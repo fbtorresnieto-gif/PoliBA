@@ -1,0 +1,414 @@
+/* PoliBA Custom Styles - Premium Thesis Aesthetics */
+
+:root {
+    --poliba-olive: #c5d852;
+    --poliba-olive-hover: #b4c643;
+    --poliba-dark-blue: #132644;
+    --poliba-dark-blue-hover: #0a172a;
+    --poliba-light-bg: #f8f9fa;
+    --poliba-card-bg: #ffffff;
+    --poliba-sidebar-bg: rgba(197, 216, 82, 0.95);
+    --poliba-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --poliba-transition: all 0.3s ease;
+}
+
+body {
+    background-color: var(--poliba-light-bg);
+    color: var(--poliba-dark-blue);
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Navbar */
+.poliba-header {
+    background-color: var(--poliba-olive);
+    padding: 0.8rem 2rem;
+    box-shadow: var(--poliba-shadow);
+}
+
+.poliba-logo {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--poliba-dark-blue) !important;
+    text-decoration: none;
+    letter-spacing: -1px;
+}
+
+.poliba-logo span {
+    color: #ffffff;
+}
+
+.navbar-nav .nav-link {
+    color: var(--poliba-dark-blue) !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: capitalize;
+    margin: 0 0.5rem;
+    position: relative;
+    transition: var(--poliba-transition);
+}
+
+.navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 3px;
+    bottom: -5px;
+    left: 0;
+    background-color: var(--poliba-dark-blue);
+    transition: var(--poliba-transition);
+}
+
+.navbar-nav .nav-link:hover::after,
+.navbar-nav .nav-link.active::after {
+    width: 100%;
+}
+
+/* Hero & Carousels */
+.poliba-hero {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin: 2rem 0;
+}
+
+.hero-control {
+    background: rgba(0,0,0,0.2);
+    color: #fff;
+    border: none;
+    padding: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.5rem;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--poliba-transition);
+}
+
+.hero-control:hover {
+    background: rgba(0,0,0,0.5);
+}
+
+.hero-control.prev { left: 20px; }
+.hero-control.next { right: 20px; }
+
+/* Grid Cards (Novedades, Deportes, Polideportivos) */
+.section-title {
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 4px;
+    background-color: var(--poliba-olive);
+    margin: 0.5rem auto 0;
+    border-radius: 2px;
+}
+
+.poliba-card {
+    background: var(--poliba-card-bg);
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--poliba-shadow);
+    transition: var(--poliba-transition);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.poliba-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+}
+
+.poliba-card-img {
+    height: 200px;
+    background-color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-weight: 700;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+}
+
+.poliba-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.poliba-card-title {
+    font-weight: 800;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.poliba-card-meta {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+}
+
+.poliba-card-text {
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    flex-grow: 1;
+    margin-bottom: 1.5rem;
+}
+
+.poliba-card-link {
+    color: var(--poliba-dark-blue);
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: var(--poliba-transition);
+}
+
+.poliba-card-link:hover {
+    color: var(--poliba-olive-hover);
+    padding-left: 5px;
+}
+
+/* Sidebar "Panel" */
+.poliba-sidebar {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 320px;
+    height: 100vh;
+    background-color: var(--poliba-sidebar-bg);
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    transition: var(--poliba-transition);
+    overflow-y: auto;
+    padding: 2rem 1.5rem;
+    backdrop-filter: blur(8px);
+}
+
+.poliba-sidebar.open {
+    right: 0;
+}
+
+.sidebar-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--poliba-dark-blue);
+    cursor: pointer;
+    float: right;
+    font-weight: 700;
+    transition: var(--poliba-transition);
+}
+
+.sidebar-close:hover {
+    color: #ffffff;
+}
+
+.sidebar-title {
+    font-weight: 800;
+    margin-bottom: 2rem;
+    color: var(--poliba-dark-blue);
+    clear: both;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.sidebar-btn {
+    background-color: #ffffff;
+    color: var(--poliba-dark-blue);
+    border: none;
+    border-radius: 30px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: var(--poliba-transition);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.sidebar-btn:hover {
+    background-color: var(--poliba-dark-blue);
+    color: #ffffff;
+    transform: translateX(-5px);
+}
+
+/* Main forms & layouts */
+.poliba-container-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: var(--poliba-shadow);
+    padding: 2.5rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.poliba-btn {
+    background-color: var(--poliba-olive);
+    color: var(--poliba-dark-blue);
+    border: none;
+    border-radius: 30px;
+    padding: 0.6rem 1.8rem;
+    font-weight: 700;
+    transition: var(--poliba-transition);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.poliba-btn:hover {
+    background-color: var(--poliba-dark-blue);
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.poliba-btn-dark {
+    background-color: var(--poliba-dark-blue);
+    color: #ffffff;
+    border: none;
+    border-radius: 30px;
+    padding: 0.6rem 1.8rem;
+    font-weight: 700;
+    transition: var(--poliba-transition);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.poliba-btn-dark:hover {
+    background-color: var(--poliba-dark-blue-hover);
+    color: var(--poliba-olive);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Footer style */
+.poliba-footer {
+    background-color: var(--poliba-olive);
+    color: var(--poliba-dark-blue);
+    padding: 1.5rem 0;
+    margin-top: auto;
+    font-weight: 600;
+    text-align: center;
+}
+
+.footer-social-icons a {
+    color: var(--poliba-dark-blue);
+    font-size: 1.8rem;
+    margin: 0 1rem;
+    transition: var(--poliba-transition);
+}
+
+.footer-social-icons a:hover {
+    color: #ffffff;
+}
+
+/* Custom Table design */
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--poliba-shadow);
+}
+
+.table-poliba {
+    background: #ffffff;
+    margin-bottom: 0;
+}
+
+.table-poliba th {
+    background-color: var(--poliba-dark-blue);
+    color: #ffffff;
+    font-weight: 700;
+    padding: 1rem;
+    border: none;
+}
+
+.table-poliba td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-poliba tr:last-child td {
+    border-bottom: none;
+}
+
+/* Map styles */
+.poliba-map {
+    height: 400px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: var(--poliba-shadow);
+    margin: 1.5rem 0;
+    background-color: #e2e8f0;
+}
+
+/* Badge and Waitlist indicators */
+.badge-espera {
+    background-color: #ff9800;
+    color: #ffffff;
+    font-weight: bold;
+    border-radius: 20px;
+    padding: 0.35em 0.8em;
+}
+
+.badge-activo {
+    background-color: #4caf50;
+    color: #ffffff;
+    font-weight: bold;
+    border-radius: 20px;
+    padding: 0.35em 0.8em;
+}
+
+.badge-cancelado {
+    background-color: #f44336;
+    color: #ffffff;
+    font-weight: bold;
+    border-radius: 20px;
+    padding: 0.35em 0.8em;
+}
+
+/* Backdrop */
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1040;
+    display: none;
+    backdrop-filter: blur(3px);
+}
+
+.sidebar-backdrop.show {
+    display: block;
+}
