@@ -244,3 +244,5 @@ input[type="radio"]:checked + label {
     border-radius: 30px;
 }
 </style>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

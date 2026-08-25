@@ -1,22 +1,22 @@
 // PoliBA Client-Side Interactions
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Sidebar Panel Navigation Toggle
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('poliba-sidebar');
-    const sidebarClose = document.getElementById('sidebar-close');
-    
-    // Create Backdrop Element dynamically if it doesn't exist
-    let backdrop = document.getElementById('sidebar-backdrop');
-    if (!backdrop && sidebar) {
-        backdrop = document.createElement('div');
-        backdrop.id = 'sidebar-backdrop';
-        backdrop.className = 'sidebar-backdrop';
-        document.body.appendChild(backdrop);
+    // Helper functions to open / close sidebar
+    function getBackdrop() {
+        let backdrop = document.getElementById('sidebar-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'sidebar-backdrop';
+            backdrop.className = 'sidebar-backdrop';
+            document.body.appendChild(backdrop);
+        }
+        return backdrop;
     }
-    
+
     function openSidebar() {
-        if (sidebar && backdrop) {
+        const sidebar = document.getElementById('poliba-sidebar');
+        const backdrop = getBackdrop();
+        if (sidebar) {
             sidebar.classList.add('open');
             backdrop.classList.add('show');
             document.body.style.overflow = 'hidden'; // Disable page scrolling
@@ -24,28 +24,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function closeSidebar() {
-        if (sidebar && backdrop) {
-            sidebar.classList.remove('open');
-            backdrop.classList.remove('show');
-            document.body.style.overflow = ''; // Restore scrolling
-        }
+        const sidebar = document.getElementById('poliba-sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (sidebar) sidebar.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
     }
-    
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function(e) {
+
+    // Global Document Click Delegation for all sidebar toggles and close buttons
+    document.addEventListener('click', function(e) {
+        // Match any sidebar toggle button or child element
+        const toggleBtn = e.target.closest('#sidebar-toggle, #sidebar-toggle-mobile, #sidebar-toggle-collapse, .poliba-hamburger-btn, [data-toggle-sidebar]');
+        if (toggleBtn) {
             e.preventDefault();
+            e.stopPropagation();
             openSidebar();
-        });
-    }
-    
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeSidebar);
-    }
-    
-    if (backdrop) {
-        backdrop.addEventListener('click', closeSidebar);
-    }
-    
+            return;
+        }
+
+        // Match sidebar close button
+        const closeBtn = e.target.closest('#sidebar-close, .sidebar-close');
+        if (closeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSidebar();
+            return;
+        }
+
+        // Match backdrop click
+        if (e.target.id === 'sidebar-backdrop' || e.target.classList.contains('sidebar-backdrop')) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSidebar();
+            return;
+        }
+    });
+
     // Esc Key closes sidebar
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {

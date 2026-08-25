@@ -97,35 +97,42 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
                 </div>
+            <?php endforeach; ?>
+        </div>
 
-                <!-- Modal de Novedad Individual -->
-                <div class="modal fade" id="novedadModal<?= $novedad['id']; ?>" tabindex="-1" aria-labelledby="novedadModalLabel<?= $novedad['id']; ?>" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                            <div class="modal-header border-0 bg-light" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
-                                <h5 class="modal-title fw-bold text-dark" id="novedadModalLabel<?= $novedad['id']; ?>">
-                                    <?= htmlspecialchars($novedad['nombre']); ?>
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modales de Novedades (renderizados fuera del grid para DOM limpio) -->
+        <?php foreach ($novedades as $novedad): 
+            $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600";
+            if (!empty($novedad['imagenURL'])) {
+                $img_url = filter_var($novedad['imagenURL'], FILTER_VALIDATE_URL) ? $novedad['imagenURL'] : "img/" . $novedad['imagenURL'];
+            }
+        ?>
+            <div class="modal fade" id="novedadModal<?= $novedad['id']; ?>" tabindex="-1" aria-labelledby="novedadModalLabel<?= $novedad['id']; ?>" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                        <div class="modal-header border-0 bg-light" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                            <h5 class="modal-title fw-bold text-dark" id="novedadModalLabel<?= $novedad['id']; ?>">
+                                <?= htmlspecialchars($novedad['nombre']); ?>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded mb-3 w-100" style="max-height: 250px; object-fit: cover;" alt="Novedad">
+                            <div class="mb-3 text-muted">
+                                <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Sede General'); ?></span>
+                                <span><i class="bi bi-calendar-event me-1"></i> Publicado: <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?></span>
                             </div>
-                            <div class="modal-body p-4">
-                                <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded mb-3 w-100" style="max-height: 250px; object-fit: cover;" alt="Novedad">
-                                <div class="mb-3 text-muted">
-                                    <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Sede General'); ?></span>
-                                    <span><i class="bi bi-calendar-event me-1"></i> Publicado: <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?></span>
-                                </div>
-                                <div class="text-dark" style="line-height: 1.6; white-space: pre-line;">
-                                    <?= htmlspecialchars($novedad['descripcion']); ?>
-                                </div>
+                            <div class="text-dark" style="line-height: 1.6; white-space: pre-line;">
+                                <?= htmlspecialchars($novedad['descripcion']); ?>
                             </div>
-                            <div class="modal-footer border-0 bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-                                <button type="button" class="poliba-btn-dark px-4 py-2" data-bs-dismiss="modal">Cerrar</button>
-                            </div>
+                        </div>
+                        <div class="modal-footer border-0 bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+                            <button type="button" class="poliba-btn-dark px-4 py-2" data-bs-dismiss="modal">Cerrar</button>
                         </div>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
+            </div>
+        <?php endforeach; ?>
     <?php endif; ?>
 </div>
 

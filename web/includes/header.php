@@ -1,7 +1,12 @@
 <?php
 require_once __DIR__ . '/auth.php';
 $logged_user = get_logged_user();
-$base_path = isset($base_path) ? $base_path : '';
+
+// Autodetectar base_path si no fue seteado previamente
+if (!isset($base_path)) {
+    $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+    $base_path = (strpos($script_dir, '/abm') !== false) ? '../' : '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -30,13 +35,22 @@ $base_path = isset($base_path) ? $base_path : '';
 <body>
 
     <!-- Header Navigation Bar -->
-    <nav class="navbar navbar-expand-lg poliba-header navbar-light sticky-top">
+    <nav class="navbar navbar-expand-lg poliba-header navbar-light sticky-top shadow-sm">
         <div class="container-fluid px-md-5">
             <a class="navbar-brand poliba-logo" href="<?= $base_path; ?>index.php">Poli<span>BA</span></a>
             
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <div class="d-flex align-items-center">
+                <?php if (is_logged_in()): ?>
+                    <!-- Botón Hamburguesa en Mobile -->
+                    <button type="button" class="btn poliba-hamburger-btn d-lg-none me-2" id="sidebar-toggle-mobile" data-toggle-sidebar="true" aria-label="Abrir panel" title="Abrir Panel">
+                        <i class="bi bi-list"></i>
+                    </button>
+                <?php endif; ?>
+                
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
             
             <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
                 <ul class="navbar-nav align-items-center">
@@ -54,11 +68,17 @@ $base_path = isset($base_path) ? $base_path : '';
                     </li>
                     
                     <?php if (is_logged_in()): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" id="sidebar-toggle">Panel</a>
+                        <!-- Botón Hamburguesa en Desktop -->
+                        <li class="nav-item ms-lg-3 d-none d-lg-block">
+                            <button type="button" class="btn poliba-hamburger-btn" id="sidebar-toggle" data-toggle-sidebar="true" aria-label="Abrir panel" title="Abrir Panel">
+                                <i class="bi bi-list"></i>
+                            </button>
                         </li>
-                        <li class="nav-item ms-lg-3">
-                            <a class="poliba-btn-dark py-2 px-4" href="<?= $base_path; ?>index.php?action=logout">Logout</a>
+                        <!-- Botón directo en Menú Desplegable Mobile -->
+                        <li class="nav-item d-lg-none mt-3 w-100">
+                            <button type="button" class="btn poliba-btn w-100 d-flex align-items-center justify-content-center py-2" id="sidebar-toggle-collapse" data-toggle-sidebar="true">
+                                <i class="bi bi-layout-sidebar-reverse me-2 fs-5"></i> Abrir Panel
+                            </button>
                         </li>
                     <?php else: ?>
                         <li class="nav-item ms-lg-3">
@@ -71,14 +91,20 @@ $base_path = isset($base_path) ? $base_path : '';
     </nav>
 
     <!-- Sidebar Panel Navigation overlay (Slides from Right) -->
-    <?php if (is_logged_in() && $logged_user): ?>
+    <?php if (is_logged_in()): 
+        $logged_user = $logged_user ?: get_logged_user();
+    ?>
     <div id="poliba-sidebar" class="poliba-sidebar">
-        <button id="sidebar-close" class="sidebar-close">&times;</button>
-        <h3 class="sidebar-title">Panel</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="sidebar-title m-0">Panel</h3>
+            <button id="sidebar-close" class="sidebar-close" aria-label="Cerrar">&times;</button>
+        </div>
         
-        <div class="mb-4 text-dark">
-            <small class="text-uppercase text-muted fw-bold">Usuario</small>
-            <div class="fw-bold fs-5"><?= htmlspecialchars($logged_user['nombre'] . ' ' . $logged_user['apellido']); ?></div>
+        <div class="mb-4 text-dark p-3 rounded" style="background: rgba(255, 255, 255, 0.45);">
+            <small class="text-uppercase text-muted fw-bold d-block" style="font-size: 0.75rem;">Usuario Conectado</small>
+            <div class="fw-bold fs-5 text-truncate" title="<?= htmlspecialchars($logged_user['nombre'] . ' ' . $logged_user['apellido']); ?>">
+                <?= htmlspecialchars($logged_user['nombre'] . ' ' . $logged_user['apellido']); ?>
+            </div>
             <span class="badge bg-dark rounded-pill mt-1"><?= htmlspecialchars($logged_user['rol_nombre']); ?></span>
         </div>
 
@@ -118,6 +144,13 @@ $base_path = isset($base_path) ? $base_path : '';
                 <a href="<?= $base_path; ?>canchas.php" class="sidebar-btn"><i class="bi bi-calendar-event me-2"></i>Reservar Cancha</a>
                 <a href="<?= $base_path; ?>perfil.php#mis-reservas" class="sidebar-btn"><i class="bi bi-ticket-perforated me-2"></i>Mis Reservas</a>
             <?php endif; ?>
+        </div>
+
+        <!-- Botón de Cerrar Sesión dentro del Panel -->
+        <div class="sidebar-logout-wrapper mt-4 pt-3 border-top" style="border-color: rgba(19, 38, 68, 0.15) !important;">
+            <a href="<?= $base_path; ?>index.php?action=logout" class="sidebar-btn sidebar-btn-logout">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i>Cerrar sesión
+            </a>
         </div>
     </div>
     <?php endif; ?>

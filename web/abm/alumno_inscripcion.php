@@ -250,3 +250,5 @@ input[type="radio"]:checked ~ label {
     font-weight: bold;
 }
 </style>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
