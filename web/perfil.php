@@ -74,25 +74,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     $menor_id = intval($_POST['menor_id']);
     $nombre = trim($_POST['nombre']);
     $apellido = trim($_POST['apellido']);
+    $dni = trim($_POST['dni']);
+    $fecha_nacimiento = $_POST['fecha_nacimiento'];
     $direccion = trim($_POST['direccion']);
     $relacion = trim($_POST['relacion']);
     
-    if (empty($nombre) || empty($apellido) || empty($relacion)) {
-        $error_msg = 'Completa todos los campos obligatorios del menor.';
+    if (empty($nombre) || empty($apellido) || empty($dni) || empty($fecha_nacimiento) || empty($relacion)) {
+        $error_msg = 'Completa todos los campos obligatorios del menor (Nombre, Apellido, DNI, Fecha de Nacimiento y Relación).';
     } else {
         try {
             $stmt = $pdo->prepare("
                 UPDATE menores 
-                SET nombre = ?, apellido = ?, direccion = ?, relacion = ? 
+                SET nombre = ?, apellido = ?, dni = ?, fecha_nacimiento = ?, direccion = ?, relacion = ? 
                 WHERE id = ? AND fk_usuario = ?
             ");
-            if ($stmt->execute([$nombre, $apellido, $direccion, $relacion, $menor_id, $user['id']])) {
+            if ($stmt->execute([$nombre, $apellido, $dni, $fecha_nacimiento, $direccion, $relacion, $menor_id, $user['id']])) {
                 $success_msg = 'Datos del menor modificados con éxito.';
             } else {
                 $error_msg = 'Error al modificar el menor.';
             }
         } catch (PDOException $e) {
-            $error_msg = 'Error de base de datos.';
+            $error_msg = 'El DNI ingresado ya se encuentra registrado para otro usuario o menor.';
         }
     }
 }
@@ -458,7 +460,7 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha de Nacimiento *</label>
-                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d', strtotime('-6 years')); ?>">
+                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d'); ?>">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -469,8 +471,11 @@ require_once __DIR__ . '/includes/header.php';
                     <label class="form-label fw-bold">Relación con el menor *</label>
                     <select name="relacion" class="form-select rounded-pill px-3" required>
                         <option value="Hijo/a">Padre/Madre (Hijo/a)</option>
+                        <option value="Hermano/a">Hermano/a</option>
                         <option value="Nieto/a">Abuelo/a (Nieto/a)</option>
+                        <option value="Sobrino/a">Tío/a (Sobrino/a)</option>
                         <option value="Tutorado/a">Tutor Legal (Tutorado/a)</option>
+                        <option value="Otro">Otro vínculo familiar</option>
                     </select>
                 </div>
             </div>
@@ -492,12 +497,12 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             <div class="modal-body p-4">
                 <div class="table-responsive">
-                    <table class="table table-poliba table-striped">
+                    <table class="table table-poliba table-striped align-middle">
                         <thead>
                             <tr>
                                 <th>Nombre Completo</th>
                                 <th>DNI</th>
-                                <th>Edad</th>
+                                <th>Fecha Nac. / Edad</th>
                                 <th>Relación</th>
                                 <th>Acción</th>
                             </tr>
@@ -508,11 +513,13 @@ require_once __DIR__ . '/includes/header.php';
                             ?>
                                 <tr>
                                     <td class="fw-bold"><?= htmlspecialchars($menor['nombre'] . ' ' . $menor['apellido']); ?></td>
-                                    <td><?= htmlspecialchars($menor['dni']); ?></td>
-                                    <td><?= $age; ?> años</td>
-                                    <td><?= htmlspecialchars($menor['relacion']); ?></td>
+                                    <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($menor['dni']); ?></span></td>
+                                    <td><?= date('d/m/Y', strtotime($menor['fecha_nacimiento'])); ?> <small class="text-muted">(<?= $age; ?> años)</small></td>
+                                    <td><span class="badge bg-secondary rounded-pill"><?= htmlspecialchars($menor['relacion']); ?></span></td>
                                     <td>
-                                        <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="collapse" data-bs-target="#editMenorCol<?= $menor['id']; ?>">Editar</button>
+                                        <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="collapse" data-bs-target="#editMenorCol<?= $menor['id']; ?>">
+                                            <i class="bi bi-pencil me-1"></i> Editar
+                                        </button>
                                     </td>
                                 </tr>
                                 <tr class="collapse" id="editMenorCol<?= $menor['id']; ?>">
@@ -520,26 +527,41 @@ require_once __DIR__ . '/includes/header.php';
                                         <form action="perfil.php" method="POST">
                                             <input type="hidden" name="action" value="modificar_menor">
                                             <input type="hidden" name="menor_id" value="<?= $menor['id']; ?>">
-                                            <h6 class="fw-bold mb-2">Editar Datos de: <?= htmlspecialchars($menor['nombre']); ?></h6>
+                                            <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-pencil-square me-1"></i> Modificar Datos de <?= htmlspecialchars($menor['nombre'] . ' ' . $menor['apellido']); ?></h6>
                                             <div class="row g-2">
-                                                <div class="col-md-3">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Nombre *</label>
                                                     <input type="text" name="nombre" class="form-control form-control-sm rounded-pill px-3" placeholder="Nombre" required value="<?= htmlspecialchars($menor['nombre']); ?>">
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Apellido *</label>
                                                     <input type="text" name="apellido" class="form-control form-control-sm rounded-pill px-3" placeholder="Apellido" required value="<?= htmlspecialchars($menor['apellido']); ?>">
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">DNI *</label>
+                                                    <input type="text" name="dni" class="form-control form-control-sm rounded-pill px-3" placeholder="DNI" required value="<?= htmlspecialchars($menor['dni']); ?>">
+                                                </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Fecha de Nacimiento *</label>
+                                                    <input type="date" name="fecha_nacimiento" class="form-control form-control-sm rounded-pill px-3" required value="<?= htmlspecialchars($menor['fecha_nacimiento']); ?>" max="<?= date('Y-m-d'); ?>">
+                                                </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Dirección</label>
                                                     <input type="text" name="direccion" class="form-control form-control-sm rounded-pill px-3" placeholder="Dirección" value="<?= htmlspecialchars($menor['direccion'] ?? ''); ?>">
                                                 </div>
-                                                <div class="col-md-3">
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="form-label small fw-bold text-dark mb-1">Relación / Vínculo *</label>
                                                     <select name="relacion" class="form-select form-select-sm rounded-pill px-3" required>
                                                         <option value="Hijo/a" <?= $menor['relacion'] == 'Hijo/a' ? 'selected' : ''; ?>>Hijo/a</option>
+                                                        <option value="Hermano/a" <?= $menor['relacion'] == 'Hermano/a' ? 'selected' : ''; ?>>Hermano/a</option>
                                                         <option value="Nieto/a" <?= $menor['relacion'] == 'Nieto/a' ? 'selected' : ''; ?>>Nieto/a</option>
+                                                        <option value="Sobrino/a" <?= $menor['relacion'] == 'Sobrino/a' ? 'selected' : ''; ?>>Sobrino/a</option>
                                                         <option value="Tutorado/a" <?= $menor['relacion'] == 'Tutorado/a' ? 'selected' : ''; ?>>Tutorado/a</option>
+                                                        <option value="Otro" <?= $menor['relacion'] == 'Otro' ? 'selected' : ''; ?>>Otro</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-12 text-end mt-2">
-                                                    <button type="submit" class="poliba-btn btn-sm py-1">Guardar</button>
+                                                    <button type="submit" class="poliba-btn btn-sm py-2 px-4">Guardar Cambios</button>
                                                 </div>
                                             </div>
                                         </form>
