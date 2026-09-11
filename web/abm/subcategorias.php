@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -107,7 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Subcategorías</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearSubModal">Agregar Subcategoría</button>
     </div>
@@ -125,7 +125,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
-                    <th>Deporte</th>
+                    <th>Actividad</th>
                     <th>Categoría General</th>
                     <th>Rango Edad</th>
                     <th>Estado</th>
@@ -135,7 +135,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($subcategorias)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No hay subcategorías registradas para esta sede.</td>
+                        <td colspan="7" class="text-center text-muted">No hay subcategorías registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($subcategorias as $sub): ?>
@@ -194,7 +194,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Deporte *</label>
+                            <label class="form-label fw-bold">Actividad *</label>
                             <select name="fk_deporte" class="form-select rounded-pill px-3" required>
                                 <?php foreach ($deportes as $dep): ?>
                                     <option value="<?= $dep['id']; ?>" <?= $sub['fk_deporte'] == $dep['id'] ? 'selected' : ''; ?>>
@@ -251,7 +251,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="row">
                     <div class="col-6 mb-3">
-                        <label class="form-label fw-bold">Deporte *</label>
+                        <label class="form-label fw-bold">Actividad *</label>
                         <select name="fk_deporte" class="form-select rounded-pill px-3" required>
                             <option value="">-- Seleccionar --</option>
                             <?php foreach ($deportes as $dep): ?>

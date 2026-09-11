@@ -147,7 +147,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="col-lg-8">
             <div class="poliba-container-card mt-0">
                 <h2 class="section-title text-dark">Inscripción a Clases</h2>
-                <p class="text-center text-muted mb-4">Inscribite a clases deportivas o anotá a los menores a tu cargo.</p>
+                <p class="text-center text-muted mb-4">Inscribite a clases de actividades o anotá a los menores a tu cargo.</p>
                 
                 <?php if (!empty($error_msg)): ?>
                     <div class="alert alert-danger" role="alert">
@@ -205,7 +205,7 @@ require_once __DIR__ . '/../includes/header.php';
                     
                     <!-- 2. Seleccionar la clase -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-dark fs-5">2. Seleccioná la Clase de Deporte</label>
+                        <label class="form-label fw-bold text-dark fs-5">2. Seleccioná la Clase de la Actividad</label>
                         <select name="clase_id" class="form-select rounded-pill px-3" required>
                             <option value="">-- Elegir Clase --</option>
                             <?php foreach ($clases as $cl): 

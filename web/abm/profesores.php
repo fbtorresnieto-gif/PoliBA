@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -86,7 +86,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">Gestión de Profesores</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearProfesorModal">Registrar Profesor</button>
     </div>
@@ -114,7 +114,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($profesores)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No hay profesores registrados para esta sede.</td>
+                        <td colspan="7" class="text-center text-muted">No hay profesores registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($profesores as $prof): ?>
@@ -177,7 +177,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Email *</label>
-                        <input type="email" name="email" class="form-control rounded-pill px-3" required placeholder="juan.perez@poliba.com">
+                        <input type="email" name="email" class="form-control rounded-pill px-3" required placeholder="juan.perez@multipro.com">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Teléfono</label>

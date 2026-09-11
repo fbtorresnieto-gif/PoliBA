@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -56,8 +56,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="container my-4">
     <div class="mb-4">
-        <h2 class="fw-bold text-dark m-0">Reservas de Canchas del Día</h2>
-        <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+        <h2 class="fw-bold text-dark m-0">Reservas de Espacios del Día</h2>
+        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
     </div>
 
     <!-- Selector de fecha -->
@@ -88,7 +88,7 @@ require_once __DIR__ . '/../includes/header.php';
             <thead>
                 <tr>
                     <th>Horario</th>
-                    <th>Cancha</th>
+                    <th>Espacio</th>
                     <th>Alumno</th>
                     <th>DNI</th>
                     <th>Teléfono</th>
@@ -120,7 +120,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php if ($is_active): ?>
                                     <a href="reservas.php?fecha=<?= $selected_date; ?>&cancelar_reserva_admin=<?= $res['id']; ?>" 
                                        class="btn btn-sm btn-danger rounded-pill px-3"
-                                       onclick="return confirm('¿Seguro deseas cancelar esta reserva de cancha?');">
+                                       onclick="return confirm('¿Seguro deseas cancelar esta reserva de espacio?');">
                                         Cancelar
                                     </a>
                                 <?php else: ?>

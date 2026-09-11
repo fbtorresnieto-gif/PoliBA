@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -171,7 +171,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Clases</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearClaseModal">Agregar Clase</button>
     </div>
@@ -189,7 +189,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
-                    <th>Deporte</th>
+                    <th>Actividad</th>
                     <th>Profesor</th>
                     <th>Horario y Días</th>
                     <th>Cupo</th>
@@ -200,7 +200,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($clases)): ?>
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No hay clases registradas para esta sede.</td>
+                        <td colspan="8" class="text-center text-muted">No hay clases registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($clases as $clase): 
@@ -283,7 +283,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold">Deporte *</label>
+                            <label class="form-label fw-bold">Actividad *</label>
                             <select name="fk_deporte" class="form-select rounded-pill px-3" required>
                                 <?php foreach ($deportes as $dep): ?>
                                     <option value="<?= $dep['id']; ?>" <?= $clase['fk_deporte'] == $dep['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dep['nombre']); ?></option>
@@ -302,9 +302,9 @@ require_once __DIR__ . '/../includes/header.php';
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold">Cancha</label>
+                            <label class="form-label fw-bold">Espacio</label>
                             <select name="fk_canchas" class="form-select rounded-pill px-3">
-                                <option value="">-- Sede General --</option>
+                                <option value="">-- Entidad General --</option>
                                 <?php foreach ($canchas as $can): ?>
                                     <option value="<?= $can['id']; ?>" <?= $clase['fk_canchas'] == $can['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($can['nombre']); ?></option>
                                 <?php endforeach; ?>
@@ -391,7 +391,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Deporte *</label>
+                        <label class="form-label fw-bold">Actividad *</label>
                         <select name="fk_deporte" class="form-select rounded-pill px-3" required>
                             <option value="">-- Seleccionar --</option>
                             <?php foreach ($deportes as $dep): ?>
@@ -409,9 +409,9 @@ require_once __DIR__ . '/../includes/header.php';
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Cancha</label>
+                        <label class="form-label fw-bold">Espacio</label>
                         <select name="fk_canchas" class="form-select rounded-pill px-3">
-                            <option value="">-- Sede General --</option>
+                            <option value="">-- Entidad General --</option>
                             <?php foreach ($canchas as $can): ?>
                                 <option value="<?= $can['id']; ?>"><?= htmlspecialchars($can['nombre']); ?></option>
                             <?php endforeach; ?>

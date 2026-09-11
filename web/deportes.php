@@ -20,13 +20,13 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container my-4">
-    <h2 class="section-title text-dark">Disciplinas Deportivas</h2>
-    <p class="text-center text-muted mb-5">Conocé todos los deportes disponibles en nuestras sedes.</p>
+    <h2 class="section-title text-dark">Nuestras Actividades</h2>
+    <p class="text-center text-muted mb-5">Conocé todas las actividades disponibles en nuestras entidades.</p>
     
     <?php if (empty($deportes)): ?>
         <div class="text-center py-5">
             <i class="bi bi-trophy text-muted fs-1 mb-3"></i>
-            <p class="text-muted">No hay deportes registrados en el sistema actualmente.</p>
+            <p class="text-muted">No hay actividades registradas en el sistema actualmente.</p>
         </div>
     <?php else: ?>
         <div class="row g-4">
@@ -46,12 +46,12 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card-body">
                             <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($deporte['nombre']); ?></h5>
                             <p class="poliba-card-meta mb-2">
-                                <i class="bi bi-building me-1"></i> Sede: <?= htmlspecialchars($deporte['polideportivo_nombre']); ?>
+                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['polideportivo_nombre']); ?>
                             </p>
                             <p class="poliba-card-text">
                                 <?= htmlspecialchars(substr($deporte['texto'], 0, 100)) . (strlen($deporte['texto']) > 100 ? '...' : ''); ?>
                             </p>
-                            <a href="deporte.php?id=<?= $deporte['id']; ?>" class="poliba-card-link mt-auto">Ver Clases y Horarios <i class="bi bi-arrow-right ms-1"></i></a>
+                            <a href="deporte.php?id=<?= $deporte['id']; ?>" class="poliba-card-link mt-auto">Ver Actividad y Clases <i class="bi bi-arrow-right ms-1"></i></a>
                         </div>
                     </div>
                 </div>

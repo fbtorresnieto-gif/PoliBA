@@ -112,15 +112,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     } elseif (strtotime($fecha) < strtotime(date('Y-m-d'))) {
         $error_msg = 'No podés realizar reservas para fechas pasadas.';
     } elseif (!$esta_abierto_hoy) {
-        $error_msg = 'El polideportivo se encuentra cerrado los días ' . $nombre_dia_actual . '.';
+        $error_msg = 'La entidad se encuentra cerrada los días ' . $nombre_dia_actual . '.';
     } elseif (!array_key_exists($horario, $slots)) {
-        $error_msg = 'El horario seleccionado está fuera del horario de atención del polideportivo (' . date('H:i', strtotime($cancha['horario_apertura'])) . ' a ' . date('H:i', strtotime($cancha['horario_cierre'])) . ' hs).';
+        $error_msg = 'El horario seleccionado está fuera del horario de atención de la entidad (' . date('H:i', strtotime($cancha['horario_apertura'])) . ' a ' . date('H:i', strtotime($cancha['horario_cierre'])) . ' hs).';
     } elseif ($fecha === date('Y-m-d') && $horario <= date('H:i:s')) {
         $error_msg = 'No podés reservar un horario que ya ha transcurrido hoy.';
     } elseif (in_array($horario, $reservas_existentes)) {
         $error_msg = 'El horario seleccionado ya se encuentra reservado por otro usuario.';
     } else {
-        // 2. Validar que no colisione con ninguna clase deportiva
+        // 2. Validar que no colisione con ninguna clase de actividad
         $slot_start_sec = strtotime("1970-01-01 $horario");
         $slot_end_sec = $slot_start_sec + 3600;
         $clase_collision = null;
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         }
         
         if ($clase_collision) {
-            $error_msg = 'El horario seleccionado no está disponible debido a la clase deportiva "' . htmlspecialchars($clase_collision['nombre']) . '" (' . date('H:i', strtotime($clase_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($clase_collision['horario_cierre'])) . ' hs).';
+            $error_msg = 'El horario seleccionado no está disponible debido a la clase de actividad "' . htmlspecialchars($clase_collision['nombre']) . '" (' . date('H:i', strtotime($clase_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($clase_collision['horario_cierre'])) . ' hs).';
         } else {
             try {
                 if ($db_driver_used === 'postgresql') {
@@ -177,7 +177,7 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="canchas.php" class="text-dark">Canchas</a></li>
+            <li class="breadcrumb-item"><a href="canchas.php" class="text-dark">Espacios</a></li>
             <li class="breadcrumb-item active" aria-current="page">Reservar</li>
         </ol>
     </nav>
@@ -188,7 +188,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
                     <span class="badge bg-dark rounded-pill px-3 py-2"><?= htmlspecialchars($cancha['polideportivo_nombre']); ?></span>
                     <span class="badge bg-secondary rounded-pill px-3 py-2">
-                        <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techada' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierta'; ?>
+                        <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
                     </span>
                     <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
                         <i class="bi bi-clock me-1 text-primary"></i> <?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs
@@ -201,7 +201,7 @@ require_once __DIR__ . '/includes/header.php';
                 <p class="text-muted mt-2 mb-0"><?= htmlspecialchars($cancha['descripcion']); ?></p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <a href="polideportivo.php?id=<?= $cancha['fk_polideportivo']; ?>" class="poliba-btn-dark btn-sm">Ver Sede</a>
+                <a href="polideportivo.php?id=<?= $cancha['fk_polideportivo']; ?>" class="poliba-btn-dark btn-sm">Ver Entidad</a>
             </div>
         </div>
 
@@ -256,12 +256,12 @@ require_once __DIR__ . '/includes/header.php';
             </form>
 
             <?php if (!$esta_abierto_hoy): ?>
-                <!-- Notificación de Polideportivo Cerrado -->
+                <!-- Notificación de Entidad Cerrada -->
                 <div class="alert alert-warning d-flex align-items-center mb-4 p-4 rounded-4 shadow-sm" role="alert">
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3 text-warning"></i>
                     <div>
-                        <h5 class="alert-heading fw-bold mb-1">Polideportivo Cerrado</h5>
-                        <p class="mb-0">El polideportivo <strong><?= htmlspecialchars($cancha['polideportivo_nombre']); ?></strong> permanece cerrado los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
+                        <h5 class="alert-heading fw-bold mb-1">Entidad Cerrada</h5>
+                        <p class="mb-0">La entidad <strong><?= htmlspecialchars($cancha['polideportivo_nombre']); ?></strong> permanece cerrada los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
                     </div>
                 </div>
             <?php else: ?>
@@ -277,7 +277,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="d-flex flex-wrap gap-2 align-items-center small mt-2 mt-md-0">
                             <span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-circle-fill me-1" style="font-size: 0.6rem;"></i> Disponible</span>
                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-x-circle-fill me-1"></i> Reservado</span>
-                            <span class="badge bg-warning bg-opacity-15 text-dark border border-warning"><i class="bi bi-calendar-x-fill me-1 text-warning"></i> Clase Deportiva</span>
+                            <span class="badge bg-warning bg-opacity-15 text-dark border border-warning"><i class="bi bi-calendar-x-fill me-1 text-warning"></i> Clase de Actividad</span>
                             <span class="badge bg-secondary bg-opacity-10 text-muted border"><i class="bi bi-clock-history me-1"></i> Pasado</span>
                         </div>
                     </div>
@@ -292,7 +292,7 @@ require_once __DIR__ . '/includes/header.php';
                             // 1. ¿Está reservado por un alumno?
                             $is_reserved = in_array($time_val, $reservas_existentes);
                             
-                            // 2. ¿Está ocupado por una clase deportiva?
+                            // 2. ¿Está ocupado por una clase de actividad?
                             $clase_ocupante = null;
                             foreach ($clases_dia as $cl) {
                                 $cl_start_sec = strtotime("1970-01-01 " . $cl['horario_inicio']);
@@ -325,7 +325,7 @@ require_once __DIR__ . '/includes/header.php';
                                         </span>
                                     </div>
                                 <?php elseif ($clase_ocupante): ?>
-                                    <!-- Slot Ocupado por Clase Deportiva Programada -->
+                                    <!-- Slot Ocupado por Clase de Actividad Programada -->
                                     <div class="border border-warning bg-warning bg-opacity-10 rounded-pill p-2 text-center position-relative d-flex align-items-center justify-content-between h-100 px-3" style="min-height: 55px;" title="Ocupado por Clase: <?= htmlspecialchars($clase_ocupante['nombre']); ?> (<?= date('H:i', strtotime($clase_ocupante['horario_inicio'])); ?> a <?= date('H:i', strtotime($clase_ocupante['horario_cierre'])); ?> hs)">
                                         <span class="text-decoration-line-through text-dark fw-bold"><?= $label; ?></span>
                                         <span class="badge bg-warning text-dark rounded-pill px-2 py-1 text-truncate" style="font-size: 0.72rem; max-width: 110px;" title="<?= htmlspecialchars($clase_ocupante['nombre']); ?>">
@@ -360,17 +360,17 @@ require_once __DIR__ . '/includes/header.php';
 
                     <?php if ($disponibles_count === 0): ?>
                         <div class="alert alert-info text-center py-3 my-3">
-                            <i class="bi bi-info-circle-fill me-2"></i> No quedan turnos disponibles para esta cancha en la fecha seleccionada. Por favor, elegí otra fecha.
+                            <i class="bi bi-info-circle-fill me-2"></i> No quedan turnos disponibles para este espacio en la fecha seleccionada. Por favor, elegí otra fecha.
                         </div>
                     <?php endif; ?>
 
                     <div class="text-center pt-3 border-top">
                         <?php if (is_logged_in() && has_role('Alumno')): ?>
-                            <button type="submit" class="poliba-btn px-5 py-2 fw-bold text-uppercase" <?= $disponibles_count === 0 ? 'disabled' : ''; ?>>Confirmar Reserva</button>
+                            <button type="submit" class="poliba-btn px-5 py-2 fw-bold text-uppercase" <?= $disponibles_count === 0 ? 'disabled' : ''; ?>>Confirmar Reserva de Espacio</button>
                         <?php elseif (!is_logged_in()): ?>
                             <a href="login.php" class="poliba-btn-dark px-5 py-2 fw-bold text-uppercase text-decoration-none">Iniciar sesión para Reservar</a>
                         <?php else: ?>
-                            <div class="alert alert-warning d-inline-block">Las reservas de canchas están disponibles únicamente para usuarios catalogados como Alumnos.</div>
+                            <div class="alert alert-warning d-inline-block">Las reservas de espacios están disponibles únicamente para usuarios catalogados como Alumnos.</div>
                         <?php endif; ?>
                     </div>
                 </form>

@@ -13,7 +13,7 @@ if (!isset($base_path)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PoliBA - Plataforma de Polideportivos CABA</title>
+    <title>MultiPro - Plataforma de Gestión de Entidades y Espacios</title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -37,7 +37,7 @@ if (!isset($base_path)) {
     <!-- Header Navigation Bar -->
     <nav class="navbar navbar-expand-lg poliba-header navbar-light sticky-top shadow-sm">
         <div class="container-fluid px-md-5">
-            <a class="navbar-brand poliba-logo" href="<?= $base_path; ?>index.php">Poli<span>BA</span></a>
+            <a class="navbar-brand poliba-logo" href="<?= $base_path; ?>index.php">Multi<span>Pro</span></a>
             
             <div class="d-flex align-items-center">
                 <?php if (is_logged_in()): ?>
@@ -58,13 +58,13 @@ if (!isset($base_path)) {
                         <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>index.php">HOME</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'polideportivos.php' || basename($_SERVER['PHP_SELF']) == 'polideportivo.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>polideportivos.php">Polideportivos</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'polideportivos.php' || basename($_SERVER['PHP_SELF']) == 'polideportivo.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>polideportivos.php">Entidades</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'deportes.php' || basename($_SERVER['PHP_SELF']) == 'deporte.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>deportes.php">Deportes</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'deportes.php' || basename($_SERVER['PHP_SELF']) == 'deporte.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>deportes.php">Actividades</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'canchas.php' || basename($_SERVER['PHP_SELF']) == 'cancha.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>canchas.php">Canchas</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'canchas.php' || basename($_SERVER['PHP_SELF']) == 'cancha.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>canchas.php">Espacios</a>
                     </li>
                     
                     <?php if (is_logged_in()): ?>
@@ -114,14 +114,14 @@ if (!isset($base_path)) {
             
             <!-- Botones del GESTOR -->
             <?php if (has_role('Gestor')): ?>
-                <a href="<?= $base_path; ?>abm/polideportivos.php" class="sidebar-btn"><i class="bi bi-building me-2"></i>Polideportivos</a>
+                <a href="<?= $base_path; ?>abm/polideportivos.php" class="sidebar-btn"><i class="bi bi-building me-2"></i>Entidades</a>
                 <a href="<?= $base_path; ?>abm/administradores.php" class="sidebar-btn"><i class="bi bi-shield-lock me-2"></i>Administradores</a>
             <?php endif; ?>
 
             <!-- Botones del ADMINISTRADOR -->
             <?php if (has_role('Administrador')): ?>
-                <a href="<?= $base_path; ?>abm/deportes.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Deportes</a>
-                <a href="<?= $base_path; ?>abm/canchas.php" class="sidebar-btn"><i class="bi bi-grid-3x3-gap me-2"></i>Canchas</a>
+                <a href="<?= $base_path; ?>abm/deportes.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Actividades</a>
+                <a href="<?= $base_path; ?>abm/canchas.php" class="sidebar-btn"><i class="bi bi-grid-3x3-gap me-2"></i>Espacios</a>
                 <a href="<?= $base_path; ?>abm/clases.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Clases</a>
                 <a href="<?= $base_path; ?>abm/novedades.php" class="sidebar-btn"><i class="bi bi-newspaper me-2"></i>Novedades</a>
                 <a href="<?= $base_path; ?>abm/profesores.php" class="sidebar-btn"><i class="bi bi-person-badge me-2"></i>Profesores</a>
@@ -139,9 +139,9 @@ if (!isset($base_path)) {
 
             <!-- Botones del ALUMNO (Usuario Común) -->
             <?php if (has_role('Alumno')): ?>
-                <a href="<?= $base_path; ?>abm/alumno_inscripcion.php" class="sidebar-btn"><i class="bi bi-file-earmark-plus me-2"></i>Inscribirse a Clases</a>
+                <a href="<?= $base_path; ?>abm/alumno_inscripcion.php" class="sidebar-btn"><i class="bi bi-file-earmark-plus me-2"></i>Inscribirse a Actividades</a>
                 <a href="<?= $base_path; ?>perfil.php#mis-clases" class="sidebar-btn"><i class="bi bi-journal-check me-2"></i>Mis Clases</a>
-                <a href="<?= $base_path; ?>canchas.php" class="sidebar-btn"><i class="bi bi-calendar-event me-2"></i>Reservar Cancha</a>
+                <a href="<?= $base_path; ?>canchas.php" class="sidebar-btn"><i class="bi bi-calendar-event me-2"></i>Reservar Espacio</a>
                 <a href="<?= $base_path; ?>perfil.php#mis-reservas" class="sidebar-btn"><i class="bi bi-ticket-perforated me-2"></i>Mis Reservas</a>
             <?php endif; ?>
         </div>

@@ -30,9 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                 ");
                 $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre]);
-                $success_msg = 'Polideportivo creado con éxito.';
+                $success_msg = 'Entidad creada con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al crear el polideportivo.';
+                $error_msg = 'Error al crear la entidad.';
             }
         } elseif ($_POST['action'] == 'editar') {
             $id = intval($_POST['id']);
@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     WHERE id = ?
                 ");
                 $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre, $id]);
-                $success_msg = 'Polideportivo modificado con éxito.';
+                $success_msg = 'Entidad modificada con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al actualizar el polideportivo.';
+                $error_msg = 'Error al actualizar la entidad.';
             }
         }
     }
@@ -58,7 +58,7 @@ if (isset($_GET['toggle_estado'])) {
     try {
         $stmt = $pdo->prepare("UPDATE polideportivos SET estado = $nuevo_estado WHERE id = ?");
         $stmt->execute([$id]);
-        $success_msg = 'Estado del polideportivo actualizado con éxito.';
+        $success_msg = 'Estado de la entidad actualizado con éxito.';
     } catch (PDOException $e) {
         $error_msg = 'Error al cambiar el estado.';
     }
@@ -89,8 +89,8 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark m-0">ABM Polideportivos</h2>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearPoliModal">Agregar Polideportivo</button>
+        <h2 class="fw-bold text-dark m-0">ABM Entidades</h2>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearPoliModal">Agregar Entidad</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editPoliModal<?= $poli['id']; ?>">Editar</button>
                             <a href="polideportivos.php?toggle_estado=<?= $poli['id']; ?>&estado=<?= $poli['estado'] ? '1' : '0'; ?>" 
                                class="btn btn-sm <?= $poli['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                               onclick="return confirm('¿Seguro deseas cambiar el estado de este polideportivo?');">
+                               onclick="return confirm('¿Seguro deseas cambiar el estado de esta entidad?');">
                                 <?= $poli['estado'] ? 'Desactivar' : 'Activar'; ?>
                             </a>
                         </td>
@@ -149,7 +149,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $poli['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Polideportivo #<?= $poli['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Entidad #<?= $poli['id']; ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
@@ -207,19 +207,19 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 <?php endforeach; ?>
 
-<!-- Modal Crear Polideportivo -->
+<!-- Modal Crear Entidad -->
 <div class="modal fade" id="crearPoliModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="polideportivos.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Agregar Polideportivo</h5>
+                <h5 class="modal-title fw-bold">Agregar Entidad</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nombre *</label>
-                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Polideportivo Chacarita">
+                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Entidad Chacarita">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Dirección *</label>
@@ -259,12 +259,12 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Información General</label>
-                    <textarea name="informacion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Descripción corta del polideportivo..."></textarea>
+                    <textarea name="informacion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Descripción corta de la entidad..."></textarea>
                 </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="poliba-btn py-2">Crear Polideportivo</button>
+                <button type="submit" class="poliba-btn py-2">Crear Entidad</button>
             </div>
         </form>
     </div>

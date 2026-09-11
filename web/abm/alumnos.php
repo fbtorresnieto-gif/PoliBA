@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 // Procesar búsqueda
@@ -75,7 +75,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Buscador de Alumnos</h2>
-        <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
     </div>
 
     <!-- Barra de búsqueda -->

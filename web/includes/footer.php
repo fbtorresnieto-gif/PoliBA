@@ -8,7 +8,7 @@
                 <a href="https://facebook.com" target="_blank" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
                 <a href="https://youtube.com" target="_blank" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
             </div>
-            <p class="m-0">&copy; <?= date('Y'); ?> PoliBA. Tesis Final de Carrera - Análisis de Sistemas. Todos los derechos reservados.</p>
+            <p class="m-0">&copy; <?= date('Y'); ?> MultiPro. Tesis Final de Carrera - Análisis de Sistemas. Todos los derechos reservados.</p>
         </div>
     </footer>
 

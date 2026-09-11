@@ -79,7 +79,7 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="deportes.php" class="text-dark">Deportes</a></li>
+            <li class="breadcrumb-item"><a href="deportes.php" class="text-dark">Actividades</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($deporte['nombre']); ?></li>
         </ol>
     </nav>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/includes/header.php';
             <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded shadow-sm w-100" style="max-height: 350px; object-fit: cover;" alt="<?= htmlspecialchars($deporte['nombre']); ?>">
         </div>
         <div class="col-md-7 mt-4 mt-md-0">
-            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($deporte['polideportivo_nombre']); ?></span>
+            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['polideportivo_nombre']); ?></span>
             <h1 class="fw-bold text-dark mb-3"><?= htmlspecialchars($deporte['nombre']); ?></h1>
             <p class="fs-5 text-dark" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($deporte['texto'])); ?></p>
         </div>
@@ -113,7 +113,7 @@ require_once __DIR__ . '/includes/header.php';
     
     <?php if (empty($clases)): ?>
         <div class="alert alert-info">
-            <i class="bi bi-info-circle-fill me-2"></i> No hay clases programadas para este deporte en este momento.
+            <i class="bi bi-info-circle-fill me-2"></i> No hay clases programadas para esta actividad en este momento.
         </div>
     <?php else: ?>
         <div class="row g-4">
@@ -145,8 +145,8 @@ require_once __DIR__ . '/includes/header.php';
                                 <?= !empty($clase['prof_nombre']) ? htmlspecialchars($clase['prof_nombre'] . ' ' . $clase['prof_apellido']) : 'Sin asignar'; ?>
                             </div>
                             <div class="col-6 mb-2">
-                                <strong><i class="bi bi-grid-3x3-gap text-muted me-2"></i>Cancha:</strong> 
-                                <?= !empty($clase['cancha_nombre']) ? htmlspecialchars($clase['cancha_nombre']) : 'Sede General'; ?>
+                                <strong><i class="bi bi-grid-3x3-gap text-muted me-2"></i>Espacio:</strong> 
+                                <?= !empty($clase['cancha_nombre']) ? htmlspecialchars($clase['cancha_nombre']) : 'Espacio General'; ?>
                             </div>
                             <div class="col-6">
                                 <strong><i class="bi bi-people text-muted me-2"></i>Cupo total:</strong> 

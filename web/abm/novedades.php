@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -83,7 +83,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Novedades</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearNovedadModal">Agregar Novedad</button>
     </div>
@@ -109,7 +109,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($novedades)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No hay novedades registradas para esta sede.</td>
+                        <td colspan="5" class="text-center text-muted">No hay novedades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($novedades as $nov): ?>

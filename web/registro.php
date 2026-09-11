@@ -131,9 +131,9 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark">Polideportivo Favorito/Cercano</label>
+                        <label class="form-label fw-bold text-dark">Entidad Favorita/Cercana</label>
                         <select name="fk_polideportivo" class="form-select rounded-pill px-3">
-                            <option value="">-- Seleccionar Polideportivo --</option>
+                            <option value="">-- Seleccionar Entidad --</option>
                             <?php foreach ($polideportivos as $poli): ?>
                                 <option value="<?= $poli['id']; ?>" <?= (isset($_POST['fk_polideportivo']) && $_POST['fk_polideportivo'] == $poli['id']) ? 'selected' : ''; ?>>
                                     <?= htmlspecialchars($poli['nombre']); ?>

@@ -118,7 +118,7 @@ require_once __DIR__ . '/../includes/header.php';
         <p class="text-center text-muted mb-4">Selecciona una clase para gestionar tus alumnos y tomar asistencia.</p>
         
         <?php if (empty($clases_profesor)): ?>
-            <div class="alert alert-info text-center">No tienes clases de deportes asignadas actualmente.</div>
+            <div class="alert alert-info text-center">No tienes clases de actividades asignadas actualmente.</div>
         <?php else: ?>
             <div class="row g-4">
                 <?php foreach ($clases_profesor as $cl): ?>
@@ -127,7 +127,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="poliba-card-body p-4">
                                 <h4 class="fw-bold text-dark mb-2"><?= htmlspecialchars($cl['nombre']); ?></h4>
                                 <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($cl['deporte_nombre']); ?></div>
-                                <div class="text-muted small mb-3"><i class="bi bi-building"></i> Sede: <?= htmlspecialchars($cl['polideportivo_nombre']); ?></div>
+                                <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($cl['polideportivo_nombre']); ?></div>
                                 <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($cl['horario_inicio'])); ?> - <?= date('H:i', strtotime($cl['horario_cierre'])); ?> hs</div>
                                 <div class="d-grid mt-auto">
                                     <a href="profesor_clases.php?clase_id=<?= $cl['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia</a>
@@ -144,7 +144,7 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($clase['nombre']); ?></h2>
-                <small class="text-muted">Cargar Asistencia - Sede: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></small>
+                <small class="text-muted">Cargar Asistencia - Entidad: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></small>
             </div>
             <a href="profesor_clases.php" class="poliba-btn-dark py-2 px-4 rounded-pill text-decoration-none">Volver</a>
         </div>

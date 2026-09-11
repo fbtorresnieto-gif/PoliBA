@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $techado = isset($_POST['techado']) ? 1 : 0;
     
     if (empty($nombre)) {
-        $error_msg = 'El nombre de la cancha es obligatorio.';
+        $error_msg = 'El nombre del espacio es obligatorio.';
     } else {
         if ($_POST['action'] == 'crear') {
             try {
@@ -33,9 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     VALUES (?, ?, ?, ?, ?, TRUE)
                 ");
                 $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $poli_id]);
-                $success_msg = 'Cancha creada con éxito.';
+                $success_msg = 'Espacio creado con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al crear la cancha.';
+                $error_msg = 'Error al crear el espacio.';
             }
         } elseif ($_POST['action'] == 'editar') {
             $id = intval($_POST['id']);
@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     WHERE id = ? AND fk_polideportivo = ?
                 ");
                 $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $poli_id]);
-                $success_msg = 'Cancha modificada con éxito.';
+                $success_msg = 'Espacio modificado con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al modificar la cancha.';
+                $error_msg = 'Error al modificar el espacio.';
             }
         }
     }
@@ -61,7 +61,7 @@ if (isset($_GET['toggle_estado'])) {
     try {
         $stmt = $pdo->prepare("UPDATE canchas SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
         $stmt->execute([$id, $poli_id]);
-        $success_msg = 'Estado de la cancha actualizado.';
+        $success_msg = 'Estado del espacio actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
     }
@@ -81,10 +81,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark m-0">ABM Canchas</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <h2 class="fw-bold text-dark m-0">ABM Espacios</h2>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearCanchaModal">Agregar Cancha</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearCanchaModal">Agregar Espacio</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -109,7 +109,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($canchas)): ?>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay canchas registradas para esta sede.</td>
+                        <td colspan="6" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($canchas as $can): ?>
@@ -119,19 +119,19 @@ require_once __DIR__ . '/../includes/header.php';
                             <td><?= htmlspecialchars($can['descripcion']); ?></td>
                             <td>
                                 <span class="badge rounded-pill <?= $can['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
-                                    <?= $can['techado'] ? 'Techada' : 'Descubierta'; ?>
+                                    <?= $can['techado'] ? 'Techado' : 'Descubierto'; ?>
                                 </span>
                             </td>
                             <td>
                                 <span class="badge rounded-pill <?= $can['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?= $can['estado'] ? 'Activa' : 'Inactiva'; ?>
+                                    <?= $can['estado'] ? 'Activo' : 'Inactivo'; ?>
                                 </span>
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editCanchaModal<?= $can['id']; ?>">Editar</button>
                                 <a href="canchas.php?toggle_estado=<?= $can['id']; ?>&estado=<?= $can['estado'] ? '1' : '0'; ?>" 
                                    class="btn btn-sm <?= $can['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta cancha?');">
+                                   onclick="return confirm('¿Seguro deseas cambiar el estado de este espacio?');">
                                     <?= $can['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
@@ -151,12 +151,12 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $can['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Cancha #<?= $can['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Espacio #<?= $can['id']; ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Nombre de la Cancha *</label>
+                        <label class="form-label fw-bold">Nombre del Espacio *</label>
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($can['nombre']); ?>">
                     </div>
                     <div class="mb-3">
@@ -165,7 +165,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3 form-check form-switch ms-1">
                         <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $can['id']; ?>" <?= $can['techado'] ? 'checked' : ''; ?>>
-                        <label class="form-check-label fw-bold" for="editTechado<?= $can['id']; ?>">Cancha Techada</label>
+                        <label class="form-check-label fw-bold" for="editTechado<?= $can['id']; ?>">Espacio Techado</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Ubicación</label>
@@ -187,13 +187,13 @@ require_once __DIR__ . '/../includes/header.php';
         <form action="canchas.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Agregar Cancha</h5>
+                <h5 class="modal-title fw-bold">Agregar Espacio</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Nombre de la Cancha *</label>
-                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Cancha de Tenis 2">
+                    <label class="form-label fw-bold">Nombre del Espacio *</label>
+                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Espacio Techado / Pista 2">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
@@ -201,7 +201,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3 form-check form-switch ms-1">
                     <input class="form-check-input" type="checkbox" name="techado" id="crearTechado">
-                    <label class="form-check-label fw-bold" for="crearTechado">Cancha Techada</label>
+                    <label class="form-check-label fw-bold" for="crearTechado">Espacio Techado</label>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Descripción / Ubicación</label>
@@ -210,7 +210,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="poliba-btn py-2">Crear Cancha</button>
+                <button type="submit" class="poliba-btn py-2">Crear Espacio</button>
             </div>
         </form>
     </div>

@@ -41,13 +41,13 @@ require_once __DIR__ . '/includes/header.php';
             
             <div class="text-start bg-light p-4 rounded-3 mb-4">
                 <div class="mb-3">
-                    <small class="text-muted text-uppercase fw-bold">Polideportivo</small>
+                    <small class="text-muted text-uppercase fw-bold">Entidad</small>
                     <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['polideportivo_nombre']); ?></div>
                     <small class="text-muted"><?= htmlspecialchars($reserva['polideportivo_direccion']); ?></small>
                 </div>
                 
                 <div class="mb-3">
-                    <small class="text-muted text-uppercase fw-bold">Cancha</small>
+                    <small class="text-muted text-uppercase fw-bold">Espacio</small>
                     <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['cancha_nombre']); ?></div>
                 </div>
 
@@ -76,7 +76,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             
             <div class="d-grid gap-2">
-                <a href="cancha.php?id=<?= $reserva['fk_cancha']; ?>" class="poliba-btn fw-bold">Reservar otro turno</a>
+                <a href="cancha.php?id=<?= $reserva['fk_cancha']; ?>" class="poliba-btn fw-bold">Reservar otro espacio</a>
                 <a href="index.php" class="poliba-btn-dark fw-bold">Volver al Inicio</a>
             </div>
         </div>

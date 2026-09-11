@@ -61,13 +61,13 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="polideportivos.php" class="text-dark">Polideportivos</a></li>
+            <li class="breadcrumb-item"><a href="polideportivos.php" class="text-dark">Entidades</a></li>
             <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($poli['nombre']); ?></li>
         </ol>
     </nav>
     
     <div class="row">
-        <!-- Ficha de Información de la Sede -->
+        <!-- Ficha de Información de la Entidad -->
         <div class="col-lg-7">
             <div class="poliba-container-card mt-0 h-100 p-4">
                 <h1 class="fw-bold mb-3" style="color: var(--poliba-dark-blue);"><?= htmlspecialchars($poli['nombre']); ?></h1>
@@ -105,19 +105,19 @@ require_once __DIR__ . '/includes/header.php';
                      data-name="<?= htmlspecialchars($poli['nombre']); ?>" 
                      data-address="<?= htmlspecialchars($poli['direccion']); ?>">
                 </div>
-                <small class="text-muted d-block mt-2">Usa el mapa interactivo para ver cómo llegar a la sede.</small>
+                <small class="text-muted d-block mt-2">Usa el mapa interactivo para ver cómo llegar a la entidad.</small>
             </div>
         </div>
     </div>
     
-    <!-- Deportes en esta sede -->
+    <!-- Actividades en esta entidad -->
     <div class="my-5">
         <h3 class="fw-bold mb-4" style="color: var(--poliba-dark-blue); border-bottom: 2px solid var(--poliba-olive); padding-bottom: 0.5rem;">
-            Deportes Disponibles
+            Actividades Disponibles
         </h3>
         
         <?php if (empty($deportes)): ?>
-            <p class="text-muted">No hay deportes registrados para esta sede en este momento.</p>
+            <p class="text-muted">No hay actividades registradas para esta entidad en este momento.</p>
         <?php else: ?>
             <div class="row g-4">
                 <?php foreach ($deportes as $deporte): 
@@ -147,14 +147,14 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
     </div>
     
-    <!-- Canchas en esta sede -->
+    <!-- Espacios en esta entidad -->
     <div class="my-5">
         <h3 class="fw-bold mb-4" style="color: var(--poliba-dark-blue); border-bottom: 2px solid var(--poliba-olive); padding-bottom: 0.5rem;">
-            Canchas y Espacios
+            Espacios Disponibles
         </h3>
         
         <?php if (empty($canchas)): ?>
-            <p class="text-muted">No hay canchas registradas en esta sede en este momento.</p>
+            <p class="text-muted">No hay espacios registrados en esta entidad en este momento.</p>
         <?php else: ?>
             <div class="row g-4">
                 <?php foreach ($canchas as $cancha): 
@@ -171,7 +171,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card">
                             <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
                                 <span class="position-absolute top-0 end-0 m-3 badge rounded-pill <?= $cancha['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
-                                    <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techada' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierta'; ?>
+                                    <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
                                 </span>
                             </div>
                             <div class="poliba-card-body">
@@ -179,7 +179,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <p class="poliba-card-text">
                                     <?= htmlspecialchars($cancha['descripcion']); ?>
                                 </p>
-                                <a href="cancha.php?id=<?= $cancha['id']; ?>" class="poliba-btn text-center mt-auto w-100">Reservar Turno</a>
+                                <a href="cancha.php?id=<?= $cancha['id']; ?>" class="poliba-btn text-center mt-auto w-100">Reservar Espacio</a>
                             </div>
                         </div>
                     </div>

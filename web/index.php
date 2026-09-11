@@ -26,16 +26,16 @@ require_once __DIR__ . '/includes/header.php';
         <div class="carousel-item active h-100">
             <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white position-relative" style="background-image: linear-gradient(rgba(19, 38, 68, 0.6), rgba(19, 38, 68, 0.6)), url('https://images.unsplash.com/photo-1544698310-74ea9d1c8258?auto=format&fit=crop&q=80&w=1200'); background-size: cover; background-position: center;">
                 <div class="text-center px-4">
-                    <h1 class="display-4 fw-bold">Polideportivos de la Ciudad</h1>
-                    <p class="lead">Inscribite a clases, reservá canchas y disfrutá del deporte en tu barrio de forma 100% digital.</p>
-                    <a href="polideportivos.php" class="poliba-btn mt-2">Explorar Sedes</a>
+                    <h1 class="display-4 fw-bold">Entidades de la Ciudad</h1>
+                    <p class="lead">Inscribite a clases, reservá espacios y disfrutá de actividades en tu barrio de forma 100% digital.</p>
+                    <a href="polideportivos.php" class="poliba-btn mt-2">Explorar Entidades</a>
                 </div>
             </div>
         </div>
         <div class="carousel-item h-100">
             <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white position-relative" style="background-image: linear-gradient(rgba(19, 38, 68, 0.6), rgba(19, 38, 68, 0.6)), url('https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=1200'); background-size: cover; background-position: center;">
                 <div class="text-center px-4">
-                    <h1 class="display-4 fw-bold">Reservas de Canchas</h1>
+                    <h1 class="display-4 fw-bold">Reservas de Espacios</h1>
                     <p class="lead">Reservá tu espacio de fútbol, tenis, básquet o vóley de manera rápida desde tu perfil.</p>
                     <a href="canchas.php" class="poliba-btn mt-2">Reservar Ahora</a>
                 </div>
@@ -77,7 +77,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="poliba-card">
                         <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
                             <?php if (empty($novedad['imagenURL'])): ?>
-                                <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">PoliBA</span>
+                                <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">MultiPro</span>
                             <?php endif; ?>
                         </div>
                         <div class="poliba-card-body">
@@ -85,7 +85,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <?= htmlspecialchars($novedad['nombre']); ?>
                             </h5>
                             <div class="poliba-card-meta">
-                                <i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'General'); ?><br>
+                                <i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Entidad General'); ?><br>
                                 <i class="bi bi-calendar-event me-1"></i> <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?>
                             </div>
                             <p class="poliba-card-text line-clamp-3">
@@ -119,7 +119,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="modal-body p-4">
                             <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded mb-3 w-100" style="max-height: 250px; object-fit: cover;" alt="Novedad">
                             <div class="mb-3 text-muted">
-                                <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Sede General'); ?></span>
+                                <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Entidad General'); ?></span>
                                 <span><i class="bi bi-calendar-event me-1"></i> Publicado: <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?></span>
                             </div>
                             <div class="text-dark" style="line-height: 1.6; white-space: pre-line;">

@@ -10,7 +10,7 @@ require_once __DIR__ . '/includes/db.php';
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>PoliBA — Fix Contraseñas</title>
+    <title>MultiPro — Fix Contraseñas</title>
     <style>
         body { background:#0f172a; color:#e2e8f0; font-family:monospace; padding:40px; }
         .ok  { color:#22c55e; } .err { color:#ef4444; }
@@ -19,7 +19,7 @@ require_once __DIR__ . '/includes/db.php';
     </style>
 </head>
 <body>
-<h2 style="color:#c5d852;">🔑 Fix de Contraseñas — PoliBA</h2>
+<h2 style="color:#c5d852;">🔑 Fix de Contraseñas — MultiPro</h2>
 <div class="box">
 <?php
 $hash = '$2y$10$FJ68oTWA59zgN.BXCRZsdu5wsDuq.jc/tK0.ecAjFUFpq63a/ZUbq'; // hash de '123456'

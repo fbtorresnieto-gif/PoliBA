@@ -126,7 +126,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Promoción de Alumnos</h2>
-        <small class="text-muted">Cambio de categoría/clase deportiva basado en la edad del alumno</small>
+        <small class="text-muted">Cambio de categoría/clase de actividad basado en la edad del alumno</small>
     </div>
 
     <?php if (!empty($error_msg)): ?>

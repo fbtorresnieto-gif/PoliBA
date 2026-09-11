@@ -288,10 +288,10 @@ require_once __DIR__ . '/includes/header.php';
 
     <!-- Sección 2: Mis Reservas (Solo Alumnos, Basada en Prototipo Mi Perfil.png) -->
     <?php if (has_role('Alumno')): ?>
-        <div class="my-5">
-            <h3 class="fw-bold mb-4 text-center text-dark">Mis Reservas</h3>
+        <div class="my-5" id="mis-reservas">
+            <h3 class="fw-bold mb-4 text-center text-dark">Mis Reservas de Espacios</h3>
             <?php if (empty($reservas)): ?>
-                <div class="alert alert-info text-center">No has realizado ninguna reserva de cancha aún. <a href="canchas.php" class="alert-link text-decoration-none">Ver canchas</a></div>
+                <div class="alert alert-info text-center">No has realizado ninguna reserva de espacio aún. <a href="canchas.php" class="alert-link text-decoration-none">Ver espacios</a></div>
             <?php else: ?>
                 <div class="row g-4">
                     <?php foreach ($reservas as $res): 
@@ -306,7 +306,7 @@ require_once __DIR__ . '/includes/header.php';
                                         <small class="text-muted">ID #<?= $res['id']; ?></small>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['cancha_nombre']); ?></h5>
-                                    <div class="text-muted small mb-2"><i class="bi bi-building"></i> Sede: <?= htmlspecialchars($res['polideportivo_nombre']); ?></div>
+                                    <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['polideportivo_nombre']); ?></div>
                                     <div class="text-dark small"><i class="bi bi-calendar-event me-2"></i><?= date('d/m/Y', strtotime($res['fecha_de_asistencia'])); ?></div>
                                     <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($res['horario'])); ?> hs</div>
                                     
@@ -326,14 +326,14 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
 
     <!-- Sección 3: Mis Clases (Alumnos/Profesores, Basada en Prototipo Mi Perfil.png) -->
-    <div class="my-5">
+    <div class="my-5" id="mis-clases">
         <h3 class="fw-bold mb-4 text-center text-dark">
             <?= has_role('Profesor') ? 'Clases que Dicto' : 'Mis Clases'; ?>
         </h3>
         
         <?php if (empty($clases_inscriptas)): ?>
             <div class="alert alert-info text-center">
-                <?= has_role('Profesor') ? 'No tienes clases asignadas actualmente.' : 'No estás inscripto en ninguna clase de deporte. <a href="deportes.php" class="alert-link text-decoration-none">Buscar clases</a>'; ?>
+                <?= has_role('Profesor') ? 'No tienes clases asignadas actualmente.' : 'No estás inscripto en ninguna clase actualmente. <a href="deportes.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
             </div>
         <?php else: ?>
             <div class="row g-4">
@@ -353,7 +353,7 @@ require_once __DIR__ . '/includes/header.php';
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($clase['clase_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($clase['deporte_nombre']); ?></div>
-                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Sede: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
+                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
                                     
                                     <div class="d-grid mt-auto gap-2">
                                         <?php if ($clase['inscripcion_estado'] == 'activo'): ?>
@@ -381,7 +381,7 @@ require_once __DIR__ . '/includes/header.php';
                                     <h5 class="fw-bold text-dark mb-2"><?= htmlspecialchars($clase['nombre']); ?></h5>
                                     <p class="text-muted small mb-3"><?= htmlspecialchars($clase['descripcion']); ?></p>
                                     <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?></div>
-                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Sede: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
+                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
                                     
                                     <div class="d-grid gap-2 mt-auto">
                                         <a href="abm/profesor_clases.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia / Alumnos</a>

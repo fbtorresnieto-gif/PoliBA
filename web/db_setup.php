@@ -27,7 +27,7 @@ function log_msg(string $msg, string $type = 'info'): void {
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>PoliBA — Setup de Base de Datos</title>
+    <title>MultiPro — Setup de Base de Datos</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; padding: 40px 20px; }
@@ -43,7 +43,7 @@ function log_msg(string $msg, string $type = 'info'): void {
 </head>
 <body>
 <div class="container">
-    <h1>🏟 PoliBA &mdash; Setup de Base de Datos</h1>
+    <h1>🏟 MultiPro &mdash; Setup de Base de Datos</h1>
     <h2>Inicializando tablas y datos en Neon PostgreSQL...</h2>
 
     <div class="log-wrap">

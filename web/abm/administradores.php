@@ -135,7 +135,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="container my-4">
     <!-- 1. Estadísticas de los Polideportivos -->
-    <h3 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-success me-2"></i>Estadísticas Generales</h3>
+    <h3 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-success me-2"></i>Estadísticas Generales por Entidad</h3>
     <div class="row g-3 mb-5">
         <?php foreach ($stats as $st): ?>
             <div class="col-md-6">
@@ -148,11 +148,11 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="col-4 border-end">
                             <div class="fs-3 fw-bold text-success"><?= $st['total_canchas']; ?></div>
-                            <small class="text-muted text-uppercase fw-bold">Canchas</small>
+                            <small class="text-muted text-uppercase fw-bold">Espacios</small>
                         </div>
                         <div class="col-4">
                             <div class="fs-3 fw-bold text-info"><?= $st['total_deportes']; ?></div>
-                            <small class="text-muted text-uppercase fw-bold">Deportes</small>
+                            <small class="text-muted text-uppercase fw-bold">Actividades</small>
                         </div>
                     </div>
                 </div>
@@ -181,7 +181,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>Nombre Completo</th>
                     <th>DNI</th>
                     <th>Gmail</th>
-                    <th>Sede Asignada</th>
+                    <th>Entidad Asignada</th>
                     <th>Teléfono</th>
                     <th>Acciones</th>
                 </tr>
@@ -267,7 +267,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Sede Asignada *</label>
+                        <label class="form-label fw-bold">Entidad Asignada *</label>
                         <select name="fk_polideportivo" class="form-select rounded-pill px-3" required>
                             <?php foreach ($polideportivos as $poli): ?>
                                 <option value="<?= $poli['id']; ?>" <?= $adm['fk_polideportivo'] == $poli['id'] ? 'selected' : ''; ?>>
@@ -327,7 +327,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Email *</label>
-                        <input type="email" name="email" class="form-control rounded-pill px-3" required placeholder="juan.gomez@poliba.com">
+                        <input type="email" name="email" class="form-control rounded-pill px-3" required placeholder="juan.gomez@multipro.com">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Teléfono</label>
@@ -335,9 +335,9 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Sede Asignada *</label>
+                    <label class="form-label fw-bold">Entidad Asignada *</label>
                     <select name="fk_polideportivo" class="form-select rounded-pill px-3" required>
-                        <option value="">-- Seleccionar Polideportivo --</option>
+                        <option value="">-- Seleccionar Entidad --</option>
                         <?php foreach ($polideportivos as $poli): ?>
                             <option value="<?= $poli['id']; ?>"><?= htmlspecialchars($poli['nombre']); ?></option>
                         <?php endforeach; ?>

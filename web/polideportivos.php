@@ -21,13 +21,13 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container my-4">
-    <h2 class="section-title text-dark">Nuestros Polideportivos</h2>
-    <p class="text-center text-muted mb-5">Explorá las sedes de la Ciudad de Buenos Aires y sus actividades.</p>
+    <h2 class="section-title text-dark">Nuestras Entidades</h2>
+    <p class="text-center text-muted mb-5">Explorá las entidades de la Ciudad de Buenos Aires y sus actividades.</p>
     
     <?php if (empty($polideportivos)): ?>
         <div class="text-center py-5">
             <i class="bi bi-building-fill-exclamation text-muted fs-1 mb-3"></i>
-            <p class="text-muted">No hay polideportivos registrados en el sistema actualmente.</p>
+            <p class="text-muted">No hay entidades registradas en el sistema actualmente.</p>
         </div>
     <?php else: ?>
         <div class="row g-4 justify-content-center">
@@ -45,7 +45,7 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="poliba-card">
                         <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
                             <?php if (empty($poli['imagenURL'])): ?>
-                                <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">Sede PoliBA</span>
+                                <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">MultiPro</span>
                             <?php endif; ?>
                         </div>
                         <div class="poliba-card-body">
@@ -62,7 +62,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <?= htmlspecialchars(substr($poli['informacion'], 0, 120)) . (strlen($poli['informacion']) > 120 ? '...' : ''); ?>
                             </p>
                             <div class="mt-auto d-flex justify-content-between align-items-center">
-                                <a href="polideportivo.php?id=<?= $poli['id']; ?>" class="poliba-btn text-center w-100">Ver Ficha y Mapa</a>
+                                <a href="polideportivo.php?id=<?= $poli['id']; ?>" class="poliba-btn text-center w-100">Ver Entidad y Mapa</a>
                             </div>
                         </div>
                     </div>

@@ -10,7 +10,7 @@ $user = get_logged_user();
 $poli_id = $user['fk_polideportivo']; // Sede administrada
 
 if (!$poli_id) {
-    die("Error: El administrador no tiene una sede polideportiva asignada.");
+    die("Error: El administrador no tiene una entidad asignada.");
 }
 
 $error_msg = '';
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $imagenURL = trim($_POST['imagenURL']);
     
     if (empty($nombre)) {
-        $error_msg = 'El nombre del deporte es obligatorio.';
+        $error_msg = 'El nombre de la actividad es obligatorio.';
     } else {
         if ($_POST['action'] == 'crear') {
             try {
@@ -32,9 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     VALUES (?, ?, ?, ?, TRUE)
                 ");
                 $stmt->execute([$nombre, $texto, $imagenURL, $poli_id]);
-                $success_msg = 'Deporte creado con éxito.';
+                $success_msg = 'Actividad creada con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al crear el deporte.';
+                $error_msg = 'Error al crear la actividad.';
             }
         } elseif ($_POST['action'] == 'editar') {
             $id = intval($_POST['id']);
@@ -45,9 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     WHERE id = ? AND fk_polideportivo = ?
                 ");
                 $stmt->execute([$nombre, $texto, $imagenURL, $id, $poli_id]);
-                $success_msg = 'Deporte modificado con éxito.';
+                $success_msg = 'Actividad modificada con éxito.';
             } catch (PDOException $e) {
-                $error_msg = 'Error al modificar el deporte.';
+                $error_msg = 'Error al modificar la actividad.';
             }
         }
     }
@@ -60,7 +60,7 @@ if (isset($_GET['toggle_estado'])) {
     try {
         $stmt = $pdo->prepare("UPDATE deportes SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
         $stmt->execute([$id, $poli_id]);
-        $success_msg = 'Estado del deporte actualizado.';
+        $success_msg = 'Estado de la actividad actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
     }
@@ -80,10 +80,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark m-0">ABM Deportes</h2>
-            <small class="text-muted">Administrando Sede: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Polideportivo'); ?></strong></small>
+            <h2 class="fw-bold text-dark m-0">ABM Actividades</h2>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearDeporteModal">Agregar Deporte</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearDeporteModal">Agregar Actividad</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -107,7 +107,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($deportes)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No hay deportes registrados para esta sede.</td>
+                        <td colspan="5" class="text-center text-muted">No hay actividades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($deportes as $dep): ?>
@@ -124,7 +124,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editDeporteModal<?= $dep['id']; ?>">Editar</button>
                                 <a href="deportes.php?toggle_estado=<?= $dep['id']; ?>&estado=<?= $dep['estado'] ? '1' : '0'; ?>" 
                                    class="btn btn-sm <?= $dep['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de este deporte?');">
+                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta actividad?');">
                                     <?= $dep['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
@@ -136,7 +136,7 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Modales Editar Deporte (Fuera de la tabla para Bootstrap 5) -->
+<!-- Modales Editar Actividad (Fuera de la tabla para Bootstrap 5) -->
 <?php foreach ($deportes as $dep): ?>
     <div class="modal fade" id="editDeporteModal<?= $dep['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
@@ -144,12 +144,12 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $dep['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Deporte #<?= $dep['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Actividad #<?= $dep['id']; ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Nombre del Deporte *</label>
+                        <label class="form-label fw-bold">Nombre de la Actividad *</label>
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($dep['nombre']); ?>">
                     </div>
                     <div class="mb-3">
@@ -170,18 +170,18 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 <?php endforeach; ?>
 
-<!-- Modal Crear Deporte -->
+<!-- Modal Crear Actividad -->
 <div class="modal fade" id="crearDeporteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="deportes.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Agregar Deporte</h5>
+                <h5 class="modal-title fw-bold">Agregar Actividad</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Nombre del Deporte *</label>
+                    <label class="form-label fw-bold">Nombre de la Actividad *</label>
                     <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Vóley">
                 </div>
                 <div class="mb-3">
@@ -195,7 +195,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="poliba-btn py-2">Crear Deporte</button>
+                <button type="submit" class="poliba-btn py-2">Crear Actividad</button>
             </div>
         </form>
     </div>
