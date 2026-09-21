@@ -106,14 +106,14 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
     
-    <!-- Clases Section -->
+    <!-- Modulos Section -->
     <h3 class="fw-bold mb-4" style="color: var(--poliba-dark-blue); border-bottom: 2px solid var(--poliba-olive); padding-bottom: 0.5rem;">
-        Clases y Horarios Disponibles
+        Módulos y Horarios Disponibles
     </h3>
     
     <?php if (empty($clases)): ?>
         <div class="alert alert-info">
-            <i class="bi bi-info-circle-fill me-2"></i> No hay clases programadas para esta actividad en este momento.
+            <i class="bi bi-info-circle-fill me-2"></i> No hay módulos programados para esta actividad en este momento.
         </div>
     <?php else: ?>
         <div class="row g-4">
@@ -160,7 +160,7 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         
                         <div class="mt-4 pt-2 border-top d-flex justify-content-between align-items-center">
-                            <span class="text-muted small">ID de clase: #<?= $clase['id']; ?></span>
+                            <span class="text-muted small">ID de módulo: #<?= $clase['id']; ?></span>
                             <?php if (is_logged_in() && has_role('Alumno')): ?>
                                 <a href="abm/alumno_inscripcion.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn">
                                     <?= $cupos_libres > 0 ? 'Inscribirse' : 'Entrar a Lista de Espera'; ?>

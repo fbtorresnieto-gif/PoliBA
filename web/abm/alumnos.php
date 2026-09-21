@@ -111,7 +111,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>DNI</th>
                     <th>Gmail</th>
                     <th>Teléfono</th>
-                    <th>Clases Activas</th>
+                    <th>Módulos Activos</th>
                     <th>Menores a Cargo</th>
                 </tr>
             </thead>
@@ -129,7 +129,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <td><?= htmlspecialchars($al['telefono'] ?? '-'); ?></td>
                             <td>
                                 <?php if (empty($al['clases'])): ?>
-                                    <span class="text-muted small">Ninguna clase</span>
+                                    <span class="text-muted small">Ningún módulo</span>
                                 <?php else: ?>
                                     <div class="d-flex flex-wrap gap-1">
                                         <?php foreach ($al['clases'] as $cls): ?>

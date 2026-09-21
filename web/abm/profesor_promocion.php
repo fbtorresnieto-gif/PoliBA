@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             // Realizar promoción (cambiar clase en la inscripción)
             $stmt_prom = $pdo->prepare("UPDATE inscripcion SET fk_clase = ?, lista_espera = FALSE WHERE id = ?");
             if ($stmt_prom->execute([$nueva_clase_id, $inscripcion_id])) {
-                $success_msg = "¡Promoción exitosa! $alumno_nombre promovido a la clase: {$target_clase['nombre']}. " .
+                $success_msg = "¡Promoción exitosa! $alumno_nombre promovido al módulo: {$target_clase['nombre']}. " .
                                "Se envió un correo de notificación a $alumno_email. Recuerda informarle telefónicamente.";
             }
         }
@@ -126,7 +126,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Promoción de Alumnos</h2>
-        <small class="text-muted">Cambio de categoría/clase de actividad basado en la edad del alumno</small>
+        <small class="text-muted">Cambio de categoría/módulo de actividad basado en la edad del alumno</small>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -142,7 +142,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <tr>
                     <th>Alumno</th>
                     <th>Edad</th>
-                    <th>Clase Actual</th>
+                    <th>Módulo Actual</th>
                     <th>Rango Permitido</th>
                     <th>Promocionar a</th>
                 </tr>
@@ -150,7 +150,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($alumnos_inscritos)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No tienes alumnos inscriptos en tus clases actualmente.</td>
+                        <td colspan="5" class="text-center text-muted py-4">No tienes alumnos inscriptos en tus módulos actualmente.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($alumnos_inscritos as $al): ?>
@@ -175,7 +175,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         <input type="hidden" name="alumno_email" value="<?= htmlspecialchars($al['display_email']); ?>">
                                         
                                         <select name="nueva_clase_id" class="form-select form-select-sm rounded-pill px-3" required style="max-width:250px;">
-                                            <option value="">-- Seleccionar Clase --</option>
+                                            <option value="">-- Seleccionar Módulo --</option>
                                             <?php foreach ($al['clases_aptas'] as $ca): ?>
                                                 <option value="<?= $ca['id']; ?>">
                                                     <?= htmlspecialchars($ca['nombre']); ?> (<?= $ca['edad_min']; ?>-<?= $ca['edad_max']; ?>)
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             <?php endforeach; ?>
                                         </select>
                                         
-                                        <button type="submit" class="poliba-btn btn-sm py-1" onclick="return confirm('¿Seguro deseas promocionar a este alumno? Se cambiará su clase y se enviará una notificación por mail.');">
+                                        <button type="submit" class="poliba-btn btn-sm py-1" onclick="return confirm('¿Seguro deseas promocionar a este alumno? Se cambiará su módulo y se enviará una notificación por mail.');">
                                             Promocionar
                                         </button>
                                     </form>

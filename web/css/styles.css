@@ -1,13 +1,13 @@
-/* PoliBA Custom Styles - Premium Thesis Aesthetics */
+/* MultiPro Custom Styles - Premium Aesthetics */
 
 :root {
-    --poliba-olive: #c5d852;
-    --poliba-olive-hover: #b4c643;
-    --poliba-dark-blue: #132644;
-    --poliba-dark-blue-hover: #0a172a;
-    --poliba-light-bg: #f8f9fa;
+    --poliba-olive: #6BA3AF;
+    --poliba-olive-hover: #5a8f9b;
+    --poliba-dark-blue: #2d4a52;
+    --poliba-dark-blue-hover: #1e333a;
+    --poliba-light-bg: #F5F4F2;
     --poliba-card-bg: #ffffff;
-    --poliba-sidebar-bg: rgba(197, 216, 82, 0.95);
+    --poliba-sidebar-bg: rgba(168, 206, 214, 0.97);
     --poliba-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     --poliba-transition: all 0.3s ease;
 }
@@ -31,17 +31,17 @@ body {
 .poliba-logo {
     font-size: 2.2rem;
     font-weight: 800;
-    color: var(--poliba-dark-blue) !important;
+    color: #ffffff !important;
     text-decoration: none;
     letter-spacing: -1px;
 }
 
 .poliba-logo span {
-    color: #ffffff;
+    color: #D6DCDD;
 }
 
 .navbar-nav .nav-link {
-    color: var(--poliba-dark-blue) !important;
+    color: #ffffff !important;
     font-weight: 700;
     font-size: 1.1rem;
     text-transform: capitalize;
@@ -57,7 +57,7 @@ body {
     height: 3px;
     bottom: -5px;
     left: 0;
-    background-color: var(--poliba-dark-blue);
+    background-color: #D6DCDD;
     transition: var(--poliba-transition);
 }
 
@@ -210,7 +210,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 10px rgba(19, 38, 68, 0.18);
+    box-shadow: 0 4px 10px rgba(45, 74, 82, 0.18);
 }
 
 .poliba-hamburger-btn i {
@@ -226,7 +226,7 @@ body {
     border-color: var(--poliba-dark-blue);
     color: var(--poliba-dark-blue) !important;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(19, 38, 68, 0.28);
+    box-shadow: 0 6px 16px rgba(45, 74, 82, 0.28);
 }
 
 .poliba-hamburger-btn:hover i,
@@ -342,7 +342,7 @@ body {
 
 .poliba-btn {
     background-color: var(--poliba-olive);
-    color: var(--poliba-dark-blue);
+    color: #ffffff;
     border: none;
     border-radius: 30px;
     padding: 0.6rem 1.8rem;
@@ -372,14 +372,14 @@ body {
 
 .poliba-btn-dark:hover {
     background-color: var(--poliba-dark-blue-hover);
-    color: var(--poliba-olive);
+    color: #A8CED6;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
 /* Footer style */
 .poliba-footer {
-    background-color: var(--poliba-olive);
-    color: var(--poliba-dark-blue);
+    background-color: var(--poliba-dark-blue);
+    color: #ffffff;
     padding: 1.5rem 0;
     margin-top: auto;
     font-weight: 600;
@@ -387,7 +387,7 @@ body {
 }
 
 .footer-social-icons a {
-    color: var(--poliba-dark-blue);
+    color: #A8CED6;
     font-size: 1.8rem;
     margin: 0 1rem;
     transition: var(--poliba-transition);

@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         }
         
         if ($clase_collision) {
-            $error_msg = 'El horario seleccionado no está disponible debido a la clase de actividad "' . htmlspecialchars($clase_collision['nombre']) . '" (' . date('H:i', strtotime($clase_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($clase_collision['horario_cierre'])) . ' hs).';
+            $error_msg = 'El horario seleccionado no está disponible debido al módulo de la actividad "' . htmlspecialchars($clase_collision['nombre']) . '" (' . date('H:i', strtotime($clase_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($clase_collision['horario_cierre'])) . ' hs).';
         } else {
             try {
                 if ($db_driver_used === 'postgresql') {
@@ -277,7 +277,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="d-flex flex-wrap gap-2 align-items-center small mt-2 mt-md-0">
                             <span class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-circle-fill me-1" style="font-size: 0.6rem;"></i> Disponible</span>
                             <span class="badge bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-x-circle-fill me-1"></i> Reservado</span>
-                            <span class="badge bg-warning bg-opacity-15 text-dark border border-warning"><i class="bi bi-calendar-x-fill me-1 text-warning"></i> Clase de Actividad</span>
+                            <span class="badge bg-warning bg-opacity-15 text-dark border border-warning"><i class="bi bi-calendar-x-fill me-1 text-warning"></i> Módulo de Actividad</span>
                             <span class="badge bg-secondary bg-opacity-10 text-muted border"><i class="bi bi-clock-history me-1"></i> Pasado</span>
                         </div>
                     </div>
@@ -326,10 +326,10 @@ require_once __DIR__ . '/includes/header.php';
                                     </div>
                                 <?php elseif ($clase_ocupante): ?>
                                     <!-- Slot Ocupado por Clase de Actividad Programada -->
-                                    <div class="border border-warning bg-warning bg-opacity-10 rounded-pill p-2 text-center position-relative d-flex align-items-center justify-content-between h-100 px-3" style="min-height: 55px;" title="Ocupado por Clase: <?= htmlspecialchars($clase_ocupante['nombre']); ?> (<?= date('H:i', strtotime($clase_ocupante['horario_inicio'])); ?> a <?= date('H:i', strtotime($clase_ocupante['horario_cierre'])); ?> hs)">
+                                    <div class="border border-warning bg-warning bg-opacity-10 rounded-pill p-2 text-center position-relative d-flex align-items-center justify-content-between h-100 px-3" style="min-height: 55px;" title="Ocupado por Módulo: <?= htmlspecialchars($clase_ocupante['nombre']); ?> (<?= date('H:i', strtotime($clase_ocupante['horario_inicio'])); ?> a <?= date('H:i', strtotime($clase_ocupante['horario_cierre'])); ?> hs)">
                                         <span class="text-decoration-line-through text-dark fw-bold"><?= $label; ?></span>
                                         <span class="badge bg-warning text-dark rounded-pill px-2 py-1 text-truncate" style="font-size: 0.72rem; max-width: 110px;" title="<?= htmlspecialchars($clase_ocupante['nombre']); ?>">
-                                            <i class="bi bi-calendar-x-fill me-1"></i>Clase
+                                            <i class="bi bi-calendar-x-fill me-1"></i>Módulo
                                         </span>
                                     </div>
                                 <?php elseif ($is_past): ?>
@@ -391,13 +391,13 @@ require_once __DIR__ . '/includes/header.php';
     transform: translateY(-2px);
 }
 input[type="radio"]:checked + label {
-    color: var(--poliba-dark-blue);
+    color: #ffffff;
     background-color: var(--poliba-olive);
     border-radius: 30px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 input[type="radio"]:checked + label .slot-icon {
-    color: var(--poliba-dark-blue) !important;
+    color: #ffffff !important;
 }
 input[type="radio"]:checked + label .slot-icon::before {
     content: "\F26A" !important; /* icon bi-check-circle-fill */

@@ -61,7 +61,7 @@ if (isset($_GET['eliminar_profesor'])) {
         $stmt->execute([$id, $poli_id]);
         $success_msg = 'Profesor dado de baja con éxito.';
     } catch (PDOException $e) {
-        $error_msg = 'Error al eliminar el profesor. Puede estar asignado a clases activas.';
+        $error_msg = 'Error al eliminar el profesor. Puede estar asignado a módulos activos.';
     }
 }
 

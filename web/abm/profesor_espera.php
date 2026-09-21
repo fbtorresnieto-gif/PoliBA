@@ -30,13 +30,13 @@ if (isset($_GET['activar_inscripcion'])) {
             if ($inscriptos < $clase_info['cupo_maximo']) {
                 $stmt_act = $pdo->prepare("UPDATE inscripcion SET lista_espera = FALSE WHERE id = ?");
                 if ($stmt_act->execute([$ins_id])) {
-                    $success_msg = 'Alumno incorporado a la clase con éxito. Recuerda contactarlo por teléfono para avisarle.';
+                    $success_msg = 'Alumno incorporado al módulo con éxito. Recuerda contactarlo por teléfono para avisarle.';
                 }
             } else {
-                $error_msg = 'No se puede incorporar al alumno: el cupo de la clase está completo.';
+                $error_msg = 'No se puede incorporar al alumno: el cupo del módulo está completo.';
             }
         } else {
-            $error_msg = 'Acceso no autorizado a la clase.';
+            $error_msg = 'Acceso no autorizado al módulo.';
         }
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar base de datos.';
@@ -84,7 +84,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Gestión de Lista de Espera</h2>
-        <small class="text-muted">Administración de vacantes para tus clases</small>
+        <small class="text-muted">Administración de vacantes para tus módulos</small>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -99,7 +99,7 @@ require_once __DIR__ . '/../includes/header.php';
             <thead>
                 <tr>
                     <th>Fecha Registro</th>
-                    <th>Clase</th>
+                    <th>Módulo</th>
                     <th>Alumno</th>
                     <th>DNI</th>
                     <th>Teléfono de Contacto</th>
@@ -110,7 +110,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($lista_espera)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">No hay alumnos en lista de espera para tus clases actualmente.</td>
+                        <td colspan="7" class="text-center text-muted py-4">No hay alumnos en lista de espera para tus módulos actualmente.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($lista_espera as $item): 
@@ -149,7 +149,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         Pasar a Activo
                                     </a>
                                 <?php else: ?>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled title="No hay vacantes disponibles en la clase.">
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled title="No hay vacantes disponibles en el módulo.">
                                         Sin Vacante
                                     </button>
                                 <?php endif; ?>

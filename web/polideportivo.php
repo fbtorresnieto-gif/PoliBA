@@ -138,7 +138,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <p class="poliba-card-text">
                                     <?= htmlspecialchars(substr($deporte['texto'], 0, 100)) . (strlen($deporte['texto']) > 100 ? '...' : ''); ?>
                                 </p>
-                                <a href="deporte.php?id=<?= $deporte['id']; ?>" class="poliba-card-link mt-auto">Ver Actividades y Clases <i class="bi bi-arrow-right ms-1"></i></a>
+                                <a href="deporte.php?id=<?= $deporte['id']; ?>" class="poliba-card-link mt-auto">Ver Actividades y Módulos <i class="bi bi-arrow-right ms-1"></i></a>
                             </div>
                         </div>
                     </div>

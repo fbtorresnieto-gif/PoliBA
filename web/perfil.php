@@ -325,15 +325,15 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- Sección 3: Mis Clases (Alumnos/Profesores, Basada en Prototipo Mi Perfil.png) -->
+    <!-- Sección 3: Mis Módulos (Alumnos/Profesores, Basada en Prototipo Mi Perfil.png) -->
     <div class="my-5" id="mis-clases">
         <h3 class="fw-bold mb-4 text-center text-dark">
-            <?= has_role('Profesor') ? 'Clases que Dicto' : 'Mis Clases'; ?>
+            <?= has_role('Profesor') ? 'Módulos que Dicto' : 'Mis Módulos'; ?>
         </h3>
         
         <?php if (empty($clases_inscriptas)): ?>
             <div class="alert alert-info text-center">
-                <?= has_role('Profesor') ? 'No tienes clases asignadas actualmente.' : 'No estás inscripto en ninguna clase actualmente. <a href="deportes.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
+                <?= has_role('Profesor') ? 'No tienes módulos asignados actualmente.' : 'No estás inscripto en ningún módulo actualmente. <a href="deportes.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
             </div>
         <?php else: ?>
             <div class="row g-4">
@@ -358,13 +358,13 @@ require_once __DIR__ . '/includes/header.php';
                                     <div class="d-grid mt-auto gap-2">
                                         <?php if ($clase['inscripcion_estado'] == 'activo'): ?>
                                             <a href="perfil.php?cambiar_estado_clase=cancelar&inscripcion_id=<?= $clase['inscripcion_id']; ?>" 
-                                               class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro quieres darte de baja de esta clase?');">
+                                               class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro quieres darte de baja de este módulo?');">
                                                 Darse de baja
                                             </a>
                                         <?php else: ?>
                                             <a href="perfil.php?cambiar_estado_clase=reanudar&inscripcion_id=<?= $clase['inscripcion_id']; ?>" 
                                                class="btn btn-outline-success btn-sm">
-                                                Reanudar clase
+                                                Reanudar módulo
                                             </a>
                                         <?php endif; ?>
                                     </div>

@@ -113,12 +113,12 @@ require_once __DIR__ . '/../includes/header.php';
 
 <div class="container my-4">
     <?php if ($clase_id == 0): ?>
-        <!-- VISTA GENERAL: Listado de Clases -->
-        <h2 class="section-title text-dark">Mis Clases Asignadas</h2>
-        <p class="text-center text-muted mb-4">Selecciona una clase para gestionar tus alumnos y tomar asistencia.</p>
+        <!-- VISTA GENERAL: Listado de Módulos -->
+        <h2 class="section-title text-dark">Mis Módulos Asignados</h2>
+        <p class="text-center text-muted mb-4">Selecciona un módulo para gestionar tus alumnos y tomar asistencia.</p>
         
         <?php if (empty($clases_profesor)): ?>
-            <div class="alert alert-info text-center">No tienes clases de actividades asignadas actualmente.</div>
+            <div class="alert alert-info text-center">No tienes módulos de actividades asignados actualmente.</div>
         <?php else: ?>
             <div class="row g-4">
                 <?php foreach ($clases_profesor as $cl): ?>
@@ -187,7 +187,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <tbody>
                     <?php if (empty($alumnos)): ?>
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-4">No hay alumnos activos inscriptos en esta clase.</td>
+                            <td colspan="4" class="text-center text-muted py-4">No hay alumnos activos inscriptos en este módulo.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($alumnos as $al): 

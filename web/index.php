@@ -27,7 +27,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="d-flex align-items-center justify-content-center h-100 bg-secondary text-white position-relative" style="background-image: linear-gradient(rgba(19, 38, 68, 0.6), rgba(19, 38, 68, 0.6)), url('https://images.unsplash.com/photo-1544698310-74ea9d1c8258?auto=format&fit=crop&q=80&w=1200'); background-size: cover; background-position: center;">
                 <div class="text-center px-4">
                     <h1 class="display-4 fw-bold">Entidades de la Ciudad</h1>
-                    <p class="lead">Inscribite a clases, reservá espacios y disfrutá de actividades en tu barrio de forma 100% digital.</p>
+                    <p class="lead">Inscribite a módulos, reservá espacios y disfrutá de actividades en tu barrio de forma 100% digital.</p>
                     <a href="polideportivos.php" class="poliba-btn mt-2">Explorar Entidades</a>
                 </div>
             </div>

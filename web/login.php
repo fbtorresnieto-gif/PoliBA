@@ -69,7 +69,7 @@ require_once __DIR__ . '/includes/header.php';
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
         <div class="poliba-container-card text-center" style="background-color: var(--poliba-olive); border-radius: 16px;">
-            <h2 class="fw-bold mb-4" style="color: var(--poliba-dark-blue);">Iniciar sesión</h2>
+            <h2 class="fw-bold mb-4" style="color: #ffffff;">Iniciar sesión</h2>
             
             <?php if (!empty($error_msg)): ?>
                 <div class="alert alert-danger text-start py-2" role="alert" style="font-size: 0.95rem;">

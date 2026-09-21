@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
     
     if (!$clase_sel) {
-        $error_msg = 'La clase seleccionada no existe o no está activa.';
+        $error_msg = 'El módulo seleccionado no existe o no está activo.';
     } else {
         // Obtener datos de la persona a inscribir
         $persona_nombre = '';
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             
             // Validar edad
             if ($age < $edad_min || $age > $edad_max) {
-                $error_msg = "Error de Inscripción: $persona_nombre tiene $age años. Esta clase está permitida únicamente para edades entre $edad_min y $edad_max años.";
+                $error_msg = "Error de Inscripción: $persona_nombre tiene $age años. Este módulo está permitido únicamente para edades entre $edad_min y $edad_max años.";
             } else {
                 try {
                     // Verificar si ya está inscripto en esta clase
@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                     $duplicado = $stmt_chk->fetchColumn();
                     
                     if ($duplicado > 0) {
-                        $error_msg = "$persona_nombre ya se encuentra inscrito en esta clase.";
+                        $error_msg = "$persona_nombre ya se encuentra inscrito en este módulo.";
                     } else {
                         // Contar cupos activos actuales
                         $stmt_cnt = $pdo->prepare("
@@ -126,9 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                         $stmt_ins->execute([$clase_id, $fk_usuario, $fk_menor, $lista_espera]);
                         
                         if ($lista_espera) {
-                            $success_msg = "¡Inscripción registrada! Debido a que el cupo está completo, $persona_nombre ha sido ingresado a la <strong>LISTA DE ESPERA</strong> de la clase.";
+                            $success_msg = "¡Inscripción registrada! Debido a que el cupo está completo, $persona_nombre ha sido ingresado a la <strong>LISTA DE ESPERA</strong> del módulo.";
                         } else {
-                            $success_msg = "¡Inscripción completada con éxito! $persona_nombre se ha incorporado a la clase activa.";
+                            $success_msg = "¡Inscripción completada con éxito! $persona_nombre se ha incorporado al módulo activo.";
                         }
                     }
                 } catch (PDOException $e) {
@@ -146,8 +146,8 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="poliba-container-card mt-0">
-                <h2 class="section-title text-dark">Inscripción a Clases</h2>
-                <p class="text-center text-muted mb-4">Inscribite a clases de actividades o anotá a los menores a tu cargo.</p>
+                <h2 class="section-title text-dark">Inscripción a Módulos</h2>
+                <p class="text-center text-muted mb-4">Inscribite a módulos de actividades o anotá a los menores a tu cargo.</p>
                 
                 <?php if (!empty($error_msg)): ?>
                     <div class="alert alert-danger" role="alert">
@@ -205,9 +205,9 @@ require_once __DIR__ . '/../includes/header.php';
                     
                     <!-- 2. Seleccionar la clase -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-dark fs-5">2. Seleccioná la Clase de la Actividad</label>
+                        <label class="form-label fw-bold text-dark fs-5">2. Seleccioná el Módulo de la Actividad</label>
                         <select name="clase_id" class="form-select rounded-pill px-3" required>
-                            <option value="">-- Elegir Clase --</option>
+                            <option value="">-- Elegir Módulo --</option>
                             <?php foreach ($clases as $cl): 
                                 $selected = ($pre_clase_id == $cl['id']) ? 'selected' : '';
                             ?>

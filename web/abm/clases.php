@@ -16,7 +16,7 @@ if (!$poli_id) {
 $error_msg = '';
 $success_msg = '';
 
-// Procesar Creación / Modificación de Clases
+// Procesar Creación / Modificación de Módulos
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
     $descripcion = trim($_POST['descripcion']);
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     if (empty($nombre) || empty($horario_inicio) || empty($horario_cierre) || $cupo_maximo <= 0 || $fk_deporte <= 0) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif (empty($dias_seleccionados)) {
-        $error_msg = 'Debes seleccionar al menos un día de dictado para la clase.';
+        $error_msg = 'Debes seleccionar al menos un día de dictado para el módulo.';
     } else {
         $pdo->beginTransaction();
         try {
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
                 
                 $pdo->commit();
-                $success_msg = 'Clase creada con éxito.';
+                $success_msg = 'Módulo creado con éxito.';
             } elseif ($_POST['action'] == 'editar') {
                 $id = intval($_POST['id']);
                 
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
                 
                 $pdo->commit();
-                $success_msg = 'Clase modificada con éxito.';
+                $success_msg = 'Módulo modificado con éxito.';
             }
         } catch (PDOException $e) {
             $pdo->rollBack();
@@ -99,7 +99,7 @@ if (isset($_GET['toggle_estado'])) {
     try {
         $stmt = $pdo->prepare("UPDATE clases SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
         $stmt->execute([$id, $poli_id]);
-        $success_msg = 'Estado de la clase actualizado.';
+        $success_msg = 'Estado del módulo actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
     }
@@ -170,10 +170,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark m-0">ABM Clases</h2>
+            <h2 class="fw-bold text-dark m-0">ABM Módulos</h2>
             <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearClaseModal">Agregar Clase</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearClaseModal">Agregar Módulo</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -200,7 +200,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($clases)): ?>
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No hay clases registradas para esta entidad.</td>
+                        <td colspan="8" class="text-center text-muted">No hay módulos registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($clases as $clase): 
@@ -237,7 +237,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <button class="btn btn-sm btn-dark rounded-pill px-3 mb-1" data-bs-toggle="modal" data-bs-target="#editClaseModal<?= $clase['id']; ?>">Editar</button>
                                 <a href="clases.php?toggle_estado=<?= $clase['id']; ?>&estado=<?= $clase['estado'] ? '1' : '0'; ?>" 
                                    class="btn btn-sm <?= $clase['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta clase?');">
+                                   onclick="return confirm('¿Seguro deseas cambiar el estado de este módulo?');">
                                     <?= $clase['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
@@ -257,13 +257,13 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $clase['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Clase #<?= $clase['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Módulo #<?= $clase['id']; ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Nombre de la Clase *</label>
+                            <label class="form-label fw-bold">Nombre del Módulo *</label>
                             <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($clase['nombre']); ?>">
                         </div>
                         <div class="col-md-6 mb-3">
@@ -359,19 +359,19 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 <?php endforeach; ?>
 
-<!-- Modal Crear Clase -->
+<!-- Modal Crear Módulo -->
 <div class="modal fade" id="crearClaseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <form action="clases.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold">Agregar Clase</h5>
+                <h5 class="modal-title fw-bold">Agregar Módulo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Nombre de la Clase *</label>
+                        <label class="form-label fw-bold">Nombre del Módulo *</label>
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Vóley Femenino Sub-18">
                     </div>
                     <div class="col-md-6 mb-3">
@@ -451,12 +451,12 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Descripción / Requisitos</label>
-                    <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Descripción de la clase, nivel, requisitos de indumentaria..."></textarea>
+                    <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Descripción del módulo, nivel, requisitos de indumentaria..."></textarea>
                 </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                <button type="submit" class="poliba-btn py-2">Crear Clase</button>
+                <button type="submit" class="poliba-btn py-2">Crear Módulo</button>
             </div>
         </form>
     </div>
