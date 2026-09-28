@@ -1,0 +1,10 @@
+{
+  "name": "multipro/plataforma",
+  "description": "Plataforma MultiPro",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-pdo": "*",
+    "ext-pdo_pgsql": "*"
+  }
+}
