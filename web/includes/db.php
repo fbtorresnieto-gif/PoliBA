@@ -1,74 +1,78 @@
 <?php
-// Configuración de Conexión a la Base de Datos para PoliBA
-// ----------------------------------------------------------
-// Conexión principal: PostgreSQL en Neon.tech (base de datos en la nube)
+// Conexión centralizada a PostgreSQL en Railway.
+// Las credenciales deben configurarse como variables del servicio de la aplicación.
 
-$db_host = 'ep-billowing-hill-aycuwnf6.c-5.us-east-2.aws.neon.tech';
-$db_port = '5432';
-$db_name = 'neondb';
-$db_user = 'neondb_owner';
-$db_pass = 'npg_m6TU1orRAjQF';
+$db_host = getenv('PGHOST') ?: '';
+$db_port = getenv('PGPORT') ?: '5432';
+$db_name = getenv('PGDATABASE') ?: (getenv('POSTGRES_DB') ?: '');
+$db_user = getenv('PGUSER') ?: '';
+$db_pass = getenv('PGPASSWORD') ?: '';
+$db_sslmode = getenv('PGSSLMODE') ?: 'require';
 
 $pdo = null;
 $db_driver_used = 'postgresql';
 
+// Evitar que un valor inesperado modifique el DSN de conexión.
+$allowed_ssl_modes = ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'];
+if (!in_array($db_sslmode, $allowed_ssl_modes, true)) {
+    $db_sslmode = 'require';
+}
+
+$missing_variables = [];
+
+if ($db_host === '') {
+    $missing_variables[] = 'PGHOST';
+}
+if ($db_name === '') {
+    $missing_variables[] = 'PGDATABASE o POSTGRES_DB';
+}
+if ($db_user === '') {
+    $missing_variables[] = 'PGUSER';
+}
+if ($db_pass === '') {
+    $missing_variables[] = 'PGPASSWORD';
+}
+
+if ($missing_variables !== []) {
+    error_log(
+        'Configuración PostgreSQL incompleta. Faltan variables: '
+        . implode(', ', $missing_variables)
+    );
+
+    http_response_code(500);
+    exit('La plataforma no pudo conectarse a la base de datos.');
+}
+
+if (!extension_loaded('pdo_pgsql')) {
+    error_log('La extensión PHP pdo_pgsql no está instalada o habilitada.');
+
+    http_response_code(500);
+    exit('La plataforma no pudo conectarse a la base de datos.');
+}
+
+$dsn = sprintf(
+    'pgsql:host=%s;port=%s;dbname=%s;sslmode=%s',
+    $db_host,
+    $db_port,
+    $db_name,
+    $db_sslmode
+);
+
 try {
-    // Conectar a PostgreSQL en Neon (requiere sslmode=require)
-    $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
-    $pdo = new PDO($dsn, $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-    ]);
-} catch (PDOException $e) {
-    // FALLBACK A SQLITE (solo si Neon no está disponible temporalmente):
-    // Permite que el sitio funcione localmente sin conexión a internet.
-    $sqlite_dir = __DIR__ . '/../../database';
-    if (!is_dir($sqlite_dir)) {
-        mkdir($sqlite_dir, 0777, true);
-    }
-
-    $sqlite_path = $sqlite_dir . '/poliba.db';
-    $db_driver_used = 'sqlite';
-
-    try {
-        $pdo = new PDO("sqlite:" . $sqlite_path, null, null, [
+    $pdo = new PDO(
+        $dsn,
+        $db_user,
+        $db_pass,
+        [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]);
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
+    );
+} catch (PDOException $e) {
+    // El detalle queda solamente en los logs de Railway; no se exponen credenciales al usuario.
+    error_log('Error de conexión a PostgreSQL: ' . $e->getMessage());
 
-        // Verificar si la base de datos SQLite está vacía
-        $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'");
-        $table_exists = $stmt->fetch();
-
-        if (!$table_exists) {
-            $schema_file = __DIR__ . '/../../database/schema.sql';
-            $seed_file   = __DIR__ . '/../../database/seed.sql';
-
-            if (file_exists($schema_file)) {
-                $schema_sql = file_get_contents($schema_file);
-                $schema_sql = str_ireplace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT', $schema_sql);
-                $schema_sql = preg_replace('/--.*/', '', $schema_sql);
-
-                foreach (explode(';', $schema_sql) as $query) {
-                    $query = trim($query);
-                    if (!empty($query)) $pdo->exec($query);
-                }
-            }
-
-            if (file_exists($seed_file)) {
-                $seed_sql = file_get_contents($seed_file);
-                $seed_sql = preg_replace('/--.*/', '', $seed_sql);
-
-                foreach (explode(';', $seed_sql) as $query) {
-                    $query = trim($query);
-                    if (!empty($query)) $pdo->exec($query);
-                }
-            }
-        }
-    } catch (PDOException $sqlite_err) {
-        die("<b>Error crítico de base de datos:</b><br>" .
-            "Neon PostgreSQL: " . $e->getMessage() . "<br>" .
-            "SQLite Fallback: " . $sqlite_err->getMessage());
-    }
+    http_response_code(500);
+    exit('La plataforma no pudo conectarse a la base de datos.');
 }

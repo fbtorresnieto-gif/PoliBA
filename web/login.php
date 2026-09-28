@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Opción de Demostración Rápida de Google Login para Tesis
+
 if (isset($_GET['google_demo_login']) && $_GET['google_demo_login'] == 1) {
     global $pdo;
     $email = 'gero@gmail.com'; 

@@ -95,16 +95,16 @@ foreach ($statements as $stmt) {
     try {
         $pdo->exec($stmt);
         if ($table_name) {
-            log_msg("   ✅ Tabla creada/verificada: <strong>$table_name</strong>", 'ok');
+            log_msg("  Tabla creada/verificada: <strong>$table_name</strong>", 'ok');
             $success_tables++;
         }
     } catch (PDOException $e) {
         $msg = $e->getMessage();
         // En PostgreSQL, "already exists" no es un error fatal para nuestro setup
         if (stripos($msg, 'already exists') !== false) {
-            if ($table_name) log_msg("   ℹ️ Tabla <strong>$table_name</strong> ya existe (sin cambios)", 'warn');
+            if ($table_name) log_msg("  Tabla <strong>$table_name</strong> ya existe (sin cambios)", 'warn');
         } else {
-            log_msg("   ❌ Error en statement: " . htmlspecialchars(substr($stmt, 0, 120)) . "... <br>&nbsp;&nbsp;&nbsp;&nbsp;→ " . htmlspecialchars($msg), 'error');
+            log_msg("  Error en statement: " . htmlspecialchars(substr($stmt, 0, 120)) . "... <br>&nbsp;&nbsp;&nbsp;&nbsp;→ " . htmlspecialchars($msg), 'error');
             $errors[] = $msg;
         }
     }
@@ -129,9 +129,9 @@ if (file_exists($seed_file)) {
             $msg = $e->getMessage();
             // Ignorar duplicados (unique constraint violations)
             if (stripos($msg, 'duplicate key') !== false || stripos($msg, 'UNIQUE constraint') !== false) {
-                log_msg("   ℹ️ Dato ya existente (ignorado): " . htmlspecialchars(substr($stmt, 0, 80)) . "...", 'warn');
+                log_msg("   Dato ya existente (ignorado): " . htmlspecialchars(substr($stmt, 0, 80)) . "...", 'warn');
             } else {
-                log_msg("   ❌ Error en seed: " . htmlspecialchars($msg), 'error');
+                log_msg("  Error en seed: " . htmlspecialchars($msg), 'error');
                 $errors[] = $msg;
             }
         }
