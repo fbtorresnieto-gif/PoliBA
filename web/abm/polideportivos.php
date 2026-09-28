@@ -21,46 +21,94 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fk_dia_cierre = !empty($_POST['fk_dia_cierre']) ? intval($_POST['fk_dia_cierre']) : null;
     
     if (empty($nombre) || empty($direccion) || empty($horario_apertura) || empty($horario_cierre)) {
-        $error_msg = 'Por favor, completa los campos obligatorios.';
+        $error_msg = 'Por favor, completa los campos obligatorios (*).';
+    } elseif (mb_strlen($nombre) < 3) {
+        $error_msg = 'El nombre de la entidad debe tener al menos 3 caracteres.';
+    } elseif (mb_strlen($direccion) < 5) {
+        $error_msg = 'La dirección debe tener al menos 5 caracteres.';
+    } elseif ($horario_apertura >= $horario_cierre) {
+        $error_msg = "El horario de apertura ($horario_apertura hs) debe ser anterior al horario de cierre ($horario_cierre hs).";
     } else {
-        if ($_POST['action'] == 'crear') {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO polideportivos (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, fk_dia_apertura, fk_dia_cierre, estado)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
-                ");
-                $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre]);
-                $success_msg = 'Entidad creada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al crear la entidad.';
+        // Validar coordenadas si se ingresaron
+        $coord_valida = true;
+        if (!empty($coordenadas)) {
+            $parts = explode(',', $coordenadas);
+            if (count($parts) != 2 || !is_numeric(trim($parts[0])) || !is_numeric(trim($parts[1]))) {
+                $error_msg = 'El formato de coordenadas no es válido. Debe ser latitud,longitud (ejemplo: -34.6037,-58.3816).';
+                $coord_valida = false;
             }
-        } elseif ($_POST['action'] == 'editar') {
-            $id = intval($_POST['id']);
+        }
+
+        if ($coord_valida) {
+            $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
+            // Validar unicidad del nombre
             try {
-                $stmt = $pdo->prepare("
-                    UPDATE polideportivos 
-                    SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
-                    WHERE id = ?
-                ");
-                $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre, $id]);
-                $success_msg = 'Entidad modificada con éxito.';
+                $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM polideportivos WHERE LOWER(nombre) = LOWER(?) AND id != ?");
+                $stmt_chk->execute([$nombre, $chk_id]);
+                if ($stmt_chk->fetchColumn() > 0) {
+                    $error_msg = "Ya existe una entidad registrada con el nombre \"$nombre\".";
+                } else {
+                    if ($_POST['action'] == 'crear') {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO polideportivos (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, fk_dia_apertura, fk_dia_cierre, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                        ");
+                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre]);
+                        $success_msg = 'Entidad creada con éxito.';
+                    } elseif ($_POST['action'] == 'editar') {
+                        $id = intval($_POST['id']);
+                        $stmt = $pdo->prepare("
+                            UPDATE polideportivos 
+                            SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
+                            WHERE id = ?
+                        ");
+                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre, $id]);
+                        $success_msg = 'Entidad modificada con éxito.';
+                    }
+                }
             } catch (PDOException $e) {
-                $error_msg = 'Error al actualizar la entidad.';
+                $error_msg = 'Error al procesar la entidad en la base de datos: ' . $e->getMessage();
             }
         }
     }
 }
 
-// Procesar Baja (Baja Lógica / Estado)
+// Procesar Baja Lógica con Desactivación en Cascada
 if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE polideportivos SET estado = $nuevo_estado WHERE id = ?");
-        $stmt->execute([$id]);
-        $success_msg = 'Estado de la entidad actualizado con éxito.';
+        if ($nuevo_estado == 'FALSE') {
+            // Desactivación en cascada: entidad, deportes, canchas, clases y subcategorias
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare("UPDATE polideportivos SET estado = FALSE WHERE id = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("UPDATE subcategorias SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt->execute([$id]);
+
+            $pdo->commit();
+            $success_msg = 'Entidad desactivada. Sus actividades, espacios y módulos asociados fueron desactivados automáticamente en cascada.';
+        } else {
+            // Activación de la entidad
+            $stmt = $pdo->prepare("UPDATE polideportivos SET estado = TRUE WHERE id = ?");
+            $stmt->execute([$id]);
+            $success_msg = 'Entidad activada con éxito. Ya puedes gestionar sus actividades y espacios.';
+        }
     } catch (PDOException $e) {
-        $error_msg = 'Error al cambiar el estado.';
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $error_msg = 'Error al cambiar el estado de la entidad.';
     }
 }
 
@@ -104,7 +152,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Dirección</th>
                     <th>Horario</th>
@@ -116,7 +163,6 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($polideportivos as $poli): ?>
                     <tr>
-                        <td>#<?= $poli['id']; ?></td>
                         <td class="fw-bold"><?= htmlspecialchars($poli['nombre']); ?></td>
                         <td><?= htmlspecialchars($poli['direccion']); ?></td>
                         <td><?= date('H:i', strtotime($poli['horario_apertura'])); ?> - <?= date('H:i', strtotime($poli['horario_cierre'])); ?></td>
@@ -130,7 +176,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editPoliModal<?= $poli['id']; ?>">Editar</button>
                             <a href="polideportivos.php?toggle_estado=<?= $poli['id']; ?>&estado=<?= $poli['estado'] ? '1' : '0'; ?>" 
                                class="btn btn-sm <?= $poli['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                               onclick="return confirm('¿Seguro deseas cambiar el estado de esta entidad?');">
+                               onclick="return confirm('¿Seguro deseas cambiar el estado de esta entidad? Si la desactivas, todas sus actividades, espacios y módulos se desactivarán automáticamente.');">
                                 <?= $poli['estado'] ? 'Desactivar' : 'Activar'; ?>
                             </a>
                         </td>
@@ -149,7 +195,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $poli['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Entidad #<?= $poli['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Entidad: <?= htmlspecialchars($poli['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">

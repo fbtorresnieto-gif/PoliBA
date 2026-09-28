@@ -120,6 +120,7 @@ if (!isset($base_path)) {
 
             <!-- Botones del ADMINISTRADOR -->
             <?php if (has_role('Administrador')): ?>
+                <a href="<?= $base_path; ?>abm/estadisticas.php" class="sidebar-btn"><i class="bi bi-graph-up-arrow me-2"></i>Estadísticas</a>
                 <a href="<?= $base_path; ?>abm/deportes.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Actividades</a>
                 <a href="<?= $base_path; ?>abm/canchas.php" class="sidebar-btn"><i class="bi bi-grid-3x3-gap me-2"></i>Espacios</a>
                 <a href="<?= $base_path; ?>abm/clases.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Módulos</a>

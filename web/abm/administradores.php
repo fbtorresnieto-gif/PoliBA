@@ -101,21 +101,6 @@ if (isset($_GET['eliminar_admin'])) {
     }
 }
 
-// Cargar Estadísticas por Polideportivo
-$stats = [];
-try {
-    $stmt = $pdo->query("
-        SELECT p.id, p.nombre,
-               (SELECT COUNT(*) FROM usuarios u WHERE u.fk_polideportivo = p.id AND u.fk_rol = (SELECT id FROM roles WHERE nombre = 'Alumno')) as total_alumnos,
-               (SELECT COUNT(*) FROM canchas c WHERE c.fk_polideportivo = p.id AND c.estado = TRUE) as total_canchas,
-               (SELECT COUNT(*) FROM deportes d WHERE d.fk_polideportivo = p.id AND d.estado = TRUE) as total_deportes
-        FROM polideportivos p
-        WHERE p.estado = TRUE
-        ORDER BY p.nombre ASC
-    ");
-    $stats = $stmt->fetchAll();
-} catch (PDOException $e) {}
-
 // Cargar Administradores
 $administradores = [];
 try {
@@ -134,33 +119,7 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container my-4">
-    <!-- 1. Estadísticas de los Polideportivos -->
-    <h3 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-success me-2"></i>Estadísticas Generales por Entidad</h3>
-    <div class="row g-3 mb-5">
-        <?php foreach ($stats as $st): ?>
-            <div class="col-md-6">
-                <div class="poliba-container-card mt-0 p-4" style="border-left: 6px solid var(--poliba-dark-blue);">
-                    <h5 class="fw-bold text-dark mb-3"><?= htmlspecialchars($st['nombre']); ?></h5>
-                    <div class="row text-center">
-                        <div class="col-4 border-end">
-                            <div class="fs-3 fw-bold text-primary"><?= $st['total_alumnos']; ?></div>
-                            <small class="text-muted text-uppercase fw-bold">Alumnos</small>
-                        </div>
-                        <div class="col-4 border-end">
-                            <div class="fs-3 fw-bold text-success"><?= $st['total_canchas']; ?></div>
-                            <small class="text-muted text-uppercase fw-bold">Espacios</small>
-                        </div>
-                        <div class="col-4">
-                            <div class="fs-3 fw-bold text-info"><?= $st['total_deportes']; ?></div>
-                            <small class="text-muted text-uppercase fw-bold">Actividades</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
-    <!-- 2. ABM de Administradores -->
+    <!-- ABM de Administradores -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-dark m-0"><i class="bi bi-shield-lock-fill text-dark me-2"></i>Gestión de Administradores</h3>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearAdminModal">Agregar Administrador</button>
@@ -177,7 +136,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre Completo</th>
                     <th>DNI</th>
                     <th>Gmail</th>
@@ -189,12 +147,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($administradores)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No hay administradores registrados en el sistema.</td>
+                        <td colspan="6" class="text-center text-muted">No hay administradores registrados en el sistema.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($administradores as $adm): ?>
                         <tr>
-                            <td>#<?= $adm['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($adm['nombre'] . ' ' . $adm['apellido']); ?></td>
                             <td><?= htmlspecialchars($adm['dni']); ?></td>
                             <td><?= htmlspecialchars($adm['email']); ?></td>

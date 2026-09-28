@@ -25,30 +25,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     
     if (empty($nombre)) {
         $error_msg = 'El nombre del espacio es obligatorio.';
+    } elseif (mb_strlen($nombre) < 2) {
+        $error_msg = 'El nombre del espacio debe tener al menos 2 caracteres.';
     } else {
-        if ($_POST['action'] == 'crear') {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_polideportivo, estado)
-                    VALUES (?, ?, ?, ?, ?, TRUE)
-                ");
-                $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $poli_id]);
-                $success_msg = 'Espacio creado con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al crear el espacio.';
-            }
-        } elseif ($_POST['action'] == 'editar') {
-            $id = intval($_POST['id']);
-            try {
-                $stmt = $pdo->prepare("
-                    UPDATE canchas 
-                    SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ? 
-                    WHERE id = ? AND fk_polideportivo = ?
-                ");
-                $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $poli_id]);
-                $success_msg = 'Espacio modificado con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al modificar el espacio.';
+        // Verificar que la entidad esté activa
+        $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
+        $stmt_p->execute([$poli_id]);
+        $poli_row = $stmt_p->fetch();
+        if (!$poli_row || !$poli_row['estado']) {
+            $error_msg = 'No es posible gestionar espacios porque la entidad se encuentra desactivada.';
+        } else {
+            $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
+            // Validar unicidad dentro de la entidad
+            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM canchas WHERE LOWER(nombre) = LOWER(?) AND fk_polideportivo = ? AND id != ?");
+            $stmt_chk->execute([$nombre, $poli_id, $chk_id]);
+            if ($stmt_chk->fetchColumn() > 0) {
+                $error_msg = "Ya existe un espacio con el nombre \"$nombre\" en esta entidad.";
+            } else {
+                if ($_POST['action'] == 'crear') {
+                    try {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_polideportivo, estado)
+                            VALUES (?, ?, ?, ?, ?, TRUE)
+                        ");
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $poli_id]);
+                        $success_msg = 'Espacio creado con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al crear el espacio.';
+                    }
+                } elseif ($_POST['action'] == 'editar') {
+                    $id = intval($_POST['id']);
+                    try {
+                        $stmt = $pdo->prepare("
+                            UPDATE canchas 
+                            SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ? 
+                            WHERE id = ? AND fk_polideportivo = ?
+                        ");
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $poli_id]);
+                        $success_msg = 'Espacio modificado con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al modificar el espacio.';
+                    }
+                }
             }
         }
     }
@@ -59,9 +77,24 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE canchas SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
-        $stmt->execute([$id, $poli_id]);
-        $success_msg = 'Estado del espacio actualizado.';
+        if ($nuevo_estado == 'TRUE') {
+            // Verificar que la entidad esté activa
+            $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
+            $stmt_p->execute([$poli_id]);
+            $poli_row = $stmt_p->fetch();
+            if (!$poli_row || !$poli_row['estado']) {
+                $error_msg = 'No se puede activar el espacio porque la entidad se encuentra desactivada.';
+            } else {
+                $stmt = $pdo->prepare("UPDATE canchas SET estado = TRUE WHERE id = ? AND fk_polideportivo = ?");
+                $stmt->execute([$id, $poli_id]);
+                $success_msg = 'Espacio activado con éxito.';
+            }
+        } else {
+            // Desactivar espacio
+            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE id = ? AND fk_polideportivo = ?");
+            $stmt->execute([$id, $poli_id]);
+            $success_msg = 'Espacio desactivado con éxito.';
+        }
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
     }
@@ -98,7 +131,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Tipo</th>
@@ -109,12 +141,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($canchas)): ?>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
+                        <td colspan="5" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($canchas as $can): ?>
                         <tr>
-                            <td>#<?= $can['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($can['nombre']); ?></td>
                             <td><?= htmlspecialchars($can['descripcion']); ?></td>
                             <td>
@@ -151,7 +182,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $can['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Espacio #<?= $can['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Espacio: <?= htmlspecialchars($can['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">

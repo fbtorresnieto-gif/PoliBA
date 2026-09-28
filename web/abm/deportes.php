@@ -24,45 +24,87 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     
     if (empty($nombre)) {
         $error_msg = 'El nombre de la actividad es obligatorio.';
+    } elseif (mb_strlen($nombre) < 2) {
+        $error_msg = 'El nombre de la actividad debe tener al menos 2 caracteres.';
     } else {
-        if ($_POST['action'] == 'crear') {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO deportes (nombre, texto, imagenURL, fk_polideportivo, estado)
-                    VALUES (?, ?, ?, ?, TRUE)
-                ");
-                $stmt->execute([$nombre, $texto, $imagenURL, $poli_id]);
-                $success_msg = 'Actividad creada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al crear la actividad.';
-            }
-        } elseif ($_POST['action'] == 'editar') {
-            $id = intval($_POST['id']);
-            try {
-                $stmt = $pdo->prepare("
-                    UPDATE deportes 
-                    SET nombre = ?, texto = ?, imagenURL = ? 
-                    WHERE id = ? AND fk_polideportivo = ?
-                ");
-                $stmt->execute([$nombre, $texto, $imagenURL, $id, $poli_id]);
-                $success_msg = 'Actividad modificada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al modificar la actividad.';
+        // Verificar si la entidad está activa
+        $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
+        $stmt_p->execute([$poli_id]);
+        $poli_row = $stmt_p->fetch();
+        if (!$poli_row || !$poli_row['estado']) {
+            $error_msg = 'No es posible gestionar actividades porque la entidad se encuentra desactivada.';
+        } else {
+            $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
+            // Validar unicidad dentro de la entidad
+            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM deportes WHERE LOWER(nombre) = LOWER(?) AND fk_polideportivo = ? AND id != ?");
+            $stmt_chk->execute([$nombre, $poli_id, $chk_id]);
+            if ($stmt_chk->fetchColumn() > 0) {
+                $error_msg = "Ya existe una actividad con el nombre \"$nombre\" en esta entidad.";
+            } else {
+                if ($_POST['action'] == 'crear') {
+                    try {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO deportes (nombre, texto, imagenURL, fk_polideportivo, estado)
+                            VALUES (?, ?, ?, ?, TRUE)
+                        ");
+                        $stmt->execute([$nombre, $texto, $imagenURL, $poli_id]);
+                        $success_msg = 'Actividad creada con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al crear la actividad: ' . $e->getMessage();
+                    }
+                } elseif ($_POST['action'] == 'editar') {
+                    $id = intval($_POST['id']);
+                    try {
+                        $stmt = $pdo->prepare("
+                            UPDATE deportes 
+                            SET nombre = ?, texto = ?, imagenURL = ? 
+                            WHERE id = ? AND fk_polideportivo = ?
+                        ");
+                        $stmt->execute([$nombre, $texto, $imagenURL, $id, $poli_id]);
+                        $success_msg = 'Actividad modificada con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al modificar la actividad.';
+                    }
+                }
             }
         }
     }
 }
 
-// Procesar Alta/Baja Lógica
+// Procesar Alta/Baja Lógica con Cascada
 if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE deportes SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
-        $stmt->execute([$id, $poli_id]);
-        $success_msg = 'Estado de la actividad actualizado.';
+        if ($nuevo_estado == 'FALSE') {
+            // Desactivar actividad y en cascada todos sus módulos
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE id = ? AND fk_polideportivo = ?");
+            $stmt->execute([$id, $poli_id]);
+
+            $stmt_c = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_deporte = ? AND fk_polideportivo = ?");
+            $stmt_c->execute([$id, $poli_id]);
+
+            $pdo->commit();
+            $success_msg = 'Actividad desactivada. Los módulos asociados fueron desactivados automáticamente.';
+        } else {
+            // Verificar si la entidad está activa
+            $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
+            $stmt_p->execute([$poli_id]);
+            $poli_row = $stmt_p->fetch();
+            if (!$poli_row || !$poli_row['estado']) {
+                $error_msg = 'No se puede activar la actividad porque la entidad a la que pertenece se encuentra desactivada.';
+            } else {
+                $stmt = $pdo->prepare("UPDATE deportes SET estado = TRUE WHERE id = ? AND fk_polideportivo = ?");
+                $stmt->execute([$id, $poli_id]);
+                $success_msg = 'Actividad activada con éxito.';
+            }
+        }
     } catch (PDOException $e) {
-        $error_msg = 'Error al actualizar el estado.';
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $error_msg = 'Error al actualizar el estado de la actividad.';
     }
 }
 
@@ -97,7 +139,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Estado</th>
@@ -107,12 +148,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($deportes)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No hay actividades registradas para esta entidad.</td>
+                        <td colspan="4" class="text-center text-muted">No hay actividades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($deportes as $dep): ?>
                         <tr>
-                            <td>#<?= $dep['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($dep['nombre']); ?></td>
                             <td><?= htmlspecialchars(substr($dep['texto'], 0, 150)) . (strlen($dep['texto']) > 150 ? '...' : ''); ?></td>
                             <td>
@@ -124,7 +164,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editDeporteModal<?= $dep['id']; ?>">Editar</button>
                                 <a href="deportes.php?toggle_estado=<?= $dep['id']; ?>&estado=<?= $dep['estado'] ? '1' : '0'; ?>" 
                                    class="btn btn-sm <?= $dep['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta actividad?');">
+                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta actividad? Si la desactivas, todos sus módulos asociados se desactivarán automáticamente.');">
                                     <?= $dep['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
@@ -144,7 +184,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $dep['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Actividad #<?= $dep['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Actividad: <?= htmlspecialchars($dep['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">

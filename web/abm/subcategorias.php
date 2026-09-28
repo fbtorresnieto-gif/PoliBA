@@ -25,33 +25,60 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fk_categoria = !empty($_POST['fk_categoria']) ? intval($_POST['fk_categoria']) : null;
     
     if (empty($nombre) || $edad_minima < 0 || $edad_maxima <= 0 || $fk_deporte <= 0) {
-        $error_msg = 'Por favor, completa los campos obligatorios.';
+        $error_msg = 'Por favor, completa todos los campos obligatorios (*).';
     } elseif ($edad_minima > $edad_maxima) {
         $error_msg = 'La edad mínima no puede ser mayor que la edad máxima.';
     } else {
-        if ($_POST['action'] == 'crear') {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_polideportivo, estado)
-                    VALUES (?, ?, ?, ?, ?, ?, TRUE)
-                ");
-                $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $poli_id]);
-                $success_msg = 'Subcategoría creada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al crear la subcategoría.';
+        // Validar compatibilidad estricta con la Categoría seleccionada
+        $compatible = true;
+        if ($fk_categoria) {
+            $stmt_cat = $pdo->prepare("SELECT nombre, edad_minima, edad_maxima FROM categoria WHERE id = ?");
+            $stmt_cat->execute([$fk_categoria]);
+            $cat_info = $stmt_cat->fetch();
+            if ($cat_info) {
+                if ($edad_minima < $cat_info['edad_minima']) {
+                    $error_msg = "La edad mínima ingresada ({$edad_minima} años) no puede ser menor a la permitida por la categoría {$cat_info['nombre']} ({$cat_info['edad_minima']} años).";
+                    $compatible = false;
+                } elseif ($edad_maxima > $cat_info['edad_maxima']) {
+                    $error_msg = "La edad máxima ingresada ({$edad_maxima} años) no puede ser mayor a la permitida por la categoría {$cat_info['nombre']} ({$cat_info['edad_maxima']} años).";
+                    $compatible = false;
+                }
             }
-        } elseif ($_POST['action'] == 'editar') {
-            $id = intval($_POST['id']);
-            try {
-                $stmt = $pdo->prepare("
-                    UPDATE subcategorias 
-                    SET nombre = ?, edad_minima = ?, edad_maxima = ?, fk_deporte = ?, fk_categoria = ? 
-                    WHERE id = ? AND fk_polideportivo = ?
-                ");
-                $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $id, $poli_id]);
-                $success_msg = 'Subcategoría modificada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al modificar la subcategoría.';
+        }
+
+        if ($compatible) {
+            $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
+            // Validar unicidad del nombre para la misma actividad en la entidad
+            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM subcategorias WHERE LOWER(nombre) = LOWER(?) AND fk_deporte = ? AND fk_polideportivo = ? AND id != ?");
+            $stmt_chk->execute([$nombre, $fk_deporte, $poli_id, $chk_id]);
+            if ($stmt_chk->fetchColumn() > 0) {
+                $error_msg = "Ya existe una subcategoría con el nombre \"$nombre\" para la actividad seleccionada en esta entidad.";
+            } else {
+                if ($_POST['action'] == 'crear') {
+                    try {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_polideportivo, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, TRUE)
+                        ");
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $poli_id]);
+                        $success_msg = 'Subcategoría creada con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al crear la subcategoría.';
+                    }
+                } elseif ($_POST['action'] == 'editar') {
+                    $id = intval($_POST['id']);
+                    try {
+                        $stmt = $pdo->prepare("
+                            UPDATE subcategorias 
+                            SET nombre = ?, edad_minima = ?, edad_maxima = ?, fk_deporte = ?, fk_categoria = ? 
+                            WHERE id = ? AND fk_polideportivo = ?
+                        ");
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $id, $poli_id]);
+                        $success_msg = 'Subcategoría modificada con éxito.';
+                    } catch (PDOException $e) {
+                        $error_msg = 'Error al modificar la subcategoría.';
+                    }
+                }
             }
         }
     }
@@ -93,10 +120,10 @@ try {
     $deportes = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
-// Cargar Categorías generales para selects
+// Cargar Categorías generales para selects con límites de edad
 $categorias = [];
 try {
-    $stmt = $pdo->query("SELECT id, nombre FROM categoria ORDER BY id ASC");
+    $stmt = $pdo->query("SELECT id, nombre, edad_minima, edad_maxima FROM categoria ORDER BY id ASC");
     $categorias = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -123,7 +150,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Actividad</th>
                     <th>Categoría General</th>
@@ -135,12 +161,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($subcategorias)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No hay subcategorías registradas para esta entidad.</td>
+                        <td colspan="6" class="text-center text-muted">No hay subcategorías registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($subcategorias as $sub): ?>
                         <tr>
-                            <td>#<?= $sub['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($sub['nombre']); ?></td>
                             <td><?= htmlspecialchars($sub['deporte_nombre']); ?></td>
                             <td><?= htmlspecialchars($sub['categoria_nombre'] ?? 'General'); ?></td>
