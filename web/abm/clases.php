@@ -187,7 +187,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Actividad</th>
                     <th>Profesor</th>
@@ -200,7 +199,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($clases)): ?>
                     <tr>
-                        <td colspan="8" class="text-center text-muted">No hay módulos registrados para esta entidad.</td>
+                        <td colspan="7" class="text-center text-muted">No hay módulos registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($clases as $clase): 
@@ -213,7 +212,6 @@ require_once __DIR__ . '/../includes/header.php';
                         }
                     ?>
                         <tr>
-                            <td>#<?= $clase['id']; ?></td>
                             <td class="fw-bold">
                                 <?= htmlspecialchars($clase['nombre']); ?>
                                 <div class="small text-muted font-normal">

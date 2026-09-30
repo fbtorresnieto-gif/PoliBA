@@ -99,7 +99,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Título</th>
                     <th>Vigencia</th>
                     <th>Estado</th>
@@ -109,12 +108,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($novedades)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No hay novedades registradas para esta entidad.</td>
+                        <td colspan="4" class="text-center text-muted">No hay novedades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($novedades as $nov): ?>
                         <tr>
-                            <td>#<?= $nov['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($nov['nombre']); ?></td>
                             <td><?= date('d/m/Y', strtotime($nov['fecha_inicio'])); ?> al <?= date('d/m/Y', strtotime($nov['fecha_fin'])); ?></td>
                             <td>

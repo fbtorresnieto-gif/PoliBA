@@ -160,8 +160,7 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                         </div>
                         
-                        <div class="mt-4 pt-2 border-top d-flex justify-content-between align-items-center">
-                            <span class="text-muted small">ID de módulo: #<?= $clase['id']; ?></span>
+                        <div class="mt-4 pt-2 border-top d-flex justify-content-end align-items-center">
                             <?php if (is_logged_in() && has_role('Alumno')): ?>
                                 <a href="abm/alumno_inscripcion.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn">
                                     <?= $cupos_libres > 0 ? 'Inscribirse' : 'Entrar a Lista de Espera'; ?>

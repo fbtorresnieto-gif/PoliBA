@@ -102,7 +102,6 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre Completo</th>
                     <th>DNI</th>
                     <th>Gmail</th>
@@ -114,12 +113,11 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($profesores)): ?>
                     <tr>
-                        <td colspan="7" class="text-center text-muted">No hay profesores registrados para esta entidad.</td>
+                        <td colspan="6" class="text-center text-muted">No hay profesores registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($profesores as $prof): ?>
                         <tr>
-                            <td>#<?= $prof['id']; ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($prof['nombre'] . ' ' . $prof['apellido']); ?></td>
                             <td><?= htmlspecialchars($prof['dni']); ?></td>
                             <td><?= htmlspecialchars($prof['email']); ?></td>

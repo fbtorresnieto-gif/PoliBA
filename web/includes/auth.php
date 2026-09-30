@@ -28,9 +28,10 @@ function get_logged_user() {
     // Si no, buscarlo en la DB
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre 
+            SELECT u.*, r.nombre as rol_nombre, p.nombre as fk_polideportivo_nombre 
             FROM usuarios u 
             JOIN roles r ON u.fk_rol = r.id 
+            LEFT JOIN polideportivos p ON u.fk_polideportivo = p.id 
             WHERE u.id = ?
         ");
         $stmt->execute([$_SESSION['user_id']]);
@@ -94,9 +95,10 @@ function login($email, $password) {
     global $pdo;
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre 
+            SELECT u.*, r.nombre as rol_nombre, p.nombre as fk_polideportivo_nombre 
             FROM usuarios u 
             JOIN roles r ON u.fk_rol = r.id 
+            LEFT JOIN polideportivos p ON u.fk_polideportivo = p.id 
             WHERE u.email = ?
         ");
         $stmt->execute([$email]);
