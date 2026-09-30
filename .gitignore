@@ -1,0 +1,17 @@
+# Archivos de entorno y credenciales sensibles
+.env
+web/.env
+*.env
+
+# Dependencias de Composer
+/web/vendor/
+vendor/
+
+# Archivos del sistema y editores
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Base de datos SQLite local de prueba
+database/poliba.db

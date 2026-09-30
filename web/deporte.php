@@ -89,11 +89,12 @@ require_once __DIR__ . '/includes/header.php';
         <div class="col-md-5">
             <?php 
             $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600";
-            if (!empty($deporte['imagenURL'])) {
-                if (filter_var($deporte['imagenURL'], FILTER_VALIDATE_URL)) {
-                    $img_url = $deporte['imagenURL'];
+            $raw_img = $deporte['imagenurl'] ?? $deporte['imagenURL'] ?? '';
+            if (!empty($raw_img)) {
+                if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
+                    $img_url = $raw_img;
                 } else {
-                    $img_url = "img/" . $deporte['imagenURL'];
+                    $img_url = "img/" . $raw_img;
                 }
             }
             ?>

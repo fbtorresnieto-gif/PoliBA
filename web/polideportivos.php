@@ -33,18 +33,19 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row g-4 justify-content-center">
             <?php foreach ($polideportivos as $poli): 
                 $img_url = "https://images.unsplash.com/photo-1579758629938-03607ccdbaba?auto=format&fit=crop&q=80&w=600"; // fallback gym/pool
-                if (!empty($poli['imagenURL'])) {
-                    if (filter_var($poli['imagenURL'], FILTER_VALIDATE_URL)) {
-                        $img_url = $poli['imagenURL'];
+                $raw_img = $poli['imagenurl'] ?? $poli['imagenURL'] ?? '';
+                if (!empty($raw_img)) {
+                    if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
+                        $img_url = $raw_img;
                     } else {
-                        $img_url = "img/" . $poli['imagenURL'];
+                        $img_url = "img/" . $raw_img;
                     }
                 }
             ?>
                 <div class="col-md-6 col-lg-5">
                     <div class="poliba-card">
                         <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
-                            <?php if (empty($poli['imagenURL'])): ?>
+                            <?php if (empty($raw_img)): ?>
                                 <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">MultiPro</span>
                             <?php endif; ?>
                         </div>

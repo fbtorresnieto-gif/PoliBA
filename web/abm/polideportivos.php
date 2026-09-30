@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $horario_cierre = $_POST['horario_cierre'];
     $coordenadas = trim($_POST['coordenadas']);
     $informacion = trim($_POST['informacion']);
+    $imagenURL = trim($_POST['imagenURL'] ?? '');
     $fk_dia_apertura = !empty($_POST['fk_dia_apertura']) ? intval($_POST['fk_dia_apertura']) : null;
     $fk_dia_cierre = !empty($_POST['fk_dia_cierre']) ? intval($_POST['fk_dia_cierre']) : null;
     
@@ -50,19 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 } else {
                     if ($_POST['action'] == 'crear') {
                         $stmt = $pdo->prepare("
-                            INSERT INTO polideportivos (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, fk_dia_apertura, fk_dia_cierre, estado)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                            INSERT INTO polideportivos (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre]);
+                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre]);
                         $success_msg = 'Entidad creada con éxito.';
                     } elseif ($_POST['action'] == 'editar') {
                         $id = intval($_POST['id']);
                         $stmt = $pdo->prepare("
                             UPDATE polideportivos 
-                            SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
+                            SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
                             WHERE id = ?
                         ");
-                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $fk_dia_apertura, $fk_dia_cierre, $id]);
+                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $id]);
                         $success_msg = 'Entidad modificada con éxito.';
                     }
                 }
@@ -240,6 +241,10 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="text" name="coordenadas" class="form-control rounded-pill px-3" placeholder="-34.574,-58.448" value="<?= htmlspecialchars($poli['coordenadas'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
+                        <label class="form-label fw-bold">URL de la Imagen</label>
+                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg" value="<?= htmlspecialchars($poli['imagenurl'] ?? $poli['imagenURL'] ?? ''); ?>">
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label fw-bold">Información General</label>
                         <textarea name="informacion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($poli['informacion'] ?? ''); ?></textarea>
                     </div>
@@ -302,6 +307,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="mb-3">
                     <label class="form-label fw-bold">Coordenadas (Lat,Lng)</label>
                     <input type="text" name="coordenadas" class="form-control rounded-pill px-3" placeholder="-34.574,-58.448">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">URL de la Imagen</label>
+                    <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Información General</label>

@@ -2,6 +2,28 @@
 // Conexión centralizada a PostgreSQL en Railway.
 // Las credenciales deben configurarse como variables del servicio de la aplicación.
 
+// Cargar archivo .env local si existe (para desarrollo local)
+$env_path = __DIR__ . '/../.env';
+if (!file_exists($env_path)) {
+    $env_path = __DIR__ . '/.env';
+}
+if (file_exists($env_path)) {
+    $lines = file($env_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            if (!getenv($key)) {
+                putenv("$key=$value");
+                $_ENV[$key] = $value;
+            }
+        }
+    }
+}
+
 $db_host = getenv('PGHOST') ?: '';
 $db_port = getenv('PGPORT') ?: '5432';
 $db_name = getenv('PGDATABASE') ?: (getenv('POSTGRES_DB') ?: '');

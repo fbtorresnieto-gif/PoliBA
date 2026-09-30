@@ -32,11 +32,12 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row g-4">
             <?php foreach ($canchas as $cancha): 
                 $img_url = "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?auto=format&fit=crop&q=80&w=600";
-                if (!empty($cancha['imagenURL'])) {
-                    if (filter_var($cancha['imagenURL'], FILTER_VALIDATE_URL)) {
-                        $img_url = $cancha['imagenURL'];
+                $raw_img = $cancha['imagenurl'] ?? $cancha['imagenURL'] ?? '';
+                if (!empty($raw_img)) {
+                    if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
+                        $img_url = $raw_img;
                     } else {
-                        $img_url = "img/" . $cancha['imagenURL'];
+                        $img_url = "img/" . $raw_img;
                     }
                 }
             ?>

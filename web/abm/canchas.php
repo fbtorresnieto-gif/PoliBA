@@ -192,7 +192,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($can['imagenURL'] ?? ''); ?>">
+                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($can['imagenurl'] ?? $can['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3 form-check form-switch ms-1">
                         <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $can['id']; ?>" <?= $can['techado'] ? 'checked' : ''; ?>>

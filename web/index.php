@@ -62,21 +62,21 @@ require_once __DIR__ . '/includes/header.php';
     <?php else: ?>
         <div class="row g-4 justify-content-center">
             <?php foreach ($novedades as $novedad): 
-                // Generar una imagen de respaldo bonita si no existe
                 $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600"; // fallback deportista
-                if (!empty($novedad['imagenURL'])) {
-                    if (filter_var($novedad['imagenURL'], FILTER_VALIDATE_URL)) {
-                        $img_url = $novedad['imagenURL'];
+                $raw_img = $novedad['imagenurl'] ?? $novedad['imagenURL'] ?? '';
+                if (!empty($raw_img)) {
+                    if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
+                        $img_url = $raw_img;
                     } else {
                         // Si es local, se puede vincular a la ruta correspondiente
-                        $img_url = "img/" . $novedad['imagenURL'];
+                        $img_url = "img/" . $raw_img;
                     }
                 }
             ?>
                 <div class="col-md-6 col-lg-3">
                     <div class="poliba-card">
                         <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
-                            <?php if (empty($novedad['imagenURL'])): ?>
+                            <?php if (empty($raw_img)): ?>
                                 <span class="bg-dark bg-opacity-50 text-white w-100 h-100 d-flex align-items-center justify-content-center">MultiPro</span>
                             <?php endif; ?>
                         </div>
@@ -103,8 +103,9 @@ require_once __DIR__ . '/includes/header.php';
         <!-- Modales de Novedades (renderizados fuera del grid para DOM limpio) -->
         <?php foreach ($novedades as $novedad): 
             $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600";
-            if (!empty($novedad['imagenURL'])) {
-                $img_url = filter_var($novedad['imagenURL'], FILTER_VALIDATE_URL) ? $novedad['imagenURL'] : "img/" . $novedad['imagenURL'];
+            $raw_img = $novedad['imagenurl'] ?? $novedad['imagenURL'] ?? '';
+            if (!empty($raw_img)) {
+                $img_url = filter_var($raw_img, FILTER_VALIDATE_URL) ? $raw_img : "img/" . $raw_img;
             }
         ?>
             <div class="modal fade" id="novedadModal<?= $novedad['id']; ?>" tabindex="-1" aria-labelledby="novedadModalLabel<?= $novedad['id']; ?>" aria-hidden="true">
