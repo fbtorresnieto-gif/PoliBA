@@ -30,11 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     
     if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || $polideportivo_id <= 0) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
+    } elseif (!ctype_digit($dni)) {
+        $error_msg = 'El DNI debe contener únicamente números.';
+    } elseif (!empty($telefono) && !ctype_digit($telefono)) {
+        $error_msg = 'El teléfono debe contener únicamente números.';
     } else {
         if ($_POST['action'] == 'crear') {
             $contrasena = trim($_POST['contrasena']);
             if (empty($contrasena)) {
                 $error_msg = 'La contraseña es obligatoria para nuevos administradores.';
+            } elseif (strlen($contrasena) < 6) {
+                $error_msg = 'La contraseña debe tener al menos 6 caracteres.';
             } else {
                 try {
                     $stmt = $pdo->query("SELECT id FROM roles WHERE nombre = 'Administrador' LIMIT 1");
@@ -56,31 +62,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         } elseif ($_POST['action'] == 'editar') {
             $id = intval($_POST['id']);
             $contrasena = trim($_POST['contrasena'] ?? '');
-            try {
-                if (!empty($contrasena)) {
-                    $hash = password_hash($contrasena, PASSWORD_BCRYPT);
-                    $stmt = $pdo->prepare("
-                        UPDATE usuarios 
-                        SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?, contrasena = ?
-                        WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
-                    ");
-                    $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $hash, $id]);
-                } else {
-                    $stmt = $pdo->prepare("
-                        UPDATE usuarios 
-                        SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?
-                        WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
-                    ");
-                    $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $id]);
+            if (!empty($contrasena) && strlen($contrasena) < 6) {
+                $error_msg = 'La nueva contraseña debe tener al menos 6 caracteres.';
+            } else {
+                try {
+                    if (!empty($contrasena)) {
+                        $hash = password_hash($contrasena, PASSWORD_BCRYPT);
+                        $stmt = $pdo->prepare("
+                            UPDATE usuarios 
+                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?, contrasena = ?
+                            WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
+                        ");
+                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $hash, $id]);
+                    } else {
+                        $stmt = $pdo->prepare("
+                            UPDATE usuarios 
+                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?
+                            WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
+                        ");
+                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $id]);
+                    }
+                    
+                    if ($user && $id == $user['id']) {
+                        unset($_SESSION['user_data']);
+                    }
+                    
+                    $success_msg = 'Administrador modificado con éxito.';
+                } catch (PDOException $e) {
+                    $error_msg = 'Error al actualizar los datos del administrador.';
                 }
-                
-                if ($user && $id == $user['id']) {
-                    unset($_SESSION['user_data']);
-                }
-                
-                $success_msg = 'Administrador modificado con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al actualizar los datos del administrador.';
             }
         }
     }
@@ -202,7 +212,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">DNI *</label>
-                            <input type="text" name="dni" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($adm['dni']); ?>">
+                            <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" value="<?= htmlspecialchars($adm['dni']); ?>">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Fecha de Nacimiento</label>
@@ -220,7 +230,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($adm['telefono'] ?? ''); ?>">
+                            <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="[0-9]*" inputmode="numeric" title="El teléfono debe contener únicamente números" placeholder="Ej: 1122334455" value="<?= htmlspecialchars($adm['telefono'] ?? ''); ?>">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -235,7 +245,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nueva Contraseña (Opcional)</label>
-                        <input type="password" name="contrasena" class="form-control rounded-pill px-3" placeholder="Dejar en blanco para no cambiar">
+                        <input type="password" name="contrasena" class="form-control rounded-pill px-3" minlength="6" placeholder="Dejar en blanco para no cambiar (Mín. 6 caracteres)">
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -270,7 +280,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">DNI *</label>
-                        <input type="text" name="dni" class="form-control rounded-pill px-3" required placeholder="33444555">
+                        <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" placeholder="33444555">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha de Nacimiento</label>
@@ -288,7 +298,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Teléfono</label>
-                        <input type="text" name="telefono" class="form-control rounded-pill px-3" placeholder="+54 9 11 ...">
+                        <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="[0-9]*" inputmode="numeric" title="El teléfono debe contener únicamente números" placeholder="Ej: 1122334455">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -302,7 +312,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Contraseña *</label>
-                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="6" placeholder="Mínimo 6 caracteres">
                 </div>
             </div>
             <div class="modal-footer bg-light">

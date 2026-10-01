@@ -29,6 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     
     if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || empty($contrasena)) {
         $error_msg = 'Por favor, completa todos los campos obligatorios.';
+    } elseif (!ctype_digit($dni)) {
+        $error_msg = 'El DNI debe contener únicamente números.';
+    } elseif (!empty($telefono) && !ctype_digit($telefono)) {
+        $error_msg = 'El teléfono debe contener únicamente números.';
+    } elseif (strlen($contrasena) < 6) {
+        $error_msg = 'La contraseña debe tener al menos 6 caracteres.';
     } else {
         try {
             // Obtener el ID del rol Profesor
@@ -161,7 +167,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">DNI *</label>
-                        <input type="text" name="dni" class="form-control rounded-pill px-3" required placeholder="28394857">
+                        <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" placeholder="28394857">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha de Nacimiento</label>
@@ -179,12 +185,12 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Teléfono</label>
-                        <input type="text" name="telefono" class="form-control rounded-pill px-3" placeholder="+54 9 11 ...">
+                        <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="[0-9]*" inputmode="numeric" title="El teléfono debe contener únicamente números" placeholder="Ej: 1122334455">
                     </div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Contraseña de Acceso *</label>
-                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="6" placeholder="Mínimo 6 caracteres">
                 </div>
             </div>
             <div class="modal-footer bg-light">

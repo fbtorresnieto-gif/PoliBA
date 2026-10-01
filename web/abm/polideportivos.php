@@ -33,9 +33,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         // Validar coordenadas si se ingresaron
         $coord_valida = true;
         if (!empty($coordenadas)) {
-            $parts = explode(',', $coordenadas);
-            if (count($parts) != 2 || !is_numeric(trim($parts[0])) || !is_numeric(trim($parts[1]))) {
+            if (!preg_match('/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/', $coordenadas)) {
                 $error_msg = 'El formato de coordenadas no es válido. Debe ser latitud,longitud (ejemplo: -34.6037,-58.3816).';
+                $coord_valida = false;
+            }
+        }
+
+        // Validar URL / Imagen si se ingresó
+        if ($coord_valida && !empty($imagenURL)) {
+            $is_valid_url = filter_var($imagenURL, FILTER_VALIDATE_URL) || preg_match('/^https?:\/\//i', $imagenURL);
+            $is_valid_filename = preg_match('/^[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp|svg|gif)$/i', $imagenURL);
+            if (!$is_valid_url && !$is_valid_filename) {
+                $error_msg = 'La URL de la imagen debe comenzar con http:// o https:// (o ser un nombre de archivo de imagen válido como imagen.jpg).';
                 $coord_valida = false;
             }
         }
@@ -238,11 +247,11 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Coordenadas (Lat,Lng)</label>
-                        <input type="text" name="coordenadas" class="form-control rounded-pill px-3" placeholder="-34.574,-58.448" value="<?= htmlspecialchars($poli['coordenadas'] ?? ''); ?>">
+                        <input type="text" name="coordenadas" class="form-control rounded-pill px-3" pattern="^-?[0-9]+(\.[0-9]+)?,\s*-?[0-9]+(\.[0-9]+)?$" title="Formato requerido: latitud,longitud (ej: -34.574,-58.448)" placeholder="-34.574,-58.448" value="<?= htmlspecialchars($poli['coordenadas'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">URL de la Imagen</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg" value="<?= htmlspecialchars($poli['imagenurl'] ?? $poli['imagenURL'] ?? ''); ?>">
+                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" pattern="^(https?://.+|[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp|svg|gif))$" title="Debe ser una URL válida iniciando con http:// o https://, o un nombre de archivo de imagen (.jpg, .png, etc.)" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg" value="<?= htmlspecialchars($poli['imagenurl'] ?? $poli['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Información General</label>
@@ -306,11 +315,11 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Coordenadas (Lat,Lng)</label>
-                    <input type="text" name="coordenadas" class="form-control rounded-pill px-3" placeholder="-34.574,-58.448">
+                    <input type="text" name="coordenadas" class="form-control rounded-pill px-3" pattern="^-?[0-9]+(\.[0-9]+)?,\s*-?[0-9]+(\.[0-9]+)?$" title="Formato requerido: latitud,longitud (ej: -34.574,-58.448)" placeholder="-34.574,-58.448">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">URL de la Imagen</label>
-                    <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg">
+                    <input type="text" name="imagenURL" class="form-control rounded-pill px-3" pattern="^(https?://.+|[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp|svg|gif))$" title="Debe ser una URL válida iniciando con http:// o https://, o un nombre de archivo de imagen (.jpg, .png, etc.)" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Información General</label>
