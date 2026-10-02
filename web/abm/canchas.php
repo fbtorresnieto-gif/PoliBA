@@ -27,6 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'El nombre del espacio es obligatorio.';
     } elseif (mb_strlen($nombre) < 2) {
         $error_msg = 'El nombre del espacio debe tener al menos 2 caracteres.';
+    } elseif (!empty($imagenURL) && (!filter_var($imagenURL, FILTER_VALIDATE_URL) && !preg_match('/^https?:\/\//i', $imagenURL))) {
+        $error_msg = 'La URL de la imagen debe ser un enlace válido (ejemplo: https://ejemplo.com/imagen.jpg).';
     } else {
         // Verificar que la entidad esté activa
         $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
@@ -191,8 +193,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($can['nombre']); ?>">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($can['imagenurl'] ?? $can['imagenURL'] ?? ''); ?>">
+                        <label class="form-label fw-bold">Imagen URL</label>
+                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/cancha.jpg" value="<?= htmlspecialchars($can['imagenurl'] ?? $can['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3 form-check form-switch ms-1">
                         <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $can['id']; ?>" <?= $can['techado'] ? 'checked' : ''; ?>>
@@ -227,8 +229,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Espacio Techado / Pista 2">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                    <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="cancha_tenis.jpg">
+                    <label class="form-label fw-bold">Imagen URL</label>
+                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/cancha.jpg">
                 </div>
                 <div class="mb-3 form-check form-switch ms-1">
                     <input class="form-check-input" type="checkbox" name="techado" id="crearTechado">

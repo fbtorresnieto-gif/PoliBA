@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'El nombre de la actividad es obligatorio.';
     } elseif (mb_strlen($nombre) < 2) {
         $error_msg = 'El nombre de la actividad debe tener al menos 2 caracteres.';
+    } elseif (!empty($imagenURL) && (!filter_var($imagenURL, FILTER_VALIDATE_URL) && !preg_match('/^https?:\/\//i', $imagenURL))) {
+        $error_msg = 'La URL de la imagen debe ser un enlace válido (ejemplo: https://ejemplo.com/imagen.jpg).';
     } else {
         // Verificar si la entidad está activa
         $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
@@ -193,8 +195,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($dep['nombre']); ?>">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($dep['imagenurl'] ?? $dep['imagenURL'] ?? ''); ?>">
+                        <label class="form-label fw-bold">Imagen URL</label>
+                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/voley.jpg" value="<?= htmlspecialchars($dep['imagenurl'] ?? $dep['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Información</label>
@@ -225,8 +227,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Vóley">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                    <input type="text" name="imagenURL" class="form-control rounded-pill px-3" placeholder="voley.jpg">
+                    <label class="form-label fw-bold">Imagen URL</label>
+                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/voley.jpg">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Descripción / Información</label>
