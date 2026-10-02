@@ -73,26 +73,14 @@ try {
     $user = $stmt->fetch();
 
     if (!$user) {
-        // Si el usuario no existe, crearlo automáticamente como Alumno
-        $stmt_rol = $pdo->query("SELECT id FROM roles WHERE nombre = 'Alumno' LIMIT 1");
-        $rol = $stmt_rol->fetch();
-        $rol_id = $rol ? $rol['id'] : 4;
-        
-        $random_pass = password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT);
-        $dummy_dni = 'G-' . rand(10000000, 99999999);
-        $fecha_nac = '2000-01-01';
-
-        $stmt_ins = $pdo->prepare("
-            INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_polideportivo, fk_rol)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
-        ");
-        $stmt_ins->execute([
-            $nombre, $apellido, $dummy_dni, 'Registrado con Google', $email, $random_pass, '+54 11 0000 0000', $fecha_nac, $rol_id
-        ]);
-
-        // Volver a consultar el usuario recién creado
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        // Si el usuario no existe en la base de datos, guardar datos verificados de Google en sesión temporal y redirigir a registro.php para exigir DNI y datos requeridos
+        $_SESSION['google_pending_user'] = [
+            'email'    => $email,
+            'nombre'   => $nombre,
+            'apellido' => $apellido
+        ];
+        header("Location: registro.php?google_pending=1");
+        exit;
     }
 
     // 4. Iniciar sesión en PoliBA

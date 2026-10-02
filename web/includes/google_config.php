@@ -7,11 +7,17 @@
 // URI de Redirección Autorizada requerida en Google Console:
 // http://localhost:8080/google_callback.php  (o http://localhost/PoliBA/web/google_callback.php)
 
-define('GOOGLE_CLIENT_ID', 'TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com');
-define('GOOGLE_CLIENT_SECRET', 'TU_CLIENT_SECRET_DE_GOOGLE');
+$env_client_id = getenv('GOOGLE_CLIENT_ID') ?: 'TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com';
+$env_client_secret = getenv('GOOGLE_CLIENT_SECRET') ?: 'TU_CLIENT_SECRET_DE_GOOGLE';
+
+define('GOOGLE_CLIENT_ID', $env_client_id);
+define('GOOGLE_CLIENT_SECRET', $env_client_secret);
 
 // Generador de la URL de redirección dinámica según el servidor actual
 function get_google_redirect_uri() {
+    if (getenv('GOOGLE_REDIRECT_URI')) {
+        return getenv('GOOGLE_REDIRECT_URI');
+    }
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'];
     $script_dir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
