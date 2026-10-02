@@ -16,6 +16,22 @@ if (!$poli_id) {
 $error_msg = '';
 $success_msg = '';
 
+if (!function_exists('normalizar_espacio')) {
+    function normalizar_espacio($texto) {
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+        $utf8 = [
+            '/[áàâäã]/u' => 'a',
+            '/[éèêë]/u' => 'e',
+            '/[íìîï]/u' => 'i',
+            '/[óòôöõ]/u' => 'o',
+            '/[úùûü]/u' => 'u',
+            '/[ñ]/u' => 'n',
+            '/[^a-z0-9]/u' => ''
+        ];
+        return preg_replace(array_keys($utf8), array_values($utf8), $texto);
+    }
+}
+
 // Procesar Creación / Modificación de Canchas
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
@@ -38,11 +54,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $error_msg = 'No es posible gestionar espacios porque la entidad se encuentra desactivada.';
         } else {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
-            // Validar unicidad dentro de la entidad
-            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM canchas WHERE LOWER(nombre) = LOWER(?) AND fk_polideportivo = ? AND id != ?");
-            $stmt_chk->execute([$nombre, $poli_id, $chk_id]);
-            if ($stmt_chk->fetchColumn() > 0) {
-                $error_msg = "Ya existe un espacio con el nombre \"$nombre\" en esta entidad.";
+            
+            // Validar unicidad y similitud inteligente dentro de la entidad
+            $stmt_all = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_polideportivo = ? AND id != ?");
+            $stmt_all->execute([$poli_id, $chk_id]);
+            $canchas_existentes = $stmt_all->fetchAll();
+
+            $norm_nuevo = normalizar_espacio($nombre);
+            $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
+
+            $nombre_duplicado = null;
+            $es_muy_similar = false;
+
+            foreach ($canchas_existentes as $can_ex) {
+                $norm_existente = normalizar_espacio($can_ex['nombre']);
+                $num_existente = preg_replace('/\D/', '', $norm_existente);
+
+                // Si ambos contienen números y los números son diferentes (ej. "canchavoley1" vs "canchavoley2"), son espacios distintos
+                if (!empty($num_nuevo) && !empty($num_existente) && intval($num_nuevo) !== intval($num_existente)) {
+                    continue;
+                }
+
+                $base_nuevo = preg_replace('/[0-9]+/', '', $norm_nuevo);
+                $base_existente = preg_replace('/[0-9]+/', '', $norm_existente);
+
+                // 1. Coincidencia exacta ignorando tildes, mayúsculas, espacios y ceros a la izquierda
+                if ($norm_nuevo === $norm_existente || ($base_nuevo === $base_existente && $num_nuevo !== '' && intval($num_nuevo) === intval($num_existente))) {
+                    $nombre_duplicado = $can_ex['nombre'];
+                    break;
+                }
+
+                // 2. Similitud alta si coinciden en número (o no tienen número) pero varían ligeramente en texto (ej. "cancha voley 1" vs "cancha voleyball 1")
+                if (($num_nuevo === '' && $num_existente === '') || (intval($num_nuevo) === intval($num_existente) && $num_nuevo !== '')) {
+                    similar_text($base_nuevo, $base_existente, $percent);
+                    $lev = (strlen($base_nuevo) < 255 && strlen($base_existente) < 255) ? levenshtein($base_nuevo, $base_existente) : 999;
+                    $es_prefijo = (strpos($base_existente, $base_nuevo) === 0 || strpos($base_nuevo, $base_existente) === 0) && abs(strlen($base_nuevo) - strlen($base_existente)) <= 4;
+
+                    if ($percent >= 75 || $lev <= 2 || $es_prefijo) {
+                        $nombre_duplicado = $can_ex['nombre'];
+                        $es_muy_similar = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($nombre_duplicado !== null) {
+                if ($es_muy_similar) {
+                    $error_msg = "El nombre \"$nombre\" es equivalente o muy similar al espacio \"$nombre_duplicado\" que ya existe en esta entidad.";
+                } else {
+                    $error_msg = "Ya existe un espacio con el nombre \"$nombre_duplicado\" en esta entidad.";
+                }
             } else {
                 if ($_POST['action'] == 'crear') {
                     try {

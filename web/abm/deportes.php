@@ -16,6 +16,22 @@ if (!$poli_id) {
 $error_msg = '';
 $success_msg = '';
 
+if (!function_exists('normalizar_actividad')) {
+    function normalizar_actividad($texto) {
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+        $utf8 = [
+            '/[áàâäã]/u' => 'a',
+            '/[éèêë]/u' => 'e',
+            '/[íìîï]/u' => 'i',
+            '/[óòôöõ]/u' => 'o',
+            '/[úùûü]/u' => 'u',
+            '/[ñ]/u' => 'n',
+            '/[^a-z0-9]/u' => ''
+        ];
+        return preg_replace(array_keys($utf8), array_values($utf8), $texto);
+    }
+}
+
 // Procesar Creación / Modificación de Deportes
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
@@ -37,11 +53,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $error_msg = 'No es posible gestionar actividades porque la entidad se encuentra desactivada.';
         } else {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
-            // Validar unicidad dentro de la entidad
-            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM deportes WHERE LOWER(nombre) = LOWER(?) AND fk_polideportivo = ? AND id != ?");
-            $stmt_chk->execute([$nombre, $poli_id, $chk_id]);
-            if ($stmt_chk->fetchColumn() > 0) {
-                $error_msg = "Ya existe una actividad con el nombre \"$nombre\" en esta entidad.";
+            
+            // Validar unicidad y similitud inteligente dentro de la entidad
+            $stmt_all = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_polideportivo = ? AND id != ?");
+            $stmt_all->execute([$poli_id, $chk_id]);
+            $deportes_existentes = $stmt_all->fetchAll();
+
+            $norm_nuevo = normalizar_actividad($nombre);
+            $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
+
+            $nombre_duplicado = null;
+            $es_muy_similar = false;
+
+            foreach ($deportes_existentes as $dep_ex) {
+                $norm_existente = normalizar_actividad($dep_ex['nombre']);
+                $num_existente = preg_replace('/\D/', '', $norm_existente);
+
+                // Si ambos contienen números y son diferentes (ej. "futbol5" vs "futbol11"), son actividades distintas
+                if (!empty($num_nuevo) && !empty($num_existente) && $num_nuevo !== $num_existente) {
+                    continue;
+                }
+
+                // 1. Coincidencia exacta ignorando tildes, mayúsculas y espacios
+                if ($norm_nuevo === $norm_existente) {
+                    $nombre_duplicado = $dep_ex['nombre'];
+                    break;
+                }
+
+                // 2. Similitud alta (ej. "voley" vs "voleyball" o "volleyball")
+                similar_text($norm_nuevo, $norm_existente, $percent);
+                $lev = (strlen($norm_nuevo) < 255 && strlen($norm_existente) < 255) ? levenshtein($norm_nuevo, $norm_existente) : 999;
+                $es_prefijo = (strpos($norm_existente, $norm_nuevo) === 0 || strpos($norm_nuevo, $norm_existente) === 0) && abs(strlen($norm_nuevo) - strlen($norm_existente)) <= 4;
+
+                if ($percent >= 75 || $lev <= 2 || $es_prefijo) {
+                    $nombre_duplicado = $dep_ex['nombre'];
+                    $es_muy_similar = true;
+                    break;
+                }
+            }
+
+            if ($nombre_duplicado !== null) {
+                if ($es_muy_similar) {
+                    $error_msg = "El nombre \"$nombre\" es equivalente o muy similar a la actividad \"$nombre_duplicado\" que ya existe en esta entidad.";
+                } else {
+                    $error_msg = "Ya existe una actividad con el nombre \"$nombre_duplicado\" en esta entidad.";
+                }
             } else {
                 if ($_POST['action'] == 'crear') {
                     try {
