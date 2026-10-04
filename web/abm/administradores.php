@@ -28,12 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fecha_nacimiento = $_POST['fecha_nacimiento'];
     $polideportivo_id = intval($_POST['fk_polideportivo']);
     
-    if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || $polideportivo_id <= 0) {
+    if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || empty($fecha_nacimiento) || $polideportivo_id <= 0) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif (!ctype_digit($dni)) {
         $error_msg = 'El DNI debe contener únicamente números.';
-    } elseif (!empty($telefono) && !ctype_digit($telefono)) {
-        $error_msg = 'El teléfono debe contener únicamente números.';
+    } elseif (!empty($fecha_nacimiento) && date_diff(date_create($fecha_nacimiento), date_create('today'))->y < 21) {
+        $error_msg = 'El administrador debe tener al menos 21 años de edad.';
+    } elseif (!empty($telefono) && !preg_match('/^\+?[0-9]+$/', $telefono)) {
+        $error_msg = 'El teléfono solo puede contener números y opcionalmente el símbolo + al inicio.';
     } else {
         if ($_POST['action'] == 'crear') {
             $contrasena = trim($_POST['contrasena']);
@@ -215,8 +217,8 @@ require_once __DIR__ . '/../includes/header.php';
                             <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" value="<?= htmlspecialchars($adm['dni']); ?>">
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Fecha de Nacimiento</label>
-                            <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" value="<?= $adm['fecha_nacimiento']; ?>">
+                            <label class="form-label fw-bold">Fecha de Nacimiento *</label>
+                            <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d', strtotime('-21 years')); ?>" value="<?= $adm['fecha_nacimiento']; ?>">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -230,7 +232,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="[0-9]*" inputmode="numeric" title="El teléfono debe contener únicamente números" placeholder="Ej: 1122334455" value="<?= htmlspecialchars($adm['telefono'] ?? ''); ?>">
+                            <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="\+?[0-9]+" title="El teléfono solo puede contener números y opcionalmente el símbolo + al inicio" placeholder="Ej: +541122334455" value="<?= htmlspecialchars($adm['telefono'] ?? ''); ?>">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -283,8 +285,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" placeholder="33444555">
                     </div>
                     <div class="col-6 mb-3">
-                        <label class="form-label fw-bold">Fecha de Nacimiento</label>
-                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3">
+                        <label class="form-label fw-bold">Fecha de Nacimiento *</label>
+                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d', strtotime('-21 years')); ?>">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -298,7 +300,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Teléfono</label>
-                        <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="[0-9]*" inputmode="numeric" title="El teléfono debe contener únicamente números" placeholder="Ej: 1122334455">
+                        <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="\+?[0-9]+" title="El teléfono solo puede contener números y opcionalmente el símbolo + al inicio" placeholder="Ej: +541122334455">
                     </div>
                 </div>
                 <div class="mb-3">

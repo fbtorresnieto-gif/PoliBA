@@ -16,15 +16,37 @@ if (!$poli_id) {
 $error_msg = '';
 $success_msg = '';
 
+if (!function_exists('normalizar_subcategoria')) {
+    function normalizar_subcategoria($texto) {
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+        $utf8 = [
+            '/[áàâäã]/u' => 'a',
+            '/[éèêë]/u' => 'e',
+            '/[íìîï]/u' => 'i',
+            '/[óòôöõ]/u' => 'o',
+            '/[úùûü]/u' => 'u',
+            '/[ñ]/u' => 'n',
+            '/[^a-z0-9]/u' => ''
+        ];
+        return preg_replace(array_keys($utf8), array_values($utf8), $texto);
+    }
+}
+
 // Procesar Creación / Modificación de Subcategorías
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
-    $edad_minima = intval($_POST['edad_minima']);
-    $edad_maxima = intval($_POST['edad_maxima']);
+    $raw_min = $_POST['edad_minima'] ?? '';
+    $raw_max = $_POST['edad_maxima'] ?? '';
     $fk_deporte = intval($_POST['fk_deporte']);
     $fk_categoria = !empty($_POST['fk_categoria']) ? intval($_POST['fk_categoria']) : null;
     
-    if (empty($nombre) || $edad_minima < 0 || $edad_maxima <= 0 || $fk_deporte <= 0) {
+    if (!is_numeric($raw_min) || !is_numeric($raw_max)) {
+        $error_msg = 'Los campos de edad deben contener únicamente números.';
+    } else {
+        $edad_minima = intval($raw_min);
+        $edad_maxima = intval($raw_max);
+        
+        if (empty($nombre) || $edad_minima < 0 || $edad_maxima <= 0 || $fk_deporte <= 0 || empty($fk_categoria)) {
         $error_msg = 'Por favor, completa todos los campos obligatorios (*).';
     } elseif ($edad_minima > $edad_maxima) {
         $error_msg = 'La edad mínima no puede ser mayor que la edad máxima.';
@@ -48,11 +70,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
         if ($compatible) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
-            // Validar unicidad del nombre para la misma actividad en la entidad
-            $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM subcategorias WHERE LOWER(nombre) = LOWER(?) AND fk_deporte = ? AND fk_polideportivo = ? AND id != ?");
-            $stmt_chk->execute([$nombre, $fk_deporte, $poli_id, $chk_id]);
-            if ($stmt_chk->fetchColumn() > 0) {
-                $error_msg = "Ya existe una subcategoría con el nombre \"$nombre\" para la actividad seleccionada en esta entidad.";
+            
+            // Cargar todas las subcategorías de la entidad (excluyendo la actual en edición)
+            $stmt_all = $pdo->prepare("SELECT id, nombre, fk_deporte, fk_categoria, edad_minima, edad_maxima FROM subcategorias WHERE fk_polideportivo = ? AND id != ?");
+            $stmt_all->execute([$poli_id, $chk_id]);
+            $subcategorias_existentes = $stmt_all->fetchAll();
+
+            $norm_nuevo = normalizar_subcategoria($nombre);
+            $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
+
+            $error_duplicado = null;
+
+            foreach ($subcategorias_existentes as $sub_ex) {
+                $norm_ex = normalizar_subcategoria($sub_ex['nombre']);
+                $num_ex = preg_replace('/\D/', '', $norm_ex);
+
+                // 1. Validar similitud/duplicado de nombre en la entidad
+                $mismo_numero = (empty($num_nuevo) && empty($num_ex)) || ($num_nuevo === $num_ex);
+                if ($norm_nuevo === $norm_ex && $mismo_numero) {
+                    $error_duplicado = "Ya existe la subcategoría \"{$sub_ex['nombre']}\" registrada en esta entidad.";
+                    break;
+                }
+                similar_text($norm_nuevo, $norm_ex, $percent);
+                $lev = (strlen($norm_nuevo) < 255 && strlen($norm_ex) < 255) ? levenshtein($norm_nuevo, $norm_ex) : 999;
+                if (($percent >= 88 || $lev <= 1) && $mismo_numero && strlen($norm_nuevo) >= 4) {
+                    $error_duplicado = "El nombre de la subcategoría es muy similar a la subcategoría existente \"{$sub_ex['nombre']}\". Por favor, usa un nombre más descriptivo.";
+                    break;
+                }
+
+                // 2. Validar mismo rango de edad para la misma actividad y misma categoría general
+                $misma_actividad = (intval($sub_ex['fk_deporte']) === $fk_deporte);
+                $misma_cat = (empty($sub_ex['fk_categoria']) && empty($fk_categoria)) || (intval($sub_ex['fk_categoria'] ?? 0) === intval($fk_categoria ?? 0));
+                $mismo_rango = (intval($sub_ex['edad_minima']) === $edad_minima && intval($sub_ex['edad_maxima']) === $edad_maxima);
+
+                if ($misma_actividad && $misma_cat && $mismo_rango) {
+                    $error_duplicado = "Ya existe la subcategoría \"{$sub_ex['nombre']}\" con el mismo rango de edad ({$edad_minima} a {$edad_maxima} años) para la actividad y categoría seleccionadas.";
+                    break;
+                }
+            }
+
+            if ($error_duplicado) {
+                $error_msg = $error_duplicado;
             } else {
                 if ($_POST['action'] == 'crear') {
                     try {
@@ -82,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
         }
     }
+}
 }
 
 // Procesar Alta/Baja Lógica
@@ -209,16 +268,6 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Edad Mínima *</label>
-                            <input type="number" name="edad_minima" class="form-control rounded-pill px-3" required value="<?= $sub['edad_minima']; ?>">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Edad Máxima *</label>
-                            <input type="number" name="edad_maxima" class="form-control rounded-pill px-3" required value="<?= $sub['edad_maxima']; ?>">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Actividad *</label>
                             <select name="fk_deporte" class="form-select rounded-pill px-3" required>
                                 <?php foreach ($deportes as $dep): ?>
@@ -229,15 +278,28 @@ require_once __DIR__ . '/../includes/header.php';
                             </select>
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Categoría General</label>
-                            <select name="fk_categoria" class="form-select rounded-pill px-3">
-                                <option value="">-- General --</option>
+                            <label class="form-label fw-bold">Categoría General *</label>
+                            <select name="fk_categoria" class="form-select rounded-pill px-3" required>
+                                <option value="">-- Seleccionar --</option>
                                 <?php foreach ($categorias as $cat): ?>
-                                    <option value="<?= $cat['id']; ?>" <?= $sub['fk_categoria'] == $cat['id'] ? 'selected' : ''; ?>>
-                                        <?= htmlspecialchars($cat['nombre']); ?>
+                                    <option value="<?= $cat['id']; ?>" 
+                                            data-min="<?= $cat['edad_minima']; ?>" 
+                                            data-max="<?= $cat['edad_maxima']; ?>" 
+                                            <?= $sub['fk_categoria'] == $cat['id'] ? 'selected' : ''; ?>>
+                                        <?= htmlspecialchars($cat['nombre']); ?> (<?= $cat['edad_minima']; ?>-<?= $cat['edad_maxima']; ?> años)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">Edad Mínima *</label>
+                            <input type="number" name="edad_minima" class="form-control rounded-pill px-3" required min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="<?= $sub['edad_minima']; ?>">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-bold">Edad Máxima *</label>
+                            <input type="number" name="edad_maxima" class="form-control rounded-pill px-3" required min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="<?= $sub['edad_maxima']; ?>">
                         </div>
                     </div>
                 </div>
@@ -264,16 +326,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <label class="form-label fw-bold">Nombre *</label>
                     <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Vóley Cadetes">
                 </div>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label fw-bold">Edad Mínima *</label>
-                        <input type="number" name="edad_minima" class="form-control rounded-pill px-3" required placeholder="13" min="0">
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label fw-bold">Edad Máxima *</label>
-                        <input type="number" name="edad_maxima" class="form-control rounded-pill px-3" required placeholder="17" min="0">
-                    </div>
-                </div>
+
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Actividad *</label>
@@ -285,13 +338,27 @@ require_once __DIR__ . '/../includes/header.php';
                         </select>
                     </div>
                     <div class="col-6 mb-3">
-                        <label class="form-label fw-bold">Categoría General</label>
-                        <select name="fk_categoria" class="form-select rounded-pill px-3">
-                            <option value="">-- General --</option>
+                        <label class="form-label fw-bold">Categoría General *</label>
+                        <select name="fk_categoria" class="form-select rounded-pill px-3" required>
+                            <option value="">-- Seleccionar --</option>
                             <?php foreach ($categorias as $cat): ?>
-                                <option value="<?= $cat['id']; ?>"><?= htmlspecialchars($cat['nombre']); ?></option>
+                                <option value="<?= $cat['id']; ?>" 
+                                        data-min="<?= $cat['edad_minima']; ?>" 
+                                        data-max="<?= $cat['edad_maxima']; ?>">
+                                    <?= htmlspecialchars($cat['nombre']); ?> (<?= $cat['edad_minima']; ?>-<?= $cat['edad_maxima']; ?> años)
+                                </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-bold">Edad Mínima *</label>
+                        <input type="number" name="edad_minima" class="form-control rounded-pill px-3" required placeholder="13" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label fw-bold">Edad Máxima *</label>
+                        <input type="number" name="edad_maxima" class="form-control rounded-pill px-3" required placeholder="17" min="0" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                 </div>
             </div>
@@ -302,5 +369,99 @@ require_once __DIR__ . '/../includes/header.php';
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectsCat = document.querySelectorAll('select[name="fk_categoria"]');
+    
+    selectsCat.forEach(select => {
+        const form = select.closest('form');
+        if (!form) return;
+        
+        const inputMin = form.querySelector('input[name="edad_minima"]');
+        const inputMax = form.querySelector('input[name="edad_maxima"]');
+        
+        function applyLimits(autoFillValues = false) {
+            const selectedOpt = select.options[select.selectedIndex];
+            const minCat = selectedOpt ? selectedOpt.getAttribute('data-min') : null;
+            const maxCat = selectedOpt ? selectedOpt.getAttribute('data-max') : null;
+            
+            if (minCat !== null && maxCat !== null && minCat !== "" && maxCat !== "") {
+                const minVal = parseInt(minCat, 10);
+                const maxVal = parseInt(maxCat, 10);
+                
+                if (inputMin) {
+                    inputMin.min = minVal;
+                    inputMin.max = maxVal;
+                    if (autoFillValues) {
+                        inputMin.value = minVal;
+                    }
+                }
+                if (inputMax) {
+                    inputMax.min = minVal;
+                    inputMax.max = maxVal;
+                    if (autoFillValues) {
+                        inputMax.value = maxVal;
+                    }
+                }
+            } else {
+                if (inputMin) {
+                    inputMin.min = 0;
+                    inputMin.removeAttribute('max');
+                }
+                if (inputMax) {
+                    inputMax.min = 0;
+                    inputMax.removeAttribute('max');
+                }
+            }
+            validateCurrentInputs();
+        }
+        
+        function validateCurrentInputs() {
+            const selectedOpt = select.options[select.selectedIndex];
+            const minCat = selectedOpt ? selectedOpt.getAttribute('data-min') : null;
+            const maxCat = selectedOpt ? selectedOpt.getAttribute('data-max') : null;
+            
+            if (minCat === null || maxCat === null || minCat === "" || maxCat === "") return;
+            
+            const minAllowed = parseInt(minCat, 10);
+            const maxAllowed = parseInt(maxCat, 10);
+            
+            if (inputMin && inputMin.value !== '') {
+                let val = parseInt(inputMin.value, 10);
+                if (!isNaN(val)) {
+                    if (val < minAllowed) inputMin.value = minAllowed;
+                    if (val > maxAllowed) inputMin.value = maxAllowed;
+                }
+            }
+            
+            if (inputMax && inputMax.value !== '') {
+                let val = parseInt(inputMax.value, 10);
+                if (!isNaN(val)) {
+                    if (val > maxAllowed) inputMax.value = maxAllowed;
+                    if (val < minAllowed) inputMax.value = minAllowed;
+                }
+            }
+        }
+        
+        select.addEventListener('change', function() {
+            applyLimits(true);
+        });
+        
+        if (inputMin) {
+            inputMin.addEventListener('change', validateCurrentInputs);
+            inputMin.addEventListener('blur', validateCurrentInputs);
+            inputMin.addEventListener('input', validateCurrentInputs);
+        }
+        if (inputMax) {
+            inputMax.addEventListener('change', validateCurrentInputs);
+            inputMax.addEventListener('blur', validateCurrentInputs);
+            inputMax.addEventListener('input', validateCurrentInputs);
+        }
+        
+        applyLimits(false);
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

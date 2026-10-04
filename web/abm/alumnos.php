@@ -19,10 +19,16 @@ $alumnos = [];
 
 try {
     $sql = "
-        SELECT u.* 
+        SELECT DISTINCT u.* 
         FROM usuarios u
         JOIN roles r ON u.fk_rol = r.id
-        WHERE u.fk_polideportivo = ? AND r.nombre = 'Alumno'
+        JOIN inscripcion i ON u.id = i.fk_usuario
+        JOIN clases c ON i.fk_clase = c.id
+        WHERE r.nombre = 'Alumno'
+          AND c.fk_polideportivo = ?
+          AND i.estado = 'activo'
+          AND (i.lista_espera IS NULL OR i.lista_espera = FALSE)
+          AND c.estado = TRUE
     ";
     
     $params = [$poli_id];
@@ -54,15 +60,27 @@ try {
             SELECT c.nombre 
             FROM inscripcion i
             JOIN clases c ON i.fk_clase = c.id
-            WHERE i.fk_usuario = ? AND c.fk_polideportivo = ? AND i.estado = 'activo'
+            WHERE i.fk_usuario = ? AND i.fk_menor IS NULL AND c.fk_polideportivo = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
         ");
         $stmt_cl->execute([$alumno['id'], $poli_id]);
         $alumno['clases'] = $stmt_cl->fetchAll(PDO::FETCH_COLUMN);
         
-        // Cargar menores asociados
-        $stmt_m = $pdo->prepare("SELECT nombre, apellido, dni FROM menores WHERE fk_usuario = ?");
+        // Cargar menores asociados y sus clases activas
+        $stmt_m = $pdo->prepare("SELECT id, nombre, apellido, dni FROM menores WHERE fk_usuario = ?");
         $stmt_m->execute([$alumno['id']]);
         $alumno['menores'] = $stmt_m->fetchAll();
+
+        foreach ($alumno['menores'] as &$menor) {
+            $stmt_m_cl = $pdo->prepare("
+                SELECT c.nombre 
+                FROM inscripcion i
+                JOIN clases c ON i.fk_clase = c.id
+                WHERE i.fk_menor = ? AND c.fk_polideportivo = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
+            ");
+            $stmt_m_cl->execute([$menor['id'], $poli_id]);
+            $menor['clases'] = $stmt_m_cl->fetchAll(PDO::FETCH_COLUMN);
+        }
+        unset($menor);
     }
     unset($alumno);
 } catch (PDOException $e) {
@@ -144,7 +162,19 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php else: ?>
                                     <ul class="m-0 p-0 ps-3 small text-muted">
                                         <?php foreach ($al['menores'] as $m): ?>
-                                            <li><?= htmlspecialchars($m['nombre'] . ' ' . $m['apellido']); ?> (DNI: <?= htmlspecialchars($m['dni']); ?>)</li>
+                                            <li class="mb-2">
+                                                <strong><?= htmlspecialchars($m['nombre'] . ' ' . $m['apellido']); ?></strong> 
+                                                <small class="text-muted">(DNI: <?= htmlspecialchars($m['dni']); ?>)</small>
+                                                <?php if (!empty($m['clases'])): ?>
+                                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                                        <?php foreach ($m['clases'] as $m_cls): ?>
+                                                            <span class="badge bg-secondary text-white rounded-pill" style="font-size:0.75rem;"><?= htmlspecialchars($m_cls); ?></span>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <small class="text-muted d-block ms-1" style="font-size:0.75rem;">Sin módulos activos</small>
+                                                <?php endif; ?>
+                                            </li>
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php endif; ?>

@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fk_subcategoria = !empty($_POST['fk_subcategoria']) ? intval($_POST['fk_subcategoria']) : null;
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : []; // Array de IDs de días
     
-    if (empty($nombre) || empty($horario_inicio) || empty($horario_cierre) || $cupo_maximo <= 0 || (($_POST['action'] ?? '') == 'crear' && $fk_deporte <= 0)) {
+    if (empty($nombre) || empty($horario_inicio) || empty($horario_cierre) || $cupo_maximo <= 0 || (($_POST['action'] ?? '') == 'crear' && ($fk_deporte <= 0 || empty($fk_categoria)))) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif ($horario_inicio >= $horario_cierre) {
         $error_msg = 'La hora de cierre debe ser posterior a la hora de inicio del módulo.';
@@ -682,9 +682,9 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Categoría de Edad</label>
-                        <select name="fk_categoria" class="form-select rounded-pill px-3">
-                            <option value="">-- General --</option>
+                        <label class="form-label fw-bold">Categoría de Edad *</label>
+                        <select name="fk_categoria" class="form-select rounded-pill px-3" required>
+                            <option value="">-- Seleccionar --</option>
                             <?php foreach ($categorias as $cat): ?>
                                 <option value="<?= $cat['id']; ?>" 
                                         data-min="<?= $cat['edad_minima']; ?>" 
