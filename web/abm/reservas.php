@@ -26,7 +26,11 @@ if (isset($_GET['cancelar_reserva_admin'])) {
         $stmt = $pdo->prepare("
             UPDATE reservas 
             SET estado = 'cancelado' 
+<<<<<<< HEAD
             WHERE id = ? AND fk_cancha IN (SELECT id FROM canchas WHERE fk_entidad = ?)
+=======
+            WHERE id = ? AND fk_espacio IN (SELECT id FROM espacios WHERE fk_entidad = ?)
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
         ");
         if ($stmt->execute([$res_id, $entidad_id])) {
             $success_msg = 'Reserva cancelada con éxito.';
@@ -36,16 +40,21 @@ if (isset($_GET['cancelar_reserva_admin'])) {
     }
 }
 
-// Cargar todas las reservas para la fecha seleccionada en las canchas de esta sede
+// Cargar todas las reservas para la fecha seleccionada en los espacios de esta entidad
 $reservas = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT r.*, c.nombre as cancha_nombre, u.nombre as alu_nombre, u.apellido as alu_apellido, u.dni as alu_dni, u.telefono as alu_telefono
+        SELECT r.*, e.nombre as espacio_nombre, u.nombre as alu_nombre, u.apellido as alu_apellido, u.dni as alu_dni, u.telefono as alu_telefono
         FROM reservas r
-        JOIN canchas c ON r.fk_cancha = c.id
+        JOIN espacios e ON r.fk_espacio = e.id
         JOIN usuarios u ON r.fk_usuario = u.id
+<<<<<<< HEAD
         WHERE c.fk_entidad = ? AND r.fecha_de_asistencia = ?
         ORDER BY r.horario ASC, c.nombre ASC
+=======
+        WHERE e.fk_entidad = ? AND r.fecha_de_asistencia = ?
+        ORDER BY r.horario ASC, e.nombre ASC
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     ");
     $stmt->execute([$entidad_id, $selected_date]);
     $reservas = $stmt->fetchAll();
@@ -107,7 +116,7 @@ require_once __DIR__ . '/../includes/header.php';
                     ?>
                         <tr>
                             <td class="fw-bold fs-5 text-dark"><?= date('H:i', strtotime($res['horario'])); ?> hs</td>
-                            <td><?= htmlspecialchars($res['cancha_nombre']); ?></td>
+                            <td><?= htmlspecialchars($res['espacio_nombre']); ?></td>
                             <td class="fw-bold"><?= htmlspecialchars($res['alu_nombre'] . ' ' . $res['alu_apellido']); ?></td>
                             <td><?= htmlspecialchars($res['alu_dni']); ?></td>
                             <td><?= htmlspecialchars($res['alu_telefono'] ?? '-'); ?></td>

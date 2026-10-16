@@ -5,7 +5,7 @@ require_once __DIR__ . '/includes/db.php';
 $entidad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $entidad = null;
 $deportes = [];
-$canchas = [];
+$espacios = [];
 
 if ($entidad_id > 0) {
     try {
@@ -26,10 +26,17 @@ if ($entidad_id > 0) {
             $stmt->execute([$entidad_id]);
             $deportes = $stmt->fetchAll();
             
+<<<<<<< HEAD
             // Consultar canchas de esta entidad
             $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? AND estado = TRUE");
             $stmt->execute([$entidad_id]);
             $canchas = $stmt->fetchAll();
+=======
+            // Consultar espacios de esta entidad
+            $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? AND estado = TRUE");
+            $stmt->execute([$entidad_id]);
+            $espacios = $stmt->fetchAll();
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
         }
     } catch (PDOException $e) {
         // Log o mostrar mensaje
@@ -154,34 +161,34 @@ require_once __DIR__ . '/includes/header.php';
             Espacios Disponibles
         </h3>
         
-        <?php if (empty($canchas)): ?>
+        <?php if (empty($espacios)): ?>
             <p class="text-muted">No hay espacios registrados en esta entidad en este momento.</p>
         <?php else: ?>
             <div class="row g-4">
-                <?php foreach ($canchas as $cancha): 
+                <?php foreach ($espacios as $espacio): 
                     $img_url = "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?auto=format&fit=crop&q=80&w=600";
-                    $raw_img_c = $cancha['imagenurl'] ?? $cancha['imagenURL'] ?? '';
-                    if (!empty($raw_img_c)) {
-                        if (filter_var($raw_img_c, FILTER_VALIDATE_URL)) {
-                            $img_url = $raw_img_c;
+                    $raw_img_espacio = $espacio['imagenurl'] ?? $espacio['imagenURL'] ?? '';
+                    if (!empty($raw_img_espacio)) {
+                        if (filter_var($raw_img_espacio, FILTER_VALIDATE_URL)) {
+                            $img_url = $raw_img_espacio;
                         } else {
-                            $img_url = "img/" . $raw_img_c;
+                            $img_url = "img/" . $raw_img_espacio;
                         }
                     }
                 ?>
                     <div class="col-md-6 col-lg-4">
                         <div class="poliba-card">
                             <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');">
-                                <span class="position-absolute top-0 end-0 m-3 badge rounded-pill <?= $cancha['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
-                                    <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
+                                <span class="position-absolute top-0 end-0 m-3 badge rounded-pill <?= $espacio['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
+                                    <?= $espacio['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
                                 </span>
                             </div>
                             <div class="poliba-card-body">
-                                <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($cancha['nombre']); ?></h5>
+                                <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($espacio['nombre']); ?></h5>
                                 <p class="poliba-card-text">
-                                    <?= htmlspecialchars($cancha['descripcion']); ?>
+                                    <?= htmlspecialchars($espacio['descripcion']); ?>
                                 </p>
-                                <a href="cancha.php?id=<?= $cancha['id']; ?>" class="poliba-btn text-center mt-auto w-100">Reservar Espacio</a>
+                                <a href="espacio.php?id=<?= $espacio['id']; ?>" class="poliba-btn text-center mt-auto w-100">Reservar Espacio</a>
                             </div>
                         </div>
                     </div>

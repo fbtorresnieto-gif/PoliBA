@@ -3,6 +3,7 @@ asistencia	fk_inscripcion	integer
 asistencia	fk_clase	integer
 asistencia	asistencia	character varying
 asistencia	fecha		date
+<<<<<<< HEAD
 canchas		id		integer
 canchas		nombre		character varying
 canchas		descripcion	text
@@ -10,6 +11,15 @@ canchas		imagenurl	character varying
 canchas		techado		boolean
 canchas		fk_entidad	integer
 canchas		estado		boolean
+=======
+espacios	id		integer
+espacios	nombre		character varying
+espacios	descripcion	text
+espacios	imagenurl	character varying
+espacios	techado		boolean
+espacios	fk_entidad	integer
+espacios	estado		boolean
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 categoria	id		integer
 categoria	nombre		character varying
 categoria	edad_minima	integer
@@ -22,7 +32,11 @@ clases		horario_cierre	time without time zone
 clases		cupo_maximo	integer
 clases		fk_usuario_profesor	integer
 clases		fk_deporte	integer
+<<<<<<< HEAD
 clases		fk_canchas	integer
+=======
+clases		fk_espacio	integer
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 clases		fk_categoria	integer
 clases		fk_subcategoria	integer
 clases		fk_entidad	integer
@@ -33,9 +47,12 @@ deportes	texto		text
 deportes	imagenurl	character varying
 deportes	fk_entidad	integer
 deportes	estado		boolean
+<<<<<<< HEAD
 deportes_canchas	id	integer
 deportes_canchas	fk_deporte	integer
 deportes_canchas	fk_cancha	integer
+=======
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 dias		id		integer
 dias		nombre		character varying
 dias	orden	integer
@@ -77,7 +94,11 @@ entidades	fk_dia_apertura	integer
 entidades	fk_dia_cierre	integer
 entidades	estado		boolean
 reservas	id		integer
+<<<<<<< HEAD
 reservas	fk_cancha	integer
+=======
+reservas	fk_espacio	integer
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 reservas	fk_usuario	integer
 reservas	fecha_de_asistencia	date
 reservas	horario		time without time zone

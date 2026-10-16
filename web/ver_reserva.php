@@ -8,11 +8,19 @@ $reserva = null;
 if ($reserva_id > 0) {
     try {
         $stmt = $pdo->prepare("
+<<<<<<< HEAD
             SELECT r.*, c.nombre as cancha_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
                    u.nombre as usuario_nombre, u.apellido as usuario_apellido
             FROM reservas r
             JOIN canchas c ON r.fk_cancha = c.id
             JOIN entidades e ON c.fk_entidad = e.id
+=======
+            SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
+                   u.nombre as usuario_nombre, u.apellido as usuario_apellido
+            FROM reservas r
+            JOIN espacios esp ON r.fk_espacio = esp.id
+            JOIN entidades e ON esp.fk_entidad = e.id
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
             JOIN usuarios u ON r.fk_usuario = u.id
             WHERE r.id = ?
         ");
@@ -48,7 +56,7 @@ require_once __DIR__ . '/includes/header.php';
                 
                 <div class="mb-3">
                     <small class="text-muted text-uppercase fw-bold">Espacio</small>
-                    <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['cancha_nombre']); ?></div>
+                    <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['espacio_nombre']); ?></div>
                 </div>
 
                 <div class="row mb-3">
@@ -76,7 +84,7 @@ require_once __DIR__ . '/includes/header.php';
             </div>
             
             <div class="d-grid gap-2">
-                <a href="cancha.php?id=<?= $reserva['fk_cancha']; ?>" class="poliba-btn fw-bold">Reservar otro espacio</a>
+                <a href="espacio.php?id=<?= $reserva['fk_espacio']; ?>" class="poliba-btn fw-bold">Reservar otro espacio</a>
                 <a href="index.php" class="poliba-btn-dark fw-bold">Volver al Inicio</a>
             </div>
         </div>

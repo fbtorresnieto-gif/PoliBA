@@ -32,7 +32,7 @@ if (!function_exists('normalizar_espacio')) {
     }
 }
 
-// Procesar Creación / Modificación de Canchas
+// Procesar creación o modificación de espacios
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
     $descripcion = trim($_POST['descripcion']);
@@ -56,9 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Validar unicidad y similitud inteligente dentro de la entidad
+<<<<<<< HEAD:web/abm/canchas.php
             $stmt_all = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_entidad = ? AND id != ?");
             $stmt_all->execute([$entidad_id, $chk_id]);
             $canchas_existentes = $stmt_all->fetchAll();
+=======
+            $stmt_all = $pdo->prepare("SELECT id, nombre FROM espacios WHERE fk_entidad = ? AND id != ?");
+            $stmt_all->execute([$entidad_id, $chk_id]);
+            $espacios_existentes = $stmt_all->fetchAll();
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
 
             $norm_nuevo = normalizar_espacio($nombre);
             $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
@@ -66,11 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $nombre_duplicado = null;
             $es_muy_similar = false;
 
-            foreach ($canchas_existentes as $can_ex) {
-                $norm_existente = normalizar_espacio($can_ex['nombre']);
+            foreach ($espacios_existentes as $espacio_existente) {
+                $norm_existente = normalizar_espacio($espacio_existente['nombre']);
                 $num_existente = preg_replace('/\D/', '', $norm_existente);
 
-                // Si ambos contienen números y los números son diferentes (ej. "canchavoley1" vs "canchavoley2"), son espacios distintos
+                // Si ambos contienen números y son diferentes (ej. "espaciovoley1" vs "espaciovoley2"), son espacios distintos
                 if (!empty($num_nuevo) && !empty($num_existente) && intval($num_nuevo) !== intval($num_existente)) {
                     continue;
                 }
@@ -80,18 +86,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
                 // 1. Coincidencia exacta ignorando tildes, mayúsculas, espacios y ceros a la izquierda
                 if ($norm_nuevo === $norm_existente || ($base_nuevo === $base_existente && $num_nuevo !== '' && intval($num_nuevo) === intval($num_existente))) {
-                    $nombre_duplicado = $can_ex['nombre'];
+                    $nombre_duplicado = $espacio_existente['nombre'];
                     break;
                 }
 
-                // 2. Similitud alta si coinciden en número (o no tienen número) pero varían ligeramente en texto (ej. "cancha voley 1" vs "cancha voleyball 1")
+                // 2. Similitud alta si coinciden en número (o no tienen número) pero varían ligeramente en texto (ej. "espacio voley 1" vs "espacio voleyball 1")
                 if (($num_nuevo === '' && $num_existente === '') || (intval($num_nuevo) === intval($num_existente) && $num_nuevo !== '')) {
                     similar_text($base_nuevo, $base_existente, $percent);
                     $lev = (strlen($base_nuevo) < 255 && strlen($base_existente) < 255) ? levenshtein($base_nuevo, $base_existente) : 999;
                     $es_prefijo = (strpos($base_existente, $base_nuevo) === 0 || strpos($base_nuevo, $base_existente) === 0) && abs(strlen($base_nuevo) - strlen($base_existente)) <= 4;
 
                     if ($percent >= 75 || $lev <= 2 || $es_prefijo) {
-                        $nombre_duplicado = $can_ex['nombre'];
+                        $nombre_duplicado = $espacio_existente['nombre'];
                         $es_muy_similar = true;
                         break;
                     }
@@ -108,7 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
+<<<<<<< HEAD:web/abm/canchas.php
                             INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
+=======
+                            INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
                             VALUES (?, ?, ?, ?, ?, TRUE)
                         ");
                         $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $entidad_id]);
@@ -120,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $id = intval($_POST['id']);
                     try {
                         $stmt = $pdo->prepare("
-                            UPDATE canchas 
+                            UPDATE espacios
                             SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ? 
                             WHERE id = ? AND fk_entidad = ?
                         ");
@@ -148,13 +158,21 @@ if (isset($_GET['toggle_estado'])) {
             if (!$entidad_row || !$entidad_row['estado']) {
                 $error_msg = 'No se puede activar el espacio porque la entidad se encuentra desactivada.';
             } else {
+<<<<<<< HEAD:web/abm/canchas.php
                 $stmt = $pdo->prepare("UPDATE canchas SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
+=======
+                $stmt = $pdo->prepare("UPDATE espacios SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
                 $stmt->execute([$id, $entidad_id]);
                 $success_msg = 'Espacio activado con éxito.';
             }
         } else {
             // Desactivar espacio
+<<<<<<< HEAD:web/abm/canchas.php
             $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
+=======
+            $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
             $stmt->execute([$id, $entidad_id]);
             $success_msg = 'Espacio desactivado con éxito.';
         }
@@ -163,12 +181,18 @@ if (isset($_GET['toggle_estado'])) {
     }
 }
 
-// Cargar Canchas de la sede
-$canchas = [];
+// Cargar espacios de la entidad
+$espacios = [];
 try {
+<<<<<<< HEAD:web/abm/canchas.php
     $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? ORDER BY id ASC");
     $stmt->execute([$entidad_id]);
     $canchas = $stmt->fetchAll();
+=======
+    $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? ORDER BY id ASC");
+    $stmt->execute([$entidad_id]);
+    $espacios = $stmt->fetchAll();
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
@@ -180,7 +204,7 @@ require_once __DIR__ . '/../includes/header.php';
             <h2 class="fw-bold text-dark m-0">ABM Espacios</h2>
             <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearCanchaModal">Agregar Espacio</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearEspacioModal">Agregar Espacio</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -202,31 +226,31 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($canchas)): ?>
+                <?php if (empty($espacios)): ?>
                     <tr>
                         <td colspan="5" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($canchas as $can): ?>
+                    <?php foreach ($espacios as $espacio): ?>
                         <tr>
-                            <td class="fw-bold"><?= htmlspecialchars($can['nombre']); ?></td>
-                            <td><?= htmlspecialchars($can['descripcion']); ?></td>
+                            <td class="fw-bold"><?= htmlspecialchars($espacio['nombre']); ?></td>
+                            <td><?= htmlspecialchars($espacio['descripcion']); ?></td>
                             <td>
-                                <span class="badge rounded-pill <?= $can['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
-                                    <?= $can['techado'] ? 'Techado' : 'Descubierto'; ?>
+                                <span class="badge rounded-pill <?= $espacio['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
+                                    <?= $espacio['techado'] ? 'Techado' : 'Descubierto'; ?>
                                 </span>
                             </td>
                             <td>
-                                <span class="badge rounded-pill <?= $can['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?= $can['estado'] ? 'Activo' : 'Inactivo'; ?>
+                                <span class="badge rounded-pill <?= $espacio['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?= $espacio['estado'] ? 'Activo' : 'Inactivo'; ?>
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editCanchaModal<?= $can['id']; ?>">Editar</button>
-                                <a href="canchas.php?toggle_estado=<?= $can['id']; ?>&estado=<?= $can['estado'] ? '1' : '0'; ?>" 
-                                   class="btn btn-sm <?= $can['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                                <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editEspacioModal<?= $espacio['id']; ?>">Editar</button>
+                                <a href="espacios.php?toggle_estado=<?= $espacio['id']; ?>&estado=<?= $espacio['estado'] ? '1' : '0'; ?>"
+                                   class="btn btn-sm <?= $espacio['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
                                    onclick="return confirm('¿Seguro deseas cambiar el estado de este espacio?');">
-                                    <?= $can['estado'] ? 'Desactivar' : 'Activar'; ?>
+                                    <?= $espacio['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
                         </tr>
@@ -237,33 +261,33 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Modales Editar Cancha (Fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($canchas as $can): ?>
-    <div class="modal fade" id="editCanchaModal<?= $can['id']; ?>" tabindex="-1" aria-hidden="true">
+<!-- Modales para editar espacios (fuera de la tabla para Bootstrap 5) -->
+<?php foreach ($espacios as $espacio): ?>
+    <div class="modal fade" id="editEspacioModal<?= $espacio['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="canchas.php" method="POST" class="modal-content border-0 shadow">
+            <form action="espacios.php" method="POST" class="modal-content border-0 shadow">
                 <input type="hidden" name="action" value="editar">
-                <input type="hidden" name="id" value="<?= $can['id']; ?>">
+                <input type="hidden" name="id" value="<?= $espacio['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Espacio: <?= htmlspecialchars($can['nombre']); ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Espacio: <?= htmlspecialchars($espacio['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre del Espacio *</label>
-                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($can['nombre']); ?>">
+                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($espacio['nombre']); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen URL</label>
-                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/cancha.jpg" value="<?= htmlspecialchars($can['imagenurl'] ?? $can['imagenURL'] ?? ''); ?>">
+                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg" value="<?= htmlspecialchars($espacio['imagenurl'] ?? $espacio['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3 form-check form-switch ms-1">
-                        <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $can['id']; ?>" <?= $can['techado'] ? 'checked' : ''; ?>>
-                        <label class="form-check-label fw-bold" for="editTechado<?= $can['id']; ?>">Espacio Techado</label>
+                        <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $espacio['id']; ?>" <?= $espacio['techado'] ? 'checked' : ''; ?>>
+                        <label class="form-check-label fw-bold" for="editTechado<?= $espacio['id']; ?>">Espacio Techado</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Ubicación</label>
-                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($can['descripcion'] ?? ''); ?></textarea>
+                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($espacio['descripcion'] ?? ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -275,10 +299,10 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 <?php endforeach; ?>
 
-<!-- Modal Crear Cancha -->
-<div class="modal fade" id="crearCanchaModal" tabindex="-1" aria-hidden="true">
+<!-- Modal para crear un espacio -->
+<div class="modal fade" id="crearEspacioModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="canchas.php" method="POST" class="modal-content border-0 shadow">
+        <form action="espacios.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Espacio</h5>
@@ -291,7 +315,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Imagen URL</label>
-                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/cancha.jpg">
+                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg">
                 </div>
                 <div class="mb-3 form-check form-switch ms-1">
                     <input class="form-check-input" type="checkbox" name="techado" id="crearTechado">

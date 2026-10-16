@@ -173,10 +173,17 @@ $reservas = [];
 if (has_role('Alumno')) {
     try {
         $stmt = $pdo->prepare("
+<<<<<<< HEAD
             SELECT r.*, c.nombre as cancha_nombre, e.nombre as entidad_nombre
             FROM reservas r
             JOIN canchas c ON r.fk_cancha = c.id
             JOIN entidades e ON c.fk_entidad = e.id
+=======
+            SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre
+            FROM reservas r
+            JOIN espacios esp ON r.fk_espacio = esp.id
+            JOIN entidades e ON esp.fk_entidad = e.id
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
             WHERE r.fk_usuario = ?
             ORDER BY r.fecha_de_asistencia DESC, r.horario DESC
         ");
@@ -291,7 +298,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="my-5" id="mis-reservas">
             <h3 class="fw-bold mb-4 text-center text-dark">Mis Reservas de Espacios</h3>
             <?php if (empty($reservas)): ?>
-                <div class="alert alert-info text-center">No has realizado ninguna reserva de espacio aún. <a href="canchas.php" class="alert-link text-decoration-none">Ver espacios</a></div>
+                <div class="alert alert-info text-center">No has realizado ninguna reserva de espacio aún. <a href="espacios.php" class="alert-link text-decoration-none">Ver espacios</a></div>
             <?php else: ?>
                 <div class="row g-4">
                     <?php foreach ($reservas as $res): 
@@ -305,7 +312,11 @@ require_once __DIR__ . '/includes/header.php';
                                         <span class="badge <?= $status_badge; ?> text-uppercase"><?= htmlspecialchars($res['estado']); ?></span>
                                         <small class="text-muted">ID #<?= $res['id']; ?></small>
                                     </div>
+<<<<<<< HEAD
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['cancha_nombre']); ?></h5>
+=======
+                                    <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['espacio_nombre']); ?></h5>
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
                                     <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['entidad_nombre']); ?></div>
                                     <div class="text-dark small"><i class="bi bi-calendar-event me-2"></i><?= date('d/m/Y', strtotime($res['fecha_de_asistencia'])); ?></div>
                                     <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($res['horario'])); ?> hs</div>

@@ -37,7 +37,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="text-center px-4">
                     <h1 class="display-4 fw-bold">Reservas de Espacios</h1>
                     <p class="lead">Reservá tu espacio de fútbol, tenis, básquet o vóley de manera rápida desde tu perfil.</p>
-                    <a href="canchas.php" class="poliba-btn mt-2">Reservar Ahora</a>
+                    <a href="espacios.php" class="poliba-btn mt-2">Reservar Ahora</a>
                 </div>
             </div>
         </div>

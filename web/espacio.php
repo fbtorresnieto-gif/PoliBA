@@ -2,15 +2,16 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
-$cancha_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$cancha = null;
+$espacio_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$espacio = null;
 $error_msg = '';
 $success_msg = '';
 $reserva_id = 0;
 
-if ($cancha_id > 0) {
+if ($espacio_id > 0) {
     try {
         $stmt = $pdo->prepare("
+<<<<<<< HEAD:web/cancha.php
             SELECT c.*, e.nombre as entidad_nombre, e.horario_apertura, e.horario_cierre,
                    e.fk_dia_apertura, e.fk_dia_cierre,
                    da.nombre as dia_apertura_nombre, da.orden as dia_apertura_orden,
@@ -20,16 +21,27 @@ if ($cancha_id > 0) {
             LEFT JOIN dias da ON e.fk_dia_apertura = da.id
             LEFT JOIN dias dc ON e.fk_dia_cierre = dc.id
             WHERE c.id = ? AND c.estado = TRUE AND e.estado = TRUE
+=======
+            SELECT esp.*, e.nombre as entidad_nombre, e.horario_apertura, e.horario_cierre,
+                   e.fk_dia_apertura, e.fk_dia_cierre,
+                   da.nombre as dia_apertura_nombre, da.orden as dia_apertura_orden,
+                   dc.nombre as dia_cierre_nombre, dc.orden as dia_cierre_orden
+            FROM espacios esp
+            JOIN entidades e ON esp.fk_entidad = e.id
+            LEFT JOIN dias da ON e.fk_dia_apertura = da.id
+            LEFT JOIN dias dc ON e.fk_dia_cierre = dc.id
+            WHERE esp.id = ? AND esp.estado = TRUE AND e.estado = TRUE
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
         ");
-        $stmt->execute([$cancha_id]);
-        $cancha = $stmt->fetch();
+        $stmt->execute([$espacio_id]);
+        $espacio = $stmt->fetch();
     } catch (PDOException $e) {
         // Log
     }
 }
 
-if (!$cancha) {
-    header("Location: canchas.php");
+if (!$espacio) {
+    header("Location: espacios.php");
     exit;
 }
 
@@ -45,8 +57,13 @@ $dias_semana_nombres = [
 $nombre_dia_actual = $dias_semana_nombres[$dia_semana_num] ?? '';
 
 // Verificar si la entidad abre en este día de la semana
+<<<<<<< HEAD:web/cancha.php
 $orden_apertura = $cancha['dia_apertura_orden'] !== null ? intval($cancha['dia_apertura_orden']) : 1;
 $orden_cierre = $cancha['dia_cierre_orden'] !== null ? intval($cancha['dia_cierre_orden']) : 7;
+=======
+$orden_apertura = $espacio['dia_apertura_orden'] !== null ? intval($espacio['dia_apertura_orden']) : 1;
+$orden_cierre = $espacio['dia_cierre_orden'] !== null ? intval($espacio['dia_cierre_orden']) : 7;
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
 
 $esta_abierto_hoy = false;
 if ($orden_apertura <= $orden_cierre) {
@@ -57,8 +74,13 @@ if ($orden_apertura <= $orden_cierre) {
 }
 
 // Generar slots de 1 hora dinámicamente según horario de apertura y cierre de la entidad
+<<<<<<< HEAD:web/cancha.php
 $hora_inicio = !empty($cancha['horario_apertura']) ? intval(substr($cancha['horario_apertura'], 0, 2)) : 8;
 $hora_fin = !empty($cancha['horario_cierre']) ? intval(substr($cancha['horario_cierre'], 0, 2)) : 22;
+=======
+$hora_inicio = !empty($espacio['horario_apertura']) ? intval(substr($espacio['horario_apertura'], 0, 2)) : 8;
+$hora_fin = !empty($espacio['horario_cierre']) ? intval(substr($espacio['horario_cierre'], 0, 2)) : 22;
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
 
 $slots = [];
 for ($h = $hora_inicio; $h < $hora_fin; $h++) {
@@ -67,21 +89,21 @@ for ($h = $hora_inicio; $h < $hora_fin; $h++) {
     $slots[$time_str] = $label;
 }
 
-// Obtener las reservas existentes para esta cancha en la fecha seleccionada
+// Obtener las reservas existentes para este espacio en la fecha seleccionada
 $reservas_existentes = [];
 try {
     $stmt = $pdo->prepare("
         SELECT horario 
         FROM reservas 
-        WHERE fk_cancha = ? AND fecha_de_asistencia = ? AND estado = 'reservado'
+        WHERE fk_espacio = ? AND fecha_de_asistencia = ? AND estado = 'reservado'
     ");
-    $stmt->execute([$cancha_id, $selected_date]);
+    $stmt->execute([$espacio_id, $selected_date]);
     $reservas_existentes = $stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
     // Log
 }
 
-// Obtener las clases programadas para esta cancha en este día de la semana
+// Obtener las clases programadas para este espacio en este día de la semana
 $clases_dia = [];
 try {
     $stmt = $pdo->prepare("
@@ -90,9 +112,9 @@ try {
         JOIN dias_clases dc ON c.id = dc.fk_clase
         JOIN dias dia ON dc.fk_dia = dia.id
         LEFT JOIN deportes d ON c.fk_deporte = d.id
-        WHERE c.fk_canchas = ? AND dia.orden = ? AND c.estado = TRUE
+        WHERE c.fk_espacio = ? AND dia.orden = ? AND c.estado = TRUE
     ");
-    $stmt->execute([$cancha_id, $dia_semana_num]);
+    $stmt->execute([$espacio_id, $dia_semana_num]);
     $clases_dia = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Log
@@ -114,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     } elseif (!$esta_abierto_hoy) {
         $error_msg = 'La entidad se encuentra cerrada los días ' . $nombre_dia_actual . '.';
     } elseif (!array_key_exists($horario, $slots)) {
-        $error_msg = 'El horario seleccionado está fuera del horario de atención de la entidad (' . date('H:i', strtotime($cancha['horario_apertura'])) . ' a ' . date('H:i', strtotime($cancha['horario_cierre'])) . ' hs).';
+        $error_msg = 'El horario seleccionado está fuera del horario de atención de la entidad (' . date('H:i', strtotime($espacio['horario_apertura'])) . ' a ' . date('H:i', strtotime($espacio['horario_cierre'])) . ' hs).';
     } elseif ($fecha === date('Y-m-d') && $horario <= date('H:i:s')) {
         $error_msg = 'No podés reservar un horario que ya ha transcurrido hoy.';
     } elseif (in_array($horario, $reservas_existentes)) {
@@ -140,18 +162,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             try {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
-                        INSERT INTO reservas (fk_cancha, fk_usuario, fecha_de_asistencia, horario, estado)
+                        INSERT INTO reservas (fk_espacio, fk_usuario, fecha_de_asistencia, horario, estado)
                         VALUES (?, ?, ?, ?, 'reservado')
                         RETURNING id
                     ");
-                    $stmt->execute([$cancha_id, $user['id'], $fecha, $horario]);
+                    $stmt->execute([$espacio_id, $user['id'], $fecha, $horario]);
                     $reserva_id = $stmt->fetchColumn();
                 } else {
                     $stmt = $pdo->prepare("
-                        INSERT INTO reservas (fk_cancha, fk_usuario, fecha_de_asistencia, horario, estado)
+                        INSERT INTO reservas (fk_espacio, fk_usuario, fecha_de_asistencia, horario, estado)
                         VALUES (?, ?, ?, ?, 'reservado')
                     ");
-                    $stmt->execute([$cancha_id, $user['id'], $fecha, $horario]);
+                    $stmt->execute([$espacio_id, $user['id'], $fecha, $horario]);
                     $reserva_id = $pdo->lastInsertId();
                 }
                 
@@ -177,7 +199,7 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="canchas.php" class="text-dark">Espacios</a></li>
+            <li class="breadcrumb-item"><a href="espacios.php" class="text-dark">Espacios</a></li>
             <li class="breadcrumb-item active" aria-current="page">Reservar</li>
         </ol>
     </nav>
@@ -186,22 +208,30 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row align-items-center mb-4 pb-3 border-bottom">
             <div class="col-md-8">
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+<<<<<<< HEAD:web/cancha.php
                     <span class="badge bg-dark rounded-pill px-3 py-2"><?= htmlspecialchars($cancha['entidad_nombre']); ?></span>
+=======
+                    <span class="badge bg-dark rounded-pill px-3 py-2"><?= htmlspecialchars($espacio['entidad_nombre']); ?></span>
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
                     <span class="badge bg-secondary rounded-pill px-3 py-2">
-                        <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
+                        <?= $espacio['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
                     </span>
                     <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
-                        <i class="bi bi-clock me-1 text-primary"></i> <?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs
+                        <i class="bi bi-clock me-1 text-primary"></i> <?= date('H:i', strtotime($espacio['horario_apertura'])); ?> a <?= date('H:i', strtotime($espacio['horario_cierre'])); ?> hs
                     </span>
                     <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
-                        <i class="bi bi-calendar-week me-1 text-primary"></i> <?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?> a <?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?>
+                        <i class="bi bi-calendar-week me-1 text-primary"></i> <?= htmlspecialchars($espacio['dia_apertura_nombre'] ?? 'Lunes'); ?> a <?= htmlspecialchars($espacio['dia_cierre_nombre'] ?? 'Sábado'); ?>
                     </span>
                 </div>
-                <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($cancha['nombre']); ?></h2>
-                <p class="text-muted mt-2 mb-0"><?= htmlspecialchars($cancha['descripcion']); ?></p>
+                <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($espacio['nombre']); ?></h2>
+                <p class="text-muted mt-2 mb-0"><?= htmlspecialchars($espacio['descripcion']); ?></p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
+<<<<<<< HEAD:web/cancha.php
                 <a href="entidad.php?id=<?= $cancha['fk_entidad']; ?>" class="poliba-btn-dark btn-sm">Ver Entidad</a>
+=======
+                <a href="entidad.php?id=<?= $espacio['fk_entidad']; ?>" class="poliba-btn-dark btn-sm">Ver Entidad</a>
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
             </div>
         </div>
 
@@ -228,13 +258,13 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
                 <div class="mt-3">
                     <a href="perfil.php" class="poliba-btn px-4 py-2">Ir a Mi Perfil</a>
-                    <a href="cancha.php?id=<?= $cancha_id; ?>" class="poliba-btn-dark px-4 py-2 ms-2">Hacer otra Reserva</a>
+                    <a href="espacio.php?id=<?= $espacio_id; ?>" class="poliba-btn-dark px-4 py-2 ms-2">Hacer otra Reserva</a>
                 </div>
             </div>
         <?php else: ?>
             <!-- Formulario de Selección de Fecha -->
             <form action="" method="GET" class="mb-4">
-                <input type="hidden" name="id" value="<?= $cancha_id; ?>">
+                <input type="hidden" name="id" value="<?= $espacio_id; ?>">
                 <div class="row align-items-end g-3">
                     <div class="col-md-5">
                         <label class="form-label fw-bold text-dark">1. Seleccioná la Fecha de Reserva</label>
@@ -261,7 +291,11 @@ require_once __DIR__ . '/includes/header.php';
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3 text-warning"></i>
                     <div>
                         <h5 class="alert-heading fw-bold mb-1">Entidad Cerrada</h5>
+<<<<<<< HEAD:web/cancha.php
                         <p class="mb-0">La entidad <strong><?= htmlspecialchars($cancha['entidad_nombre']); ?></strong> permanece cerrada los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
+=======
+                        <p class="mb-0">La entidad <strong><?= htmlspecialchars($espacio['entidad_nombre']); ?></strong> permanece cerrada los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($espacio['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($espacio['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($espacio['horario_apertura'])); ?> a <?= date('H:i', strtotime($espacio['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacio.php
                     </div>
                 </div>
             <?php else: ?>

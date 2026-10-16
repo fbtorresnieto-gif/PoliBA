@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $cupo_maximo = intval($_POST['cupo_maximo']);
     $fk_usuario_profesor = !empty($_POST['fk_usuario_profesor']) ? intval($_POST['fk_usuario_profesor']) : null;
     $fk_deporte = intval($_POST['fk_deporte']);
-    $fk_canchas = !empty($_POST['fk_canchas']) ? intval($_POST['fk_canchas']) : null;
+    $fk_espacio = !empty($_POST['fk_espacio']) ? intval($_POST['fk_espacio']) : null;
     $fk_categoria = !empty($_POST['fk_categoria']) ? intval($_POST['fk_categoria']) : null;
     $fk_subcategoria = !empty($_POST['fk_subcategoria']) ? intval($_POST['fk_subcategoria']) : null;
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : []; // Array de IDs de días
@@ -127,36 +127,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            // 1. Validar solapamiento de Espacio (Cancha específica o Entidad General)
+            // 1. Validar solapamiento de espacio específico o entidad general
             if ($sub_valida && !empty($dias_seleccionados)) {
                 $placeholders_dias = implode(',', array_fill(0, count($dias_seleccionados), '?'));
                 
-                if ($fk_canchas !== null) {
-                    $sql_cancha = "
-                        SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre, can.nombre as cancha_nombre
+                if ($fk_espacio !== null) {
+                    $sql_espacio = "
+                        SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre, esp.nombre as espacio_nombre
                         FROM clases c
                         JOIN dias_clases dc ON c.id = dc.fk_clase
                         JOIN dias d ON dc.fk_dia = d.id
+<<<<<<< HEAD
                         JOIN canchas can ON c.fk_canchas = can.id
                         WHERE c.fk_entidad = ?
                           AND c.fk_canchas = ?
+=======
+                        JOIN espacios esp ON c.fk_espacio = esp.id
+                        WHERE c.fk_entidad = ?
+                          AND c.fk_espacio = ?
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
                           AND c.estado = TRUE
                           AND c.id != ?
                           AND dc.fk_dia IN ($placeholders_dias)
                           AND c.horario_inicio < ?
                           AND c.horario_cierre > ?
                     ";
+<<<<<<< HEAD
                     $params_cancha = array_merge([$entidad_id, $fk_canchas, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
                     $stmt_cancha = $pdo->prepare($sql_cancha);
                     $stmt_cancha->execute($params_cancha);
                     $solapados_cancha = $stmt_cancha->fetchAll();
+=======
+                    $params_espacio = array_merge([$entidad_id, $fk_espacio, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
+                    $stmt_espacio = $pdo->prepare($sql_espacio);
+                    $stmt_espacio->execute($params_espacio);
+                    $solapados_espacio = $stmt_espacio->fetchAll();
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 
-                    if (!empty($solapados_cancha)) {
-                        $mod_conf = $solapados_cancha[0];
-                        $dias_conf = implode(', ', array_unique(array_column($solapados_cancha, 'dia_nombre')));
+                    if (!empty($solapados_espacio)) {
+                        $mod_conf = $solapados_espacio[0];
+                        $dias_conf = implode(', ', array_unique(array_column($solapados_espacio, 'dia_nombre')));
                         $ini_conf = date('H:i', strtotime($mod_conf['horario_inicio']));
                         $fin_conf = date('H:i', strtotime($mod_conf['horario_cierre']));
-                        $error_msg = "El espacio \"{$mod_conf['cancha_nombre']}\" ya se encuentra ocupado el/los día(s) $dias_conf de $ini_conf a $fin_conf hs por el módulo \"{$mod_conf['nombre']}\".";
+                        $error_msg = "El espacio \"{$mod_conf['espacio_nombre']}\" ya se encuentra ocupado el/los día(s) $dias_conf de $ini_conf a $fin_conf hs por el módulo \"{$mod_conf['nombre']}\".";
                         $sub_valida = false;
                     }
                 } else {
@@ -166,7 +179,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         JOIN dias_clases dc ON c.id = dc.fk_clase
                         JOIN dias d ON dc.fk_dia = d.id
                         WHERE c.fk_entidad = ?
+<<<<<<< HEAD
                           AND c.fk_canchas IS NULL
+=======
+                          AND c.fk_espacio IS NULL
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
                           AND c.estado = TRUE
                           AND c.id != ?
                           AND dc.fk_dia IN ($placeholders_dias)
@@ -260,6 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if ($_POST['action'] == 'crear') {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
+<<<<<<< HEAD
                         INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         RETURNING id
@@ -272,6 +290,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                     ");
                     $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $entidad_id]);
+=======
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                        RETURNING id
+                    ");
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
+                    $clase_id = $stmt->fetchColumn();
+                } else {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                    ");
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
                     $clase_id = $pdo->lastInsertId();
                 }
                 
@@ -288,10 +320,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 
                 $stmt = $pdo->prepare("
                     UPDATE clases 
+<<<<<<< HEAD
                     SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_deporte = ?, fk_canchas = ?, fk_categoria = ?, fk_subcategoria = ?
                     WHERE id = ? AND fk_entidad = ?
                 ");
                 $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
+=======
+                    SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_deporte = ?, fk_espacio = ?, fk_categoria = ?, fk_subcategoria = ?
+                    WHERE id = ? AND fk_entidad = ?
+                ");
+                $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
                 
                 // Limpiar días anteriores y re-insertar
                 $stmt_del = $pdo->prepare("DELETE FROM dias_clases WHERE fk_clase = ?");
@@ -332,11 +371,11 @@ $clases = [];
 try {
     $stmt = $pdo->prepare("
         SELECT c.*, d.nombre as deporte_nombre, prof.nombre as prof_nombre, prof.apellido as prof_apellido,
-               can.nombre as cancha_nombre, cat.nombre as categoria_nombre, sub.nombre as subcategoria_nombre
+               esp.nombre as espacio_nombre, cat.nombre as categoria_nombre, sub.nombre as subcategoria_nombre
         FROM clases c
         JOIN deportes d ON c.fk_deporte = d.id
         LEFT JOIN usuarios prof ON c.fk_usuario_profesor = prof.id
-        LEFT JOIN canchas can ON c.fk_canchas = can.id
+        LEFT JOIN espacios esp ON c.fk_espacio = esp.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
         WHERE c.fk_entidad = ?
@@ -354,10 +393,10 @@ try {
     unset($clase);
 } catch (PDOException $e) {}
 
-// Cargar catálogo de soporte (Profesores, Deportes, Canchas, Categorías, Subcategorías, Días)
+// Cargar catálogo de soporte (profesores, deportes, espacios, categorías, subcategorías y días)
 $profesores = [];
 $deportes = [];
-$canchas = [];
+$espacios = [];
 $categorias = [];
 $subcategorias = [];
 $dias = [];
@@ -371,9 +410,15 @@ try {
     $stmt->execute([$entidad_id]);
     $deportes = $stmt->fetchAll();
     
+<<<<<<< HEAD
     $stmt = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
     $canchas = $stmt->fetchAll();
+=======
+    $stmt = $pdo->prepare("SELECT id, nombre FROM espacios WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
+    $espacios = $stmt->fetchAll();
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     
     $stmt = $pdo->query("SELECT id, nombre, edad_minima, edad_maxima FROM categoria ORDER BY id ASC");
     $categorias = $stmt->fetchAll();
@@ -537,10 +582,10 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Espacio</label>
-                            <select name="fk_canchas" class="form-select rounded-pill px-3">
+                            <select name="fk_espacio" class="form-select rounded-pill px-3">
                                 <option value="">-- Entidad General --</option>
-                                <?php foreach ($canchas as $can): ?>
-                                    <option value="<?= $can['id']; ?>" <?= $clase['fk_canchas'] == $can['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($can['nombre']); ?></option>
+                                <?php foreach ($espacios as $espacio): ?>
+                                    <option value="<?= $espacio['id']; ?>" <?= $clase['fk_espacio'] == $espacio['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($espacio['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -672,10 +717,10 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Espacio</label>
-                        <select name="fk_canchas" class="form-select rounded-pill px-3">
+                        <select name="fk_espacio" class="form-select rounded-pill px-3">
                             <option value="">-- Entidad General --</option>
-                            <?php foreach ($canchas as $can): ?>
-                                <option value="<?= $can['id']; ?>"><?= htmlspecialchars($can['nombre']); ?></option>
+                            <?php foreach ($espacios as $espacio): ?>
+                                <option value="<?= $espacio['id']; ?>"><?= htmlspecialchars($espacio['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

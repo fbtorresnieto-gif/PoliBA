@@ -25,12 +25,12 @@ if ($deporte_id > 0) {
                        u.nombre as prof_nombre, u.apellido as prof_apellido,
                        cat.nombre as cat_nombre,
                        sub.nombre as sub_nombre,
-                       can.nombre as cancha_nombre
+                       esp.nombre as espacio_nombre
                 FROM clases c
                 LEFT JOIN usuarios u ON c.fk_usuario_profesor = u.id
                 LEFT JOIN categoria cat ON c.fk_categoria = cat.id
                 LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-                LEFT JOIN canchas can ON c.fk_canchas = can.id
+                LEFT JOIN espacios esp ON c.fk_espacio = esp.id
                 WHERE c.fk_deporte = ? AND c.estado = TRUE
                 ORDER BY c.nombre ASC
             ");
@@ -147,7 +147,7 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                             <div class="col-6 mb-2">
                                 <strong><i class="bi bi-grid-3x3-gap text-muted me-2"></i>Espacio:</strong> 
-                                <?= !empty($clase['cancha_nombre']) ? htmlspecialchars($clase['cancha_nombre']) : 'Espacio General'; ?>
+                                <?= !empty($clase['espacio_nombre']) ? htmlspecialchars($clase['espacio_nombre']) : 'Espacio General'; ?>
                             </div>
                             <div class="col-6">
                                 <strong><i class="bi bi-people text-muted me-2"></i>Cupo total:</strong> 

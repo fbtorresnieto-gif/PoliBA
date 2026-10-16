@@ -77,8 +77,8 @@ CREATE TABLE deportes (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 8. Tabla de Canchas
-CREATE TABLE canchas (
+-- 8. Tabla de Espacios
+CREATE TABLE espacios (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
@@ -88,15 +88,7 @@ CREATE TABLE canchas (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 9. Tabla de Relación Deportes y Canchas (Muchos a Muchos)
-CREATE TABLE deportes_canchas (
-    id SERIAL PRIMARY KEY,
-    fk_deporte INT NOT NULL REFERENCES deportes(id) ON DELETE CASCADE,
-    fk_cancha INT NOT NULL REFERENCES canchas(id) ON DELETE CASCADE,
-    CONSTRAINT uq_deporte_cancha UNIQUE (fk_deporte, fk_cancha)
-);
-
--- 10. Tabla de Categorias de Edad (Generales)
+-- 9. Tabla de Categorias de Edad (Generales)
 CREATE TABLE categoria (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
@@ -104,7 +96,11 @@ CREATE TABLE categoria (
     edad_maxima INT NOT NULL
 );
 
+<<<<<<< HEAD
 -- 11. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
+=======
+-- 10. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
+>>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 CREATE TABLE subcategorias (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
@@ -116,7 +112,7 @@ CREATE TABLE subcategorias (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 12. Tabla de Clases
+-- 11. Tabla de Clases
 CREATE TABLE clases (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
@@ -126,14 +122,14 @@ CREATE TABLE clases (
     cupo_maximo INT NOT NULL,
     fk_usuario_profesor INT REFERENCES usuarios(id) ON DELETE SET NULL,
     fk_deporte INT NOT NULL REFERENCES deportes(id) ON DELETE CASCADE,
-    fk_canchas INT REFERENCES canchas(id) ON DELETE SET NULL,
+    fk_espacio INT REFERENCES espacios(id) ON DELETE SET NULL,
     fk_categoria INT REFERENCES categoria(id) ON DELETE SET NULL,
     fk_subcategoria INT REFERENCES subcategorias(id) ON DELETE SET NULL,
     fk_entidad INT NOT NULL REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 13. Tabla de Relación Clases y Dias (Muchos a Muchos)
+-- 12. Tabla de Relación Clases y Dias (Muchos a Muchos)
 CREATE TABLE dias_clases (
     id SERIAL PRIMARY KEY,
     fk_clase INT NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
@@ -141,7 +137,7 @@ CREATE TABLE dias_clases (
     CONSTRAINT uq_clase_dia UNIQUE (fk_clase, fk_dia)
 );
 
--- 14. Tabla de Inscripciones a Clases
+-- 13. Tabla de Inscripciones a Clases
 CREATE TABLE inscripcion (
     id SERIAL PRIMARY KEY,
     fk_clase INT NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
@@ -156,7 +152,7 @@ CREATE TABLE inscripcion (
     )
 );
 
--- 15. Tabla de Asistencias (Toma de asistencia por clase)
+-- 14. Tabla de Asistencias (Toma de asistencia por clase)
 CREATE TABLE asistencia (
     id SERIAL PRIMARY KEY,
     fk_inscripcion INT NOT NULL REFERENCES inscripcion(id) ON DELETE CASCADE,
@@ -166,13 +162,13 @@ CREATE TABLE asistencia (
     CONSTRAINT uq_asistencia_inscripcion_fecha UNIQUE (fk_inscripcion, fecha)
 );
 
--- 16. Tabla de Reservas de Canchas
+-- 15. Tabla de Reservas de Espacios
 CREATE TABLE reservas (
     id SERIAL PRIMARY KEY,
-    fk_cancha INT NOT NULL REFERENCES canchas(id) ON DELETE CASCADE,
+    fk_espacio INT NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
     fk_usuario INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE, -- Alumno reservante
     fecha_de_asistencia DATE NOT NULL,
     horario TIME NOT NULL,
     estado VARCHAR(20) DEFAULT 'reservado', -- 'reservado', 'cancelado'
-    CONSTRAINT uq_reserva_cancha_fecha_hora UNIQUE (fk_cancha, fecha_de_asistencia, horario)
+    CONSTRAINT uq_reserva_cancha_fecha_hora UNIQUE (fk_espacio, fecha_de_asistencia, horario)
 );
