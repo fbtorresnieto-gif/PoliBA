@@ -67,13 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 2. MapLibre GL JS Map Initialization (Ficha de Polideportivo)
+    // 2. MapLibre GL JS Map Initialization (Ficha de Entidad)
     const mapContainer = document.getElementById('poliba-map');
     if (mapContainer) {
         // Read lat,lng and name from data attributes
         const lat = parseFloat(mapContainer.getAttribute('data-lat')) || -34.603722; // default Buenos Aires Obelisco
         const lng = parseFloat(mapContainer.getAttribute('data-lng')) || -58.381592;
-        const name = mapContainer.getAttribute('data-name') || 'Polideportivo';
+        const name = mapContainer.getAttribute('data-name') || 'Entidad';
         const address = mapContainer.getAttribute('data-address') || '';
 
         try {

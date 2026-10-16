@@ -89,7 +89,8 @@ try {
     $_SESSION['user_apellido'] = $user['apellido'];
     $_SESSION['user_email'] = $user['email'];
     $_SESSION['user_rol'] = $user['rol_nombre'];
-    $_SESSION['user_polideportivo'] = $user['fk_polideportivo'];
+    unset($_SESSION['user_polideportivo']);
+    $_SESSION['user_entidad'] = $user['fk_entidad'];
 
     unset($user['contrasena']);
     $_SESSION['user_data'] = $user;

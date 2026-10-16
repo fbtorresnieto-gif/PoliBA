@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -47,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'La URL de la imagen debe ser un enlace válido (ejemplo: https://ejemplo.com/imagen.jpg).';
     } else {
         // Verificar que la entidad esté activa
-        $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
-        $stmt_p->execute([$poli_id]);
-        $poli_row = $stmt_p->fetch();
-        if (!$poli_row || !$poli_row['estado']) {
+        $stmt_entidad = $pdo->prepare("SELECT estado, nombre FROM entidades WHERE id = ?");
+        $stmt_entidad->execute([$entidad_id]);
+        $entidad_row = $stmt_entidad->fetch();
+        if (!$entidad_row || !$entidad_row['estado']) {
             $error_msg = 'No es posible gestionar espacios porque la entidad se encuentra desactivada.';
         } else {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Validar unicidad y similitud inteligente dentro de la entidad
-            $stmt_all = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_polideportivo = ? AND id != ?");
-            $stmt_all->execute([$poli_id, $chk_id]);
+            $stmt_all = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_entidad = ? AND id != ?");
+            $stmt_all->execute([$entidad_id, $chk_id]);
             $canchas_existentes = $stmt_all->fetchAll();
 
             $norm_nuevo = normalizar_espacio($nombre);
@@ -108,10 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-                            INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_polideportivo, estado)
+                            INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
                             VALUES (?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $poli_id]);
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $entidad_id]);
                         $success_msg = 'Espacio creado con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al crear el espacio.';
@@ -122,9 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $stmt = $pdo->prepare("
                             UPDATE canchas 
                             SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ? 
-                            WHERE id = ? AND fk_polideportivo = ?
+                            WHERE id = ? AND fk_entidad = ?
                         ");
-                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $poli_id]);
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $entidad_id]);
                         $success_msg = 'Espacio modificado con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al modificar el espacio.';
@@ -142,20 +142,20 @@ if (isset($_GET['toggle_estado'])) {
     try {
         if ($nuevo_estado == 'TRUE') {
             // Verificar que la entidad esté activa
-            $stmt_p = $pdo->prepare("SELECT estado, nombre FROM polideportivos WHERE id = ?");
-            $stmt_p->execute([$poli_id]);
-            $poli_row = $stmt_p->fetch();
-            if (!$poli_row || !$poli_row['estado']) {
+            $stmt_entidad = $pdo->prepare("SELECT estado, nombre FROM entidades WHERE id = ?");
+            $stmt_entidad->execute([$entidad_id]);
+            $entidad_row = $stmt_entidad->fetch();
+            if (!$entidad_row || !$entidad_row['estado']) {
                 $error_msg = 'No se puede activar el espacio porque la entidad se encuentra desactivada.';
             } else {
-                $stmt = $pdo->prepare("UPDATE canchas SET estado = TRUE WHERE id = ? AND fk_polideportivo = ?");
-                $stmt->execute([$id, $poli_id]);
+                $stmt = $pdo->prepare("UPDATE canchas SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
+                $stmt->execute([$id, $entidad_id]);
                 $success_msg = 'Espacio activado con éxito.';
             }
         } else {
             // Desactivar espacio
-            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE id = ? AND fk_polideportivo = ?");
-            $stmt->execute([$id, $poli_id]);
+            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
+            $stmt->execute([$id, $entidad_id]);
             $success_msg = 'Espacio desactivado con éxito.';
         }
     } catch (PDOException $e) {
@@ -166,8 +166,8 @@ if (isset($_GET['toggle_estado'])) {
 // Cargar Canchas de la sede
 $canchas = [];
 try {
-    $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_polideportivo = ? ORDER BY id ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? ORDER BY id ASC");
+    $stmt->execute([$entidad_id]);
     $canchas = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -178,7 +178,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Espacios</h2>
-            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearCanchaModal">Agregar Espacio</button>
     </div>

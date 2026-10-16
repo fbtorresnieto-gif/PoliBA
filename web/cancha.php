@@ -11,15 +11,15 @@ $reserva_id = 0;
 if ($cancha_id > 0) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.*, p.nombre as polideportivo_nombre, p.horario_apertura, p.horario_cierre,
-                   p.fk_dia_apertura, p.fk_dia_cierre,
+            SELECT c.*, e.nombre as entidad_nombre, e.horario_apertura, e.horario_cierre,
+                   e.fk_dia_apertura, e.fk_dia_cierre,
                    da.nombre as dia_apertura_nombre, da.orden as dia_apertura_orden,
                    dc.nombre as dia_cierre_nombre, dc.orden as dia_cierre_orden
             FROM canchas c
-            JOIN polideportivos p ON c.fk_polideportivo = p.id
-            LEFT JOIN dias da ON p.fk_dia_apertura = da.id
-            LEFT JOIN dias dc ON p.fk_dia_cierre = dc.id
-            WHERE c.id = ? AND c.estado = TRUE AND p.estado = TRUE
+            JOIN entidades e ON c.fk_entidad = e.id
+            LEFT JOIN dias da ON e.fk_dia_apertura = da.id
+            LEFT JOIN dias dc ON e.fk_dia_cierre = dc.id
+            WHERE c.id = ? AND c.estado = TRUE AND e.estado = TRUE
         ");
         $stmt->execute([$cancha_id]);
         $cancha = $stmt->fetch();
@@ -44,7 +44,7 @@ $dias_semana_nombres = [
 ];
 $nombre_dia_actual = $dias_semana_nombres[$dia_semana_num] ?? '';
 
-// Verificar si el polideportivo abre en este día de la semana
+// Verificar si la entidad abre en este día de la semana
 $orden_apertura = $cancha['dia_apertura_orden'] !== null ? intval($cancha['dia_apertura_orden']) : 1;
 $orden_cierre = $cancha['dia_cierre_orden'] !== null ? intval($cancha['dia_cierre_orden']) : 7;
 
@@ -56,7 +56,7 @@ if ($orden_apertura <= $orden_cierre) {
     $esta_abierto_hoy = ($dia_semana_num >= $orden_apertura || $dia_semana_num <= $orden_cierre);
 }
 
-// Generar slots de 1 hora dinámicamente según horario de apertura y cierre del polideportivo
+// Generar slots de 1 hora dinámicamente según horario de apertura y cierre de la entidad
 $hora_inicio = !empty($cancha['horario_apertura']) ? intval(substr($cancha['horario_apertura'], 0, 2)) : 8;
 $hora_fin = !empty($cancha['horario_cierre']) ? intval(substr($cancha['horario_cierre'], 0, 2)) : 22;
 
@@ -186,7 +186,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="row align-items-center mb-4 pb-3 border-bottom">
             <div class="col-md-8">
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                    <span class="badge bg-dark rounded-pill px-3 py-2"><?= htmlspecialchars($cancha['polideportivo_nombre']); ?></span>
+                    <span class="badge bg-dark rounded-pill px-3 py-2"><?= htmlspecialchars($cancha['entidad_nombre']); ?></span>
                     <span class="badge bg-secondary rounded-pill px-3 py-2">
                         <?= $cancha['techado'] ? '<i class="bi bi-house-door-fill me-1"></i> Techado' : '<i class="bi bi-brightness-high-fill me-1"></i> Descubierto'; ?>
                     </span>
@@ -201,7 +201,7 @@ require_once __DIR__ . '/includes/header.php';
                 <p class="text-muted mt-2 mb-0"><?= htmlspecialchars($cancha['descripcion']); ?></p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <a href="polideportivo.php?id=<?= $cancha['fk_polideportivo']; ?>" class="poliba-btn-dark btn-sm">Ver Entidad</a>
+                <a href="entidad.php?id=<?= $cancha['fk_entidad']; ?>" class="poliba-btn-dark btn-sm">Ver Entidad</a>
             </div>
         </div>
 
@@ -261,7 +261,7 @@ require_once __DIR__ . '/includes/header.php';
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3 text-warning"></i>
                     <div>
                         <h5 class="alert-heading fw-bold mb-1">Entidad Cerrada</h5>
-                        <p class="mb-0">La entidad <strong><?= htmlspecialchars($cancha['polideportivo_nombre']); ?></strong> permanece cerrada los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
+                        <p class="mb-0">La entidad <strong><?= htmlspecialchars($cancha['entidad_nombre']); ?></strong> permanece cerrada los días <strong><?= $nombre_dia_actual; ?></strong>. Los días de apertura son de <strong><?= htmlspecialchars($cancha['dia_apertura_nombre'] ?? 'Lunes'); ?></strong> a <strong><?= htmlspecialchars($cancha['dia_cierre_nombre'] ?? 'Sábado'); ?></strong> en el horario de <strong><?= date('H:i', strtotime($cancha['horario_apertura'])); ?> a <?= date('H:i', strtotime($cancha['horario_cierre'])); ?> hs</strong>. Por favor, elegí otra fecha en el calendario.</p>
                     </div>
                 </div>
             <?php else: ?>

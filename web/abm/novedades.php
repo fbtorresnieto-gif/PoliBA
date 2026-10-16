@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -30,10 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         if ($_POST['action'] == 'crear') {
             try {
                 $stmt = $pdo->prepare("
-                    INSERT INTO novedades (nombre, descripcion, fecha_inicio, fecha_fin, imagenURL, fk_polideportivo, estado)
+                    INSERT INTO novedades (nombre, descripcion, fecha_inicio, fecha_fin, imagenURL, fk_entidad, estado)
                     VALUES (?, ?, ?, ?, ?, ?, TRUE)
                 ");
-                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $poli_id]);
+                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $entidad_id]);
                 $success_msg = 'Novedad publicada con éxito.';
             } catch (PDOException $e) {
                 $error_msg = 'Error al crear la novedad.';
@@ -44,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $stmt = $pdo->prepare("
                     UPDATE novedades 
                     SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, imagenURL = ? 
-                    WHERE id = ? AND fk_polideportivo = ?
+                    WHERE id = ? AND fk_entidad = ?
                 ");
-                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $id, $poli_id]);
+                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $id, $entidad_id]);
                 $success_msg = 'Novedad modificada con éxito.';
             } catch (PDOException $e) {
                 $error_msg = 'Error al modificar la novedad.';
@@ -60,8 +60,8 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE novedades SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
-        $stmt->execute([$id, $poli_id]);
+        $stmt = $pdo->prepare("UPDATE novedades SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+        $stmt->execute([$id, $entidad_id]);
         $success_msg = 'Estado de la novedad actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
@@ -71,8 +71,8 @@ if (isset($_GET['toggle_estado'])) {
 // Cargar Novedades de la sede
 $novedades = [];
 try {
-    $stmt = $pdo->prepare("SELECT * FROM novedades WHERE fk_polideportivo = ? ORDER BY id ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT * FROM novedades WHERE fk_entidad = ? ORDER BY id ASC");
+    $stmt->execute([$entidad_id]);
     $novedades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -83,7 +83,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Novedades</h2>
-            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearNovedadModal">Agregar Novedad</button>
     </div>

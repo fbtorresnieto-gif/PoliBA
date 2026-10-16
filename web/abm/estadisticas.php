@@ -7,17 +7,17 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
 // 1. Datos de la Entidad
 $entidad = null;
 try {
-    $stmt = $pdo->prepare("SELECT * FROM polideportivos WHERE id = ?");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT * FROM entidades WHERE id = ?");
+    $stmt->execute([$entidad_id]);
     $entidad = $stmt->fetch();
 } catch (PDOException $e) {}
 
@@ -33,28 +33,28 @@ $total_lista_espera = 0;
 
 try {
     // Alumnos de la entidad
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE fk_polideportivo = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Alumno')");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Alumno')");
+    $stmt->execute([$entidad_id]);
     $total_alumnos = $stmt->fetchColumn() ?: 0;
 
     // Profesores
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE fk_polideportivo = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor')");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor')");
+    $stmt->execute([$entidad_id]);
     $total_profesores = $stmt->fetchColumn() ?: 0;
 
     // Actividades activas
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM deportes WHERE fk_polideportivo = ? AND estado = TRUE");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM deportes WHERE fk_entidad = ? AND estado = TRUE");
+    $stmt->execute([$entidad_id]);
     $total_actividades = $stmt->fetchColumn() ?: 0;
 
     // Espacios activos
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM canchas WHERE fk_polideportivo = ? AND estado = TRUE");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM canchas WHERE fk_entidad = ? AND estado = TRUE");
+    $stmt->execute([$entidad_id]);
     $total_espacios = $stmt->fetchColumn() ?: 0;
 
     // Módulos activos
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM clases WHERE fk_polideportivo = ? AND estado = TRUE");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM clases WHERE fk_entidad = ? AND estado = TRUE");
+    $stmt->execute([$entidad_id]);
     $total_modulos = $stmt->fetchColumn() ?: 0;
 
     // Reservas de espacios de la entidad
@@ -62,9 +62,9 @@ try {
         SELECT COUNT(*) 
         FROM reservas r
         JOIN canchas c ON r.fk_cancha = c.id
-        WHERE c.fk_polideportivo = ? AND r.estado = 'reservado'
+        WHERE c.fk_entidad = ? AND r.estado = 'reservado'
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $total_reservas = $stmt->fetchColumn() ?: 0;
 
     // Inscripciones a módulos
@@ -74,9 +74,9 @@ try {
             SUM(CASE WHEN i.lista_espera = TRUE AND i.estado = 'activo' THEN 1 ELSE 0 END) as espera
         FROM inscripcion i
         JOIN clases c ON i.fk_clase = c.id
-        WHERE c.fk_polideportivo = ?
+        WHERE c.fk_entidad = ?
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $insc_res = $stmt->fetch();
     $total_inscriptos_activos = $insc_res['activos'] ?? 0;
     $total_lista_espera = $insc_res['espera'] ?? 0;
@@ -92,10 +92,10 @@ try {
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_cancha = c.id AND r.estado = 'cancelado') as reservas_canceladas,
             (SELECT COUNT(*) FROM clases cl WHERE cl.fk_canchas = c.id AND cl.estado = TRUE) as modulos_asignados
         FROM canchas c
-        WHERE c.fk_polideportivo = ?
+        WHERE c.fk_entidad = ?
         ORDER BY reservas_activas DESC, c.nombre ASC
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $stats_espacios = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -121,11 +121,11 @@ try {
             ) as alumnos_espera
         FROM deportes d
         LEFT JOIN clases c ON c.fk_deporte = d.id AND c.estado = TRUE
-        WHERE d.fk_polideportivo = ?
+        WHERE d.fk_entidad = ?
         GROUP BY d.id, d.nombre, d.estado
         ORDER BY alumnos_inscriptos DESC, d.nombre ASC
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $stats_actividades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -138,8 +138,8 @@ $demografia = [
 ];
 try {
     // Alumnos mayores registrados en esta sede
-    $stmt = $pdo->prepare("SELECT fecha_nacimiento FROM usuarios WHERE fk_polideportivo = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Alumno') AND fecha_nacimiento IS NOT NULL");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT fecha_nacimiento FROM usuarios WHERE fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Alumno') AND fecha_nacimiento IS NOT NULL");
+    $stmt->execute([$entidad_id]);
     $fechas_alumnos = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     // Menores asociados a tutores de esta sede
@@ -147,9 +147,9 @@ try {
         SELECT m.fecha_nacimiento 
         FROM menores m
         JOIN usuarios u ON m.fk_usuario = u.id
-        WHERE u.fk_polideportivo = ? AND m.fecha_nacimiento IS NOT NULL
+        WHERE u.fk_entidad = ? AND m.fecha_nacimiento IS NOT NULL
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $fechas_menores = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
     $todas_fechas = array_merge($fechas_alumnos, $fechas_menores);
@@ -176,12 +176,12 @@ try {
         SELECT r.horario, COUNT(*) as cantidad
         FROM reservas r
         JOIN canchas c ON r.fk_cancha = c.id
-        WHERE c.fk_polideportivo = ? AND r.estado = 'reservado'
+        WHERE c.fk_entidad = ? AND r.estado = 'reservado'
         GROUP BY r.horario
         ORDER BY cantidad DESC, r.horario ASC
         LIMIT 5
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $horarios_populares = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -193,7 +193,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
             <h2 class="fw-bold text-dark m-0"><i class="bi bi-graph-up-arrow me-2" style="color: var(--poliba-olive);"></i>Panel de Estadísticas</h2>
-            <p class="text-muted mb-0">Entidad Administrada: <strong><?= htmlspecialchars($entidad['nombre'] ?? $user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></p>
+            <p class="text-muted mb-0">Entidad Administrada: <strong><?= htmlspecialchars($entidad['nombre'] ?? $user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></p>
         </div>
         <div class="mt-2 mt-md-0">
             <span class="badge rounded-pill px-3 py-2 text-white" style="background-color: var(--poliba-dark-blue);">

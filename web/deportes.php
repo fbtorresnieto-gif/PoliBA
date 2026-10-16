@@ -5,10 +5,10 @@ require_once __DIR__ . '/includes/db.php';
 $deportes = [];
 try {
     $stmt = $pdo->query("
-        SELECT d.*, p.nombre as polideportivo_nombre 
+        SELECT d.*, e.nombre as entidad_nombre
         FROM deportes d
-        JOIN polideportivos p ON d.fk_polideportivo = p.id
-        WHERE d.estado = TRUE AND p.estado = TRUE
+        JOIN entidades e ON d.fk_entidad = e.id
+        WHERE d.estado = TRUE AND e.estado = TRUE
         ORDER BY d.nombre ASC
     ");
     $deportes = $stmt->fetchAll();
@@ -47,7 +47,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card-body">
                             <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($deporte['nombre']); ?></h5>
                             <p class="poliba-card-meta mb-2">
-                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['polideportivo_nombre']); ?>
+                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['entidad_nombre']); ?>
                             </p>
                             <p class="poliba-card-text">
                                 <?= htmlspecialchars(substr($deporte['texto'], 0, 100)) . (strlen($deporte['texto']) > 100 ? '...' : ''); ?>

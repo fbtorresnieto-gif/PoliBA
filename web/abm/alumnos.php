@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -25,13 +25,13 @@ try {
         JOIN inscripcion i ON u.id = i.fk_usuario
         JOIN clases c ON i.fk_clase = c.id
         WHERE r.nombre = 'Alumno'
-          AND c.fk_polideportivo = ?
+          AND c.fk_entidad = ?
           AND i.estado = 'activo'
           AND (i.lista_espera IS NULL OR i.lista_espera = FALSE)
           AND c.estado = TRUE
     ";
     
-    $params = [$poli_id];
+    $params = [$entidad_id];
     
     if (!empty($search_query)) {
         // SQLite soporta || para concatenar, Postgres también.
@@ -60,9 +60,9 @@ try {
             SELECT c.nombre 
             FROM inscripcion i
             JOIN clases c ON i.fk_clase = c.id
-            WHERE i.fk_usuario = ? AND i.fk_menor IS NULL AND c.fk_polideportivo = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
+            WHERE i.fk_usuario = ? AND i.fk_menor IS NULL AND c.fk_entidad = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
         ");
-        $stmt_cl->execute([$alumno['id'], $poli_id]);
+        $stmt_cl->execute([$alumno['id'], $entidad_id]);
         $alumno['clases'] = $stmt_cl->fetchAll(PDO::FETCH_COLUMN);
         
         // Cargar menores asociados y sus clases activas
@@ -75,9 +75,9 @@ try {
                 SELECT c.nombre 
                 FROM inscripcion i
                 JOIN clases c ON i.fk_clase = c.id
-                WHERE i.fk_menor = ? AND c.fk_polideportivo = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
+                WHERE i.fk_menor = ? AND c.fk_entidad = ? AND i.estado = 'activo' AND (i.lista_espera IS NULL OR i.lista_espera = FALSE) AND c.estado = TRUE
             ");
-            $stmt_m_cl->execute([$menor['id'], $poli_id]);
+            $stmt_m_cl->execute([$menor['id'], $entidad_id]);
             $menor['clases'] = $stmt_m_cl->fetchAll(PDO::FETCH_COLUMN);
         }
         unset($menor);
@@ -93,7 +93,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Buscador de Alumnos</h2>
-        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
     </div>
 
     <!-- Barra de búsqueda -->

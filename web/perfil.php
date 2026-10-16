@@ -173,10 +173,10 @@ $reservas = [];
 if (has_role('Alumno')) {
     try {
         $stmt = $pdo->prepare("
-            SELECT r.*, c.nombre as cancha_nombre, p.nombre as polideportivo_nombre
+            SELECT r.*, c.nombre as cancha_nombre, e.nombre as entidad_nombre
             FROM reservas r
             JOIN canchas c ON r.fk_cancha = c.id
-            JOIN polideportivos p ON c.fk_polideportivo = p.id
+            JOIN entidades e ON c.fk_entidad = e.id
             WHERE r.fk_usuario = ?
             ORDER BY r.fecha_de_asistencia DESC, r.horario DESC
         ");
@@ -193,11 +193,11 @@ if (has_role('Alumno')) {
         $stmt = $pdo->prepare("
             SELECT i.id as inscripcion_id, i.lista_espera, i.estado as inscripcion_estado,
                    c.nombre as clase_nombre, c.horario_inicio, c.horario_cierre,
-                   d.nombre as deporte_nombre, p.nombre as polideportivo_nombre
+                   d.nombre as deporte_nombre, e.nombre as entidad_nombre
             FROM inscripcion i
             JOIN clases c ON i.fk_clase = c.id
             JOIN deportes d ON c.fk_deporte = d.id
-            JOIN polideportivos p ON c.fk_polideportivo = p.id
+            JOIN entidades e ON c.fk_entidad = e.id
             WHERE i.fk_usuario = ? AND i.fk_menor IS NULL
             ORDER BY c.nombre ASC
         ");
@@ -207,10 +207,10 @@ if (has_role('Alumno')) {
 } elseif (has_role('Profesor')) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.*, d.nombre as deporte_nombre, p.nombre as polideportivo_nombre
+            SELECT c.*, d.nombre as deporte_nombre, e.nombre as entidad_nombre
             FROM clases c
             JOIN deportes d ON c.fk_deporte = d.id
-            JOIN polideportivos p ON c.fk_polideportivo = p.id
+            JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
             ORDER BY c.nombre ASC
         ");
@@ -306,7 +306,7 @@ require_once __DIR__ . '/includes/header.php';
                                         <small class="text-muted">ID #<?= $res['id']; ?></small>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['cancha_nombre']); ?></h5>
-                                    <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['polideportivo_nombre']); ?></div>
+                                    <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['entidad_nombre']); ?></div>
                                     <div class="text-dark small"><i class="bi bi-calendar-event me-2"></i><?= date('d/m/Y', strtotime($res['fecha_de_asistencia'])); ?></div>
                                     <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($res['horario'])); ?> hs</div>
                                     
@@ -353,7 +353,7 @@ require_once __DIR__ . '/includes/header.php';
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($clase['clase_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($clase['deporte_nombre']); ?></div>
-                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
+                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></div>
                                     
                                     <div class="d-grid mt-auto gap-2">
                                         <?php if ($clase['inscripcion_estado'] == 'activo'): ?>
@@ -381,7 +381,7 @@ require_once __DIR__ . '/includes/header.php';
                                     <h5 class="fw-bold text-dark mb-2"><?= htmlspecialchars($clase['nombre']); ?></h5>
                                     <p class="text-muted small mb-3"><?= htmlspecialchars($clase['descripcion']); ?></p>
                                     <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?></div>
-                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($clase['polideportivo_nombre']); ?></div>
+                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></div>
                                     
                                     <div class="d-grid gap-2 mt-auto">
                                         <a href="abm/profesor_clases.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia / Alumnos</a>

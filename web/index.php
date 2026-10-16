@@ -6,9 +6,9 @@ require_once __DIR__ . '/includes/db.php';
 $novedades = [];
 try {
     $stmt = $pdo->query("
-        SELECT n.*, p.nombre as polideportivo_nombre 
+        SELECT n.*, e.nombre as entidad_nombre
         FROM novedades n 
-        LEFT JOIN polideportivos p ON n.fk_polideportivo = p.id 
+        LEFT JOIN entidades e ON n.fk_entidad = e.id
         WHERE n.estado = TRUE 
         ORDER BY n.fecha_inicio DESC
     ");
@@ -28,7 +28,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="text-center px-4">
                     <h1 class="display-4 fw-bold">Entidades de la Ciudad</h1>
                     <p class="lead">Inscribite a módulos, reservá espacios y disfrutá de actividades en tu barrio de forma 100% digital.</p>
-                    <a href="polideportivos.php" class="poliba-btn mt-2">Explorar Entidades</a>
+                    <a href="entidades.php" class="poliba-btn mt-2">Explorar Entidades</a>
                 </div>
             </div>
         </div>
@@ -85,7 +85,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <?= htmlspecialchars($novedad['nombre']); ?>
                             </h5>
                             <div class="poliba-card-meta">
-                                <i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Entidad General'); ?><br>
+                                <i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['entidad_nombre'] ?? 'Entidad General'); ?><br>
                                 <i class="bi bi-calendar-event me-1"></i> <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?>
                             </div>
                             <p class="poliba-card-text line-clamp-3">
@@ -120,7 +120,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="modal-body p-4">
                             <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded mb-3 w-100" style="max-height: 250px; object-fit: cover;" alt="Novedad">
                             <div class="mb-3 text-muted">
-                                <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['polideportivo_nombre'] ?? 'Entidad General'); ?></span>
+                                <span class="me-3"><i class="bi bi-building me-1"></i> <?= htmlspecialchars($novedad['entidad_nombre'] ?? 'Entidad General'); ?></span>
                                 <span><i class="bi bi-calendar-event me-1"></i> Publicado: <?= date('d/m/Y', strtotime($novedad['fecha_inicio'])); ?></span>
                             </div>
                             <div class="text-dark" style="line-height: 1.6; white-space: pre-line;">

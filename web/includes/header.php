@@ -58,7 +58,7 @@ if (!isset($base_path)) {
                         <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>index.php">HOME</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'polideportivos.php' || basename($_SERVER['PHP_SELF']) == 'polideportivo.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>polideportivos.php">Entidades</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'entidades.php' || basename($_SERVER['PHP_SELF']) == 'entidad.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>entidades.php">Entidades</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'deportes.php' || basename($_SERVER['PHP_SELF']) == 'deporte.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>deportes.php">Actividades</a>
@@ -114,7 +114,7 @@ if (!isset($base_path)) {
             
             <!-- Botones del GESTOR -->
             <?php if (has_role('Gestor')): ?>
-                <a href="<?= $base_path; ?>abm/polideportivos.php" class="sidebar-btn"><i class="bi bi-building me-2"></i>Entidades</a>
+                <a href="<?= $base_path; ?>abm/entidades.php" class="sidebar-btn"><i class="bi bi-building me-2"></i>Entidades</a>
                 <a href="<?= $base_path; ?>abm/administradores.php" class="sidebar-btn"><i class="bi bi-shield-lock me-2"></i>Administradores</a>
             <?php endif; ?>
 

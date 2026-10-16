@@ -1,16 +1,16 @@
-# Contexto del Proyecto: Tesis - Plataforma para Polideportivo (CABA)
+# Contexto del Proyecto: Tesis - Plataforma para Entidades Deportivas (CABA)
 
 ## Información General
 - **Tipo de Proyecto:** Tesis final para la carrera de Analista en Sistemas.
 - **Equipo:** 2 personas.
-- **Ubicación Objetivo:** Polideportivo en la Ciudad de Buenos Aires (CABA).
+- **Ubicación Objetivo:** Entidades deportivas en la Ciudad de Buenos Aires (CABA).
 
 ## Descripción del Proyecto
-Desarrollo de una plataforma integral (Web y Mobile) diseñada para facilitar las diversas tareas administrativas y de usuario dentro de un polideportivo.
+Desarrollo de una plataforma integral (Web y Mobile) diseñada para facilitar las diversas tareas administrativas y de usuario dentro de una entidad deportiva.
 
 ## Funcionalidades Principales (Alcance Inicial)
 1. **Reserva de Canchas:** Registro y reserva de espacios para distintos deportes.
-2. **Gestión de Usuarios:** Administración de los perfiles de las personas que asisten al polideportivo.
+2. **Gestión de Usuarios:** Administración de los perfiles de las personas que asisten a la entidad.
 3. **Inscripciones a Clases:** Sistema para anotarse a las diferentes clases deportivas y actividades ofrecidas en el establecimiento.
 
 ## Mi Rol como Asistente (IA)

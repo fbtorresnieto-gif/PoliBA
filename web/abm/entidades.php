@@ -53,14 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             // Validar unicidad del nombre
             try {
-                $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM polideportivos WHERE LOWER(nombre) = LOWER(?) AND id != ?");
+                $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM entidades WHERE LOWER(nombre) = LOWER(?) AND id != ?");
                 $stmt_chk->execute([$nombre, $chk_id]);
                 if ($stmt_chk->fetchColumn() > 0) {
                     $error_msg = "Ya existe una entidad registrada con el nombre \"$nombre\".";
                 } else {
                     if ($_POST['action'] == 'crear') {
                         $stmt = $pdo->prepare("
-                            INSERT INTO polideportivos (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
+                            INSERT INTO entidades (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         ");
                         $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre]);
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     } elseif ($_POST['action'] == 'editar') {
                         $id = intval($_POST['id']);
                         $stmt = $pdo->prepare("
-                            UPDATE polideportivos 
+                            UPDATE entidades
                             SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
                             WHERE id = ?
                         ");
@@ -91,26 +91,26 @@ if (isset($_GET['toggle_estado'])) {
         if ($nuevo_estado == 'FALSE') {
             // Desactivación en cascada: entidad, deportes, canchas, clases y subcategorias
             $pdo->beginTransaction();
-            $stmt = $pdo->prepare("UPDATE polideportivos SET estado = FALSE WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE entidades SET estado = FALSE WHERE id = ?");
             $stmt->execute([$id]);
 
-            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
-            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
-            $stmt = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
-            $stmt = $pdo->prepare("UPDATE subcategorias SET estado = FALSE WHERE fk_polideportivo = ?");
+            $stmt = $pdo->prepare("UPDATE subcategorias SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
             $pdo->commit();
             $success_msg = 'Entidad desactivada. Sus actividades, espacios y módulos asociados fueron desactivados automáticamente en cascada.';
         } else {
             // Activación de la entidad
-            $stmt = $pdo->prepare("UPDATE polideportivos SET estado = TRUE WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE entidades SET estado = TRUE WHERE id = ?");
             $stmt->execute([$id]);
             $success_msg = 'Entidad activada con éxito. Ya puedes gestionar sus actividades y espacios.';
         }
@@ -122,17 +122,17 @@ if (isset($_GET['toggle_estado'])) {
     }
 }
 
-// Cargar Polideportivos
-$polideportivos = [];
+// Cargar Entidades
+$entidades = [];
 try {
     $stmt = $pdo->query("
-        SELECT p.*, d1.nombre as dia_apertura_nombre, d2.nombre as dia_cierre_nombre 
-        FROM polideportivos p
-        LEFT JOIN dias d1 ON p.fk_dia_apertura = d1.id
-        LEFT JOIN dias d2 ON p.fk_dia_cierre = d2.id
-        ORDER BY p.id ASC
+        SELECT e.*, d1.nombre as dia_apertura_nombre, d2.nombre as dia_cierre_nombre
+        FROM entidades e
+        LEFT JOIN dias d1 ON e.fk_dia_apertura = d1.id
+        LEFT JOIN dias d2 ON e.fk_dia_cierre = d2.id
+        ORDER BY e.id ASC
     ");
-    $polideportivos = $stmt->fetchAll();
+    $entidades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 // Cargar Dias
@@ -148,7 +148,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark m-0">ABM Entidades</h2>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearPoliModal">Agregar Entidad</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearEntidadModal">Agregar Entidad</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -171,23 +171,23 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($polideportivos as $poli): ?>
+                <?php foreach ($entidades as $entidad): ?>
                     <tr>
-                        <td class="fw-bold"><?= htmlspecialchars($poli['nombre']); ?></td>
-                        <td><?= htmlspecialchars($poli['direccion']); ?></td>
-                        <td><?= date('H:i', strtotime($poli['horario_apertura'])); ?> - <?= date('H:i', strtotime($poli['horario_cierre'])); ?></td>
-                        <td><?= htmlspecialchars($poli['dia_apertura_nombre'] ?? 'Lunes'); ?> a <?= htmlspecialchars($poli['dia_cierre_nombre'] ?? 'Sábado'); ?></td>
+                        <td class="fw-bold"><?= htmlspecialchars($entidad['nombre']); ?></td>
+                        <td><?= htmlspecialchars($entidad['direccion']); ?></td>
+                        <td><?= date('H:i', strtotime($entidad['horario_apertura'])); ?> - <?= date('H:i', strtotime($entidad['horario_cierre'])); ?></td>
+                        <td><?= htmlspecialchars($entidad['dia_apertura_nombre'] ?? 'Lunes'); ?> a <?= htmlspecialchars($entidad['dia_cierre_nombre'] ?? 'Sábado'); ?></td>
                         <td>
-                            <span class="badge rounded-pill <?= $poli['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                <?= $poli['estado'] ? 'Activo' : 'Inactivo'; ?>
+                            <span class="badge rounded-pill <?= $entidad['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                <?= $entidad['estado'] ? 'Activo' : 'Inactivo'; ?>
                             </span>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editPoliModal<?= $poli['id']; ?>">Editar</button>
-                            <a href="polideportivos.php?toggle_estado=<?= $poli['id']; ?>&estado=<?= $poli['estado'] ? '1' : '0'; ?>" 
-                               class="btn btn-sm <?= $poli['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                            <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editEntidadModal<?= $entidad['id']; ?>">Editar</button>
+                            <a href="entidades.php?toggle_estado=<?= $entidad['id']; ?>&estado=<?= $entidad['estado'] ? '1' : '0'; ?>"
+                               class="btn btn-sm <?= $entidad['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
                                onclick="return confirm('¿Seguro deseas cambiar el estado de esta entidad? Si la desactivas, todas sus actividades, espacios y módulos se desactivarán automáticamente.');">
-                                <?= $poli['estado'] ? 'Desactivar' : 'Activar'; ?>
+                                <?= $entidad['estado'] ? 'Desactivar' : 'Activar'; ?>
                             </a>
                         </td>
                     </tr>
@@ -198,33 +198,33 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Modales de Edición (Colocados fuera de la tabla para HTML válido en Bootstrap 5) -->
-<?php foreach ($polideportivos as $poli): ?>
-    <div class="modal fade" id="editPoliModal<?= $poli['id']; ?>" tabindex="-1" aria-hidden="true">
+<?php foreach ($entidades as $entidad): ?>
+    <div class="modal fade" id="editEntidadModal<?= $entidad['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="polideportivos.php" method="POST" class="modal-content border-0 shadow">
+            <form action="entidades.php" method="POST" class="modal-content border-0 shadow">
                 <input type="hidden" name="action" value="editar">
-                <input type="hidden" name="id" value="<?= $poli['id']; ?>">
+                <input type="hidden" name="id" value="<?= $entidad['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Entidad: <?= htmlspecialchars($poli['nombre']); ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Entidad: <?= htmlspecialchars($entidad['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre *</label>
-                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($poli['nombre']); ?>">
+                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($entidad['nombre']); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Dirección *</label>
-                        <input type="text" name="direccion" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($poli['direccion']); ?>">
+                        <input type="text" name="direccion" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($entidad['direccion']); ?>">
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Hora Apertura *</label>
-                            <input type="time" name="horario_apertura" class="form-control rounded-pill px-3" required value="<?= $poli['horario_apertura']; ?>">
+                            <input type="time" name="horario_apertura" class="form-control rounded-pill px-3" required value="<?= $entidad['horario_apertura']; ?>">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Hora Cierre *</label>
-                            <input type="time" name="horario_cierre" class="form-control rounded-pill px-3" required value="<?= $poli['horario_cierre']; ?>">
+                            <input type="time" name="horario_cierre" class="form-control rounded-pill px-3" required value="<?= $entidad['horario_cierre']; ?>">
                         </div>
                     </div>
                     <div class="row">
@@ -232,7 +232,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <label class="form-label fw-bold">Día Apertura *</label>
                             <select name="fk_dia_apertura" class="form-select rounded-pill px-3">
                                 <?php foreach ($dias as $dia): ?>
-                                    <option value="<?= $dia['id']; ?>" <?= $poli['fk_dia_apertura'] == $dia['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dia['nombre']); ?></option>
+                                    <option value="<?= $dia['id']; ?>" <?= $entidad['fk_dia_apertura'] == $dia['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dia['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -240,22 +240,22 @@ require_once __DIR__ . '/../includes/header.php';
                             <label class="form-label fw-bold">Día Cierre *</label>
                             <select name="fk_dia_cierre" class="form-select rounded-pill px-3">
                                 <?php foreach ($dias as $dia): ?>
-                                    <option value="<?= $dia['id']; ?>" <?= $poli['fk_dia_cierre'] == $dia['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dia['nombre']); ?></option>
+                                    <option value="<?= $dia['id']; ?>" <?= $entidad['fk_dia_cierre'] == $dia['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dia['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Coordenadas (Lat,Lng)</label>
-                        <input type="text" name="coordenadas" class="form-control rounded-pill px-3" pattern="^-?[0-9]+(\.[0-9]+)?,\s*-?[0-9]+(\.[0-9]+)?$" title="Formato requerido: latitud,longitud (ej: -34.574,-58.448)" placeholder="-34.574,-58.448" value="<?= htmlspecialchars($poli['coordenadas'] ?? ''); ?>">
+                        <input type="text" name="coordenadas" class="form-control rounded-pill px-3" pattern="^-?[0-9]+(\.[0-9]+)?,\s*-?[0-9]+(\.[0-9]+)?$" title="Formato requerido: latitud,longitud (ej: -34.574,-58.448)" placeholder="-34.574,-58.448" value="<?= htmlspecialchars($entidad['coordenadas'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">URL de la Imagen</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" pattern="^(https?://.+|[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp|svg|gif))$" title="Debe ser una URL válida iniciando con http:// o https://, o un nombre de archivo de imagen (.jpg, .png, etc.)" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg" value="<?= htmlspecialchars($poli['imagenurl'] ?? $poli['imagenURL'] ?? ''); ?>">
+                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" pattern="^(https?://.+|[a-zA-Z0-9_\-.]+\.(jpg|jpeg|png|webp|svg|gif))$" title="Debe ser una URL válida iniciando con http:// o https://, o un nombre de archivo de imagen (.jpg, .png, etc.)" placeholder="https://ejemplo.com/imagen.jpg o nombre_imagen.jpg" value="<?= htmlspecialchars($entidad['imagenurl'] ?? $entidad['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Información General</label>
-                        <textarea name="informacion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($poli['informacion'] ?? ''); ?></textarea>
+                        <textarea name="informacion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($entidad['informacion'] ?? ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -268,9 +268,9 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endforeach; ?>
 
 <!-- Modal Crear Entidad -->
-<div class="modal fade" id="crearPoliModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="crearEntidadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="polideportivos.php" method="POST" class="modal-content border-0 shadow">
+        <form action="entidades.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Entidad</h5>

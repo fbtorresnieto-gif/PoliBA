@@ -5,11 +5,11 @@ require_once __DIR__ . '/includes/db.php';
 $canchas = [];
 try {
     $stmt = $pdo->query("
-        SELECT c.*, p.nombre as polideportivo_nombre 
+        SELECT c.*, e.nombre as entidad_nombre
         FROM canchas c
-        JOIN polideportivos p ON c.fk_polideportivo = p.id
-        WHERE c.estado = TRUE AND p.estado = TRUE
-        ORDER BY p.nombre ASC, c.nombre ASC
+        JOIN entidades e ON c.fk_entidad = e.id
+        WHERE c.estado = TRUE AND e.estado = TRUE
+        ORDER BY e.nombre ASC, c.nombre ASC
     ");
     $canchas = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -51,7 +51,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card-body">
                             <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($cancha['nombre']); ?></h5>
                             <p class="poliba-card-meta mb-2">
-                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($cancha['polideportivo_nombre']); ?>
+                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($cancha['entidad_nombre']); ?>
                             </p>
                             <p class="poliba-card-text">
                                 <?= htmlspecialchars($cancha['descripcion']); ?>

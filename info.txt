@@ -1,0 +1,100 @@
+asistencia	id		integer
+asistencia	fk_inscripcion	integer
+asistencia	fk_clase	integer
+asistencia	asistencia	character varying
+asistencia	fecha		date
+canchas		id		integer
+canchas		nombre		character varying
+canchas		descripcion	text
+canchas		imagenurl	character varying
+canchas		techado		boolean
+canchas		fk_entidad	integer
+canchas		estado		boolean
+categoria	id		integer
+categoria	nombre		character varying
+categoria	edad_minima	integer
+categoria	edad_maxima	integer
+clases		id		integer
+clases		nombre		character varying
+clases		descripcion	text
+clases		horario_inicio	time without time zone
+clases		horario_cierre	time without time zone
+clases		cupo_maximo	integer
+clases		fk_usuario_profesor	integer
+clases		fk_deporte	integer
+clases		fk_canchas	integer
+clases		fk_categoria	integer
+clases		fk_subcategoria	integer
+clases		fk_entidad	integer
+clases		estado		boolean
+deportes	id		integer
+deportes	nombre		character varying
+deportes	texto		text
+deportes	imagenurl	character varying
+deportes	fk_entidad	integer
+deportes	estado		boolean
+deportes_canchas	id	integer
+deportes_canchas	fk_deporte	integer
+deportes_canchas	fk_cancha	integer
+dias		id		integer
+dias		nombre		character varying
+dias	orden	integer
+dias_clases	id		integer
+dias_clases	fk_clase	integer
+dias_clases	fk_dia		integer
+inscripcion	id		integer
+inscripcion	fk_clase	integer
+inscripcion	fk_usuario	integer
+inscripcion	fk_menor	integer
+inscripcion	fecha		timestamp without time zone
+inscripcion	lista_espera	boolean
+inscripcion	estado		character varying
+menores		id		integer
+menores		nombre		character varying
+menores		apellido	character varying
+menores		dni		character varying
+menores		direccion	character varying
+menores		fecha_nacimiento	date
+menores		relacion	character varying
+menores		fk_usuario	integer
+novedades	id		integer
+novedades	nombre	character varying
+novedades	descripcion	text
+novedades	fecha_inicio	date
+novedades	fecha_fin	date
+novedades	imagenurl	character varying
+novedades	fk_entidad	integer
+novedades	estado		boolean
+entidades	id		integer
+entidades	nombre		character varying
+entidades	direccion	character varying
+entidades	horario_apertura	time without time zone
+entidades	horario_cierre	time without time zone
+entidades	coordenadas	character varying
+entidades	informacion	text
+entidades	imagenurl	character varying
+entidades	fk_dia_apertura	integer
+entidades	fk_dia_cierre	integer
+entidades	estado		boolean
+reservas	id		integer
+reservas	fk_cancha	integer
+reservas	fk_usuario	integer
+reservas	fecha_de_asistencia	date
+reservas	horario		time without time zone
+reservas	estado		character varying
+roles		id		integer
+roles		nombre		character varying
+subcategorias	id		integer
+subcategorias	nombre		character varying
+subcategorias	edad_minima	integer
+subcategorias	edad_maxima	integer
+subcategorias	fk_deporte	integer
+subcategorias	fk_categoria	integer
+subcategorias	fk_entidad	integer
+subcategorias	estado		boolean
+usuarios	id		integer
+usuarios	nombre		character varying
+usuarios	apellido	character varying
+usuarios	dni		character varying
+usuarios	direccion	character varying
+usuarios	email		character varying

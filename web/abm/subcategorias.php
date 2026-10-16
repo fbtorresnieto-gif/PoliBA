@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -72,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Cargar todas las subcategorías de la entidad (excluyendo la actual en edición)
-            $stmt_all = $pdo->prepare("SELECT id, nombre, fk_deporte, fk_categoria, edad_minima, edad_maxima FROM subcategorias WHERE fk_polideportivo = ? AND id != ?");
-            $stmt_all->execute([$poli_id, $chk_id]);
+            $stmt_all = $pdo->prepare("SELECT id, nombre, fk_deporte, fk_categoria, edad_minima, edad_maxima FROM subcategorias WHERE fk_entidad = ? AND id != ?");
+            $stmt_all->execute([$entidad_id, $chk_id]);
             $subcategorias_existentes = $stmt_all->fetchAll();
 
             $norm_nuevo = normalizar_subcategoria($nombre);
@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-                            INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_polideportivo, estado)
+                            INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_entidad, estado)
                             VALUES (?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $poli_id]);
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $entidad_id]);
                         $success_msg = 'Subcategoría creada con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al crear la subcategoría.';
@@ -129,9 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $stmt = $pdo->prepare("
                             UPDATE subcategorias 
                             SET nombre = ?, edad_minima = ?, edad_maxima = ?, fk_deporte = ?, fk_categoria = ? 
-                            WHERE id = ? AND fk_polideportivo = ?
+                            WHERE id = ? AND fk_entidad = ?
                         ");
-                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $id, $poli_id]);
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $id, $entidad_id]);
                         $success_msg = 'Subcategoría modificada con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al modificar la subcategoría.';
@@ -148,8 +148,8 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE subcategorias SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
-        $stmt->execute([$id, $poli_id]);
+        $stmt = $pdo->prepare("UPDATE subcategorias SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+        $stmt->execute([$id, $entidad_id]);
         $success_msg = 'Estado de la subcategoría actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
@@ -164,18 +164,18 @@ try {
         FROM subcategorias s
         JOIN deportes d ON s.fk_deporte = d.id
         LEFT JOIN categoria c ON s.fk_categoria = c.id
-        WHERE s.fk_polideportivo = ?
+        WHERE s.fk_entidad = ?
         ORDER BY s.id ASC
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $subcategorias = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 // Cargar Deportes para selects
 $deportes = [];
 try {
-    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_polideportivo = ? AND estado = TRUE ORDER BY nombre ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
     $deportes = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -193,7 +193,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Subcategorías</h2>
-            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearSubModal">Agregar Subcategoría</button>
     </div>

@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -45,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             $hash = password_hash($contrasena, PASSWORD_BCRYPT);
             
             $stmt = $pdo->prepare("
-                INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_polideportivo, fk_rol)
+                INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_entidad, fk_rol)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $poli_id, $rol_id]);
+            $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $entidad_id, $rol_id]);
             $success_msg = 'Profesor registrado con éxito.';
         } catch (PDOException $e) {
             $error_msg = 'El correo electrónico o DNI ya se encuentra registrado.';
@@ -62,9 +62,9 @@ if (isset($_GET['eliminar_profesor'])) {
     try {
         $stmt = $pdo->prepare("
             DELETE FROM usuarios 
-            WHERE id = ? AND fk_polideportivo = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor')
+            WHERE id = ? AND fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor')
         ");
-        $stmt->execute([$id, $poli_id]);
+        $stmt->execute([$id, $entidad_id]);
         $success_msg = 'Profesor dado de baja con éxito.';
     } catch (PDOException $e) {
         $error_msg = 'Error al eliminar el profesor. Puede estar asignado a módulos activos.';
@@ -78,10 +78,10 @@ try {
         SELECT u.* 
         FROM usuarios u
         JOIN roles r ON u.fk_rol = r.id
-        WHERE u.fk_polideportivo = ? AND r.nombre = 'Profesor'
+        WHERE u.fk_entidad = ? AND r.nombre = 'Profesor'
         ORDER BY u.id ASC
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $profesores = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -92,7 +92,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">Gestión de Profesores</h2>
-            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearProfesorModal">Registrar Profesor</button>
     </div>

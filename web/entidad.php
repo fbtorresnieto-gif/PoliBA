@@ -2,33 +2,33 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
-$poli_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$poli = null;
+$entidad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$entidad = null;
 $deportes = [];
 $canchas = [];
 
-if ($poli_id > 0) {
+if ($entidad_id > 0) {
     try {
-        // Query polideportivo details
+        // Consultar los datos de la entidad
         $stmt = $pdo->prepare("
-            SELECT p.*, d1.nombre as dia_apertura, d2.nombre as dia_cierre 
-            FROM polideportivos p
-            LEFT JOIN dias d1 ON p.fk_dia_apertura = d1.id
-            LEFT JOIN dias d2 ON p.fk_dia_cierre = d2.id
-            WHERE p.id = ? AND p.estado = TRUE
+            SELECT e.*, d1.nombre as dia_apertura, d2.nombre as dia_cierre
+            FROM entidades e
+            LEFT JOIN dias d1 ON e.fk_dia_apertura = d1.id
+            LEFT JOIN dias d2 ON e.fk_dia_cierre = d2.id
+            WHERE e.id = ? AND e.estado = TRUE
         ");
-        $stmt->execute([$poli_id]);
-        $poli = $stmt->fetch();
+        $stmt->execute([$entidad_id]);
+        $entidad = $stmt->fetch();
         
-        if ($poli) {
-            // Query sports in this polideportivo
-            $stmt = $pdo->prepare("SELECT * FROM deportes WHERE fk_polideportivo = ? AND estado = TRUE");
-            $stmt->execute([$poli_id]);
+        if ($entidad) {
+            // Consultar deportes de esta entidad
+            $stmt = $pdo->prepare("SELECT * FROM deportes WHERE fk_entidad = ? AND estado = TRUE");
+            $stmt->execute([$entidad_id]);
             $deportes = $stmt->fetchAll();
             
-            // Query courts in this polideportivo
-            $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_polideportivo = ? AND estado = TRUE");
-            $stmt->execute([$poli_id]);
+            // Consultar canchas de esta entidad
+            $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? AND estado = TRUE");
+            $stmt->execute([$entidad_id]);
             $canchas = $stmt->fetchAll();
         }
     } catch (PDOException $e) {
@@ -37,16 +37,16 @@ if ($poli_id > 0) {
 }
 
 // Redireccionar si no existe la sede
-if (!$poli) {
-    header("Location: polideportivos.php");
+if (!$entidad) {
+    header("Location: entidades.php");
     exit;
 }
 
 // Extraer coordenadas de latitud y longitud
 $lat = -34.603722;
 $lng = -58.381592;
-if (!empty($poli['coordenadas'])) {
-    $parts = explode(',', $poli['coordenadas']);
+if (!empty($entidad['coordenadas'])) {
+    $parts = explode(',', $entidad['coordenadas']);
     if (count($parts) == 2) {
         $lat = trim($parts[0]);
         $lng = trim($parts[1]);
@@ -61,8 +61,8 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="polideportivos.php" class="text-dark">Entidades</a></li>
-            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($poli['nombre']); ?></li>
+            <li class="breadcrumb-item"><a href="entidades.php" class="text-dark">Entidades</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($entidad['nombre']); ?></li>
         </ol>
     </nav>
     
@@ -70,25 +70,25 @@ require_once __DIR__ . '/includes/header.php';
         <!-- Ficha de Información de la Entidad -->
         <div class="col-lg-7">
             <div class="poliba-container-card mt-0 h-100 p-4">
-                <h1 class="fw-bold mb-3" style="color: var(--poliba-dark-blue);"><?= htmlspecialchars($poli['nombre']); ?></h1>
+                <h1 class="fw-bold mb-3" style="color: var(--poliba-dark-blue);"><?= htmlspecialchars($entidad['nombre']); ?></h1>
                 
                 <div class="mb-4">
                     <h5 class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Dirección</h5>
-                    <p class="fs-5 text-muted ms-4"><?= htmlspecialchars($poli['direccion']); ?></p>
+                    <p class="fs-5 text-muted ms-4"><?= htmlspecialchars($entidad['direccion']); ?></p>
                 </div>
                 
                 <div class="mb-4">
                     <h5 class="fw-bold text-dark"><i class="bi bi-clock-fill text-muted me-2"></i>Horarios y Días</h5>
                     <p class="fs-5 text-muted ms-4">
-                        Abierto de <strong><?= htmlspecialchars($poli['dia_apertura'] ?? 'Lunes'); ?> a <?= htmlspecialchars($poli['dia_cierre'] ?? 'Sábado'); ?></strong>
+                        Abierto de <strong><?= htmlspecialchars($entidad['dia_apertura'] ?? 'Lunes'); ?> a <?= htmlspecialchars($entidad['dia_cierre'] ?? 'Sábado'); ?></strong>
                         <br>
-                        Horario: de <?= date('H:i', strtotime($poli['horario_apertura'])); ?> a <?= date('H:i', strtotime($poli['horario_cierre'])); ?> hs.
+                        Horario: de <?= date('H:i', strtotime($entidad['horario_apertura'])); ?> a <?= date('H:i', strtotime($entidad['horario_cierre'])); ?> hs.
                     </p>
                 </div>
                 
                 <div class="mb-4">
                     <h5 class="fw-bold text-dark"><i class="bi bi-info-circle-fill text-muted me-2"></i>Información General</h5>
-                    <p class="text-dark ms-4" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($poli['informacion'])); ?></p>
+                    <p class="text-dark ms-4" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($entidad['informacion'])); ?></p>
                 </div>
             </div>
         </div>
@@ -102,8 +102,8 @@ require_once __DIR__ . '/includes/header.php';
                 <div id="poliba-map" class="poliba-map" 
                      data-lat="<?= $lat; ?>" 
                      data-lng="<?= $lng; ?>" 
-                     data-name="<?= htmlspecialchars($poli['nombre']); ?>" 
-                     data-address="<?= htmlspecialchars($poli['direccion']); ?>">
+                     data-name="<?= htmlspecialchars($entidad['nombre']); ?>"
+                     data-address="<?= htmlspecialchars($entidad['direccion']); ?>">
                 </div>
                 <small class="text-muted d-block mt-2">Usa el mapa interactivo para ver cómo llegar a la entidad.</small>
             </div>

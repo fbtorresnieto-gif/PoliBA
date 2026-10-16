@@ -13,8 +13,8 @@ CREATE TABLE dias (
     orden INT NOT NULL
 );
 
--- 3. Tabla de Polideportivos
-CREATE TABLE polideportivos (
+-- 3. Tabla de Entidades
+CREATE TABLE entidades (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
     direccion VARCHAR(255) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE usuarios (
     contrasena VARCHAR(255) NOT NULL,
     telefono VARCHAR(50),
     fecha_nacimiento DATE,
-    fk_polideportivo INT REFERENCES polideportivos(id) ON DELETE SET NULL,
+    fk_entidad INT REFERENCES entidades(id) ON DELETE SET NULL,
     fk_rol INT NOT NULL REFERENCES roles(id)
 );
 
@@ -63,7 +63,7 @@ CREATE TABLE novedades (
     fecha_inicio DATE NOT NULL,
     fecha_fin DATE NOT NULL,
     imagenURL VARCHAR(255),
-    fk_polideportivo INT REFERENCES polideportivos(id) ON DELETE CASCADE,
+    fk_entidad INT REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 
@@ -73,7 +73,7 @@ CREATE TABLE deportes (
     nombre VARCHAR(100) NOT NULL,
     texto TEXT,
     imagenURL VARCHAR(255),
-    fk_polideportivo INT REFERENCES polideportivos(id) ON DELETE CASCADE,
+    fk_entidad INT REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 
@@ -84,7 +84,7 @@ CREATE TABLE canchas (
     descripcion TEXT,
     imagenURL VARCHAR(255),
     techado BOOLEAN DEFAULT FALSE,
-    fk_polideportivo INT REFERENCES polideportivos(id) ON DELETE CASCADE,
+    fk_entidad INT REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 
@@ -104,7 +104,7 @@ CREATE TABLE categoria (
     edad_maxima INT NOT NULL
 );
 
--- 11. Tabla de Subcategorias (Rangos acotados para clases por deporte/polideportivo)
+-- 11. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
 CREATE TABLE subcategorias (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE subcategorias (
     edad_maxima INT NOT NULL,
     fk_deporte INT NOT NULL REFERENCES deportes(id) ON DELETE CASCADE,
     fk_categoria INT REFERENCES categoria(id) ON DELETE SET NULL,
-    fk_polideportivo INT NOT NULL REFERENCES polideportivos(id) ON DELETE CASCADE,
+    fk_entidad INT NOT NULL REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 
@@ -129,7 +129,7 @@ CREATE TABLE clases (
     fk_canchas INT REFERENCES canchas(id) ON DELETE SET NULL,
     fk_categoria INT REFERENCES categoria(id) ON DELETE SET NULL,
     fk_subcategoria INT REFERENCES subcategorias(id) ON DELETE SET NULL,
-    fk_polideportivo INT NOT NULL REFERENCES polideportivos(id) ON DELETE CASCADE,
+    fk_entidad INT NOT NULL REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
 );
 

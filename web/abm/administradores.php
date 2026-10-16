@@ -10,11 +10,11 @@ $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
 
-// Cargar Polideportivos para selects
-$polideportivos = [];
+// Cargar Entidades para selects
+$entidades = [];
 try {
-    $stmt = $pdo->query("SELECT id, nombre FROM polideportivos WHERE estado = TRUE ORDER BY nombre ASC");
-    $polideportivos = $stmt->fetchAll();
+    $stmt = $pdo->query("SELECT id, nombre FROM entidades WHERE estado = TRUE ORDER BY nombre ASC");
+    $entidades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 // Procesar Creación / Modificación de Administrador
@@ -26,9 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $email = trim($_POST['email']);
     $telefono = trim($_POST['telefono']);
     $fecha_nacimiento = $_POST['fecha_nacimiento'];
-    $polideportivo_id = intval($_POST['fk_polideportivo']);
+    $entidad_id = intval($_POST['fk_entidad']);
     
-    if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || empty($fecha_nacimiento) || $polideportivo_id <= 0) {
+    if (empty($nombre) || empty($apellido) || empty($dni) || empty($email) || empty($fecha_nacimiento) || $entidad_id <= 0) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif (!ctype_digit($dni)) {
         $error_msg = 'El DNI debe contener únicamente números.';
@@ -52,10 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $hash = password_hash($contrasena, PASSWORD_BCRYPT);
                     
                     $stmt = $pdo->prepare("
-                        INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_polideportivo, fk_rol)
+                        INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_entidad, fk_rol)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ");
-                    $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $polideportivo_id, $rol_id]);
+                    $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $entidad_id, $rol_id]);
                     $success_msg = 'Administrador creado con éxito.';
                 } catch (PDOException $e) {
                     $error_msg = 'El correo electrónico o DNI ya se encuentra registrado.';
@@ -72,17 +72,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         $hash = password_hash($contrasena, PASSWORD_BCRYPT);
                         $stmt = $pdo->prepare("
                             UPDATE usuarios 
-                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?, contrasena = ?
+                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_entidad = ?, contrasena = ?
                             WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
                         ");
-                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $hash, $id]);
+                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $entidad_id, $hash, $id]);
                     } else {
                         $stmt = $pdo->prepare("
                             UPDATE usuarios 
-                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_polideportivo = ?
+                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_entidad = ?
                             WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
                         ");
-                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $polideportivo_id, $id]);
+                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $entidad_id, $id]);
                     }
                     
                     if ($user && $id == $user['id']) {
@@ -117,10 +117,10 @@ if (isset($_GET['eliminar_admin'])) {
 $administradores = [];
 try {
     $stmt = $pdo->query("
-        SELECT u.*, p.nombre as polideportivo_nombre 
+        SELECT u.*, e.nombre as entidad_nombre
         FROM usuarios u
         JOIN roles r ON u.fk_rol = r.id
-        LEFT JOIN polideportivos p ON u.fk_polideportivo = p.id
+        LEFT JOIN entidades e ON u.fk_entidad = e.id
         WHERE r.nombre = 'Administrador'
         ORDER BY u.id ASC
     ");
@@ -169,7 +169,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <td><?= htmlspecialchars($adm['email']); ?></td>
                             <td>
                                 <span class="badge bg-dark rounded-pill px-2 py-1">
-                                    <?= htmlspecialchars($adm['polideportivo_nombre'] ?? 'Sin asignar'); ?>
+                                    <?= htmlspecialchars($adm['entidad_nombre'] ?? 'Sin asignar'); ?>
                                 </span>
                             </td>
                             <td><?= htmlspecialchars($adm['telefono'] ?? '-'); ?></td>
@@ -237,10 +237,10 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Entidad Asignada *</label>
-                        <select name="fk_polideportivo" class="form-select rounded-pill px-3" required>
-                            <?php foreach ($polideportivos as $poli): ?>
-                                <option value="<?= $poli['id']; ?>" <?= $adm['fk_polideportivo'] == $poli['id'] ? 'selected' : ''; ?>>
-                                    <?= htmlspecialchars($poli['nombre']); ?>
+                        <select name="fk_entidad" class="form-select rounded-pill px-3" required>
+                            <?php foreach ($entidades as $entidad): ?>
+                                <option value="<?= $entidad['id']; ?>" <?= $adm['fk_entidad'] == $entidad['id'] ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($entidad['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -305,10 +305,10 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Entidad Asignada *</label>
-                    <select name="fk_polideportivo" class="form-select rounded-pill px-3" required>
+                    <select name="fk_entidad" class="form-select rounded-pill px-3" required>
                         <option value="">-- Seleccionar Entidad --</option>
-                        <?php foreach ($polideportivos as $poli): ?>
-                            <option value="<?= $poli['id']; ?>"><?= htmlspecialchars($poli['nombre']); ?></option>
+                        <?php foreach ($entidades as $entidad): ?>
+                            <option value="<?= $entidad['id']; ?>"><?= htmlspecialchars($entidad['nombre']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

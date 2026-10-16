@@ -20,18 +20,22 @@ function get_logged_user() {
         return null;
     }
     
-    // Si ya está guardado en sesión completo, retornarlo
+    // Si la sesión conserva el contrato anterior, recargar el usuario desde la DB.
     if (isset($_SESSION['user_data'])) {
-        return $_SESSION['user_data'];
+        if (!array_key_exists('fk_entidad', $_SESSION['user_data'])) {
+            unset($_SESSION['user_data'], $_SESSION['user_polideportivo']);
+        } else {
+            return $_SESSION['user_data'];
+        }
     }
     
     // Si no, buscarlo en la DB
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre, p.nombre as fk_polideportivo_nombre 
-            FROM usuarios u 
-            JOIN roles r ON u.fk_rol = r.id 
-            LEFT JOIN polideportivos p ON u.fk_polideportivo = p.id 
+            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre
+            FROM usuarios u
+            JOIN roles r ON u.fk_rol = r.id
+            LEFT JOIN entidades e ON u.fk_entidad = e.id
             WHERE u.id = ?
         ");
         $stmt->execute([$_SESSION['user_id']]);
@@ -95,10 +99,10 @@ function login($email, $password) {
     global $pdo;
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre, p.nombre as fk_polideportivo_nombre 
-            FROM usuarios u 
-            JOIN roles r ON u.fk_rol = r.id 
-            LEFT JOIN polideportivos p ON u.fk_polideportivo = p.id 
+            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre
+            FROM usuarios u
+            JOIN roles r ON u.fk_rol = r.id
+            LEFT JOIN entidades e ON u.fk_entidad = e.id
             WHERE u.email = ?
         ");
         $stmt->execute([$email]);
@@ -111,7 +115,8 @@ function login($email, $password) {
             $_SESSION['user_apellido'] = $user['apellido'];
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_rol'] = $user['rol_nombre'];
-            $_SESSION['user_polideportivo'] = $user['fk_polideportivo'];
+            unset($_SESSION['user_polideportivo']);
+            $_SESSION['user_entidad'] = $user['fk_entidad'];
             
             // Cargar datos completos
             unset($user['contrasena']);
@@ -125,7 +130,7 @@ function login($email, $password) {
 }
 
 // Registro de Alumnos
-function register_alumno($nombre, $apellido, $dni, $direccion, $email, $password, $telefono, $fecha_nacimiento, $polideportivo_id = null) {
+function register_alumno($nombre, $apellido, $dni, $direccion, $email, $password, $telefono, $fecha_nacimiento, $entidad_id = null) {
     global $pdo;
     try {
         // Buscar el ID del rol 'Alumno'
@@ -137,11 +142,11 @@ function register_alumno($nombre, $apellido, $dni, $direccion, $email, $password
         $hash = password_hash($password, PASSWORD_BCRYPT);
         
         $stmt = $pdo->prepare("
-            INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_polideportivo, fk_rol)
+            INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_entidad, fk_rol)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         return $stmt->execute([
-            $nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $polideportivo_id, $rol_id
+            $nombre, $apellido, $dni, $direccion, $email, $hash, $telefono, $fecha_nacimiento, $entidad_id, $rol_id
         ]);
     } catch (PDOException $e) {
         // En caso de duplicación de DNI o Email saltará excepción

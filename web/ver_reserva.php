@@ -8,11 +8,11 @@ $reserva = null;
 if ($reserva_id > 0) {
     try {
         $stmt = $pdo->prepare("
-            SELECT r.*, c.nombre as cancha_nombre, p.nombre as polideportivo_nombre, p.direccion as polideportivo_direccion,
+            SELECT r.*, c.nombre as cancha_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
                    u.nombre as usuario_nombre, u.apellido as usuario_apellido
             FROM reservas r
             JOIN canchas c ON r.fk_cancha = c.id
-            JOIN polideportivos p ON c.fk_polideportivo = p.id
+            JOIN entidades e ON c.fk_entidad = e.id
             JOIN usuarios u ON r.fk_usuario = u.id
             WHERE r.id = ?
         ");
@@ -42,8 +42,8 @@ require_once __DIR__ . '/includes/header.php';
             <div class="text-start bg-light p-4 rounded-3 mb-4">
                 <div class="mb-3">
                     <small class="text-muted text-uppercase fw-bold">Entidad</small>
-                    <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['polideportivo_nombre']); ?></div>
-                    <small class="text-muted"><?= htmlspecialchars($reserva['polideportivo_direccion']); ?></small>
+                    <div class="fs-5 fw-bold text-dark"><?= htmlspecialchars($reserva['entidad_nombre']); ?></div>
+                    <small class="text-muted"><?= htmlspecialchars($reserva['entidad_direccion']); ?></small>
                 </div>
                 
                 <div class="mb-3">

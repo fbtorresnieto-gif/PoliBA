@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -26,9 +26,9 @@ if (isset($_GET['cancelar_reserva_admin'])) {
         $stmt = $pdo->prepare("
             UPDATE reservas 
             SET estado = 'cancelado' 
-            WHERE id = ? AND fk_cancha IN (SELECT id FROM canchas WHERE fk_polideportivo = ?)
+            WHERE id = ? AND fk_cancha IN (SELECT id FROM canchas WHERE fk_entidad = ?)
         ");
-        if ($stmt->execute([$res_id, $poli_id])) {
+        if ($stmt->execute([$res_id, $entidad_id])) {
             $success_msg = 'Reserva cancelada con éxito.';
         }
     } catch (PDOException $e) {
@@ -44,10 +44,10 @@ try {
         FROM reservas r
         JOIN canchas c ON r.fk_cancha = c.id
         JOIN usuarios u ON r.fk_usuario = u.id
-        WHERE c.fk_polideportivo = ? AND r.fecha_de_asistencia = ?
+        WHERE c.fk_entidad = ? AND r.fecha_de_asistencia = ?
         ORDER BY r.horario ASC, c.nombre ASC
     ");
-    $stmt->execute([$poli_id, $selected_date]);
+    $stmt->execute([$entidad_id, $selected_date]);
     $reservas = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -57,7 +57,7 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container my-4">
     <div class="mb-4">
         <h2 class="fw-bold text-dark m-0">Reservas de Espacios del Día</h2>
-        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+        <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
     </div>
 
     <!-- Selector de fecha -->

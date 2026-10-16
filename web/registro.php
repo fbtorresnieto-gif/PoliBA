@@ -11,11 +11,11 @@ if (is_logged_in()) {
 $error_msg = '';
 $success_msg = '';
 
-// Obtener los polideportivos para el selector
-$polideportivos = [];
+// Obtener las entidades para el selector
+$entidades = [];
 try {
-    $stmt = $pdo->query("SELECT id, nombre FROM polideportivos WHERE estado = TRUE");
-    $polideportivos = $stmt->fetchAll();
+    $stmt = $pdo->query("SELECT id, nombre FROM entidades WHERE estado = TRUE");
+    $entidades = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Si falla, el selector estará vacío
 }
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     $confirmar_contrasena = $_POST['confirmar_contrasena'];
     $telefono = trim($_POST['telefono']);
     $fecha_nacimiento = $_POST['fecha_nacimiento'];
-    $polideportivo_id = !empty($_POST['fk_polideportivo']) ? intval($_POST['fk_polideportivo']) : null;
+    $entidad_id = !empty($_POST['fk_entidad']) ? intval($_POST['fk_entidad']) : null;
     
     // Si viene por Google y dejó la contraseña vacía, generar una segura automáticamente
     if ($google_pending && empty($contrasena) && empty($confirmar_contrasena)) {
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             $error_msg = 'Debes tener al menos 18 años para registrarte en el sistema. Los menores deben ser inscritos por sus tutores desde su perfil.';
         } else {
             try {
-                if (register_alumno($nombre, $apellido, $dni, $direccion, $email, $contrasena, $telefono, $fecha_nacimiento, $polideportivo_id)) {
+                if (register_alumno($nombre, $apellido, $dni, $direccion, $email, $contrasena, $telefono, $fecha_nacimiento, $entidad_id)) {
                     if ($google_pending) {
                         unset($_SESSION['google_pending_user']);
                         login($email, $contrasena);
@@ -161,11 +161,11 @@ require_once __DIR__ . '/includes/header.php';
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark">Entidad Favorita/Cercana</label>
-                        <select name="fk_polideportivo" class="form-select rounded-pill px-3">
+                        <select name="fk_entidad" class="form-select rounded-pill px-3">
                             <option value="">-- Seleccionar Entidad --</option>
-                            <?php foreach ($polideportivos as $poli): ?>
-                                <option value="<?= $poli['id']; ?>" <?= (isset($_POST['fk_polideportivo']) && $_POST['fk_polideportivo'] == $poli['id']) ? 'selected' : ''; ?>>
-                                    <?= htmlspecialchars($poli['nombre']); ?>
+                            <?php foreach ($entidades as $entidad): ?>
+                                <option value="<?= $entidad['id']; ?>" <?= (isset($_POST['fk_entidad']) && $_POST['fk_entidad'] == $entidad['id']) ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($entidad['nombre']); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

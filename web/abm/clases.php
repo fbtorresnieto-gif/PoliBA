@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/db.php';
 redirect_if_not_logged_in(['Administrador']);
 
 $user = get_logged_user();
-$poli_id = $user['fk_polideportivo']; // Sede administrada
+$entidad_id = $user['fk_entidad']; // Entidad administrada
 
-if (!$poli_id) {
+if (!$entidad_id) {
     die("Error: El administrador no tiene una entidad asignada.");
 }
 
@@ -17,26 +17,26 @@ $error_msg = '';
 $success_msg = '';
 
 // Obtener información de atención de la entidad (días y horarios)
-$poli_info = null;
+$entidad_info = null;
 $dias_abiertos_ids = [];
 $dias = [];
 try {
-    $stmt_p = $pdo->prepare("
-        SELECT p.*, da.orden as orden_apertura, dc.orden as orden_cierre, da.nombre as nombre_apertura, dc.nombre as nombre_cierre
-        FROM polideportivos p
-        LEFT JOIN dias da ON p.fk_dia_apertura = da.id
-        LEFT JOIN dias dc ON p.fk_dia_cierre = dc.id
-        WHERE p.id = ?
+    $stmt_entidad = $pdo->prepare("
+        SELECT e.*, da.orden as orden_apertura, dc.orden as orden_cierre, da.nombre as nombre_apertura, dc.nombre as nombre_cierre
+        FROM entidades e
+        LEFT JOIN dias da ON e.fk_dia_apertura = da.id
+        LEFT JOIN dias dc ON e.fk_dia_cierre = dc.id
+        WHERE e.id = ?
     ");
-    $stmt_p->execute([$poli_id]);
-    $poli_info = $stmt_p->fetch();
+    $stmt_entidad->execute([$entidad_id]);
+    $entidad_info = $stmt_entidad->fetch();
 
     $stmt_dias = $pdo->query("SELECT id, nombre, orden FROM dias ORDER BY orden ASC");
     $dias = $stmt_dias->fetchAll();
 
-    if ($poli_info && $poli_info['orden_apertura'] !== null && $poli_info['orden_cierre'] !== null) {
-        $ord_ap = intval($poli_info['orden_apertura']);
-        $ord_ci = intval($poli_info['orden_cierre']);
+    if ($entidad_info && $entidad_info['orden_apertura'] !== null && $entidad_info['orden_cierre'] !== null) {
+        $ord_ap = intval($entidad_info['orden_apertura']);
+        $ord_ci = intval($entidad_info['orden_cierre']);
         foreach ($dias as $d) {
             $ord = intval($d['orden']);
             $abierto = ($ord_ap <= $ord_ci) ? ($ord >= $ord_ap && $ord <= $ord_ci) : ($ord >= $ord_ap || $ord <= $ord_ci);
@@ -69,20 +69,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif ($horario_inicio >= $horario_cierre) {
         $error_msg = 'La hora de cierre debe ser posterior a la hora de inicio del módulo.';
-    } elseif ($poli_info && !empty($poli_info['horario_apertura']) && !empty($poli_info['horario_cierre']) && (
-        date('H:i', strtotime($horario_inicio)) < date('H:i', strtotime($poli_info['horario_apertura'])) ||
-        date('H:i', strtotime($horario_inicio)) > date('H:i', strtotime($poli_info['horario_cierre']))
+    } elseif ($entidad_info && !empty($entidad_info['horario_apertura']) && !empty($entidad_info['horario_cierre']) && (
+        date('H:i', strtotime($horario_inicio)) < date('H:i', strtotime($entidad_info['horario_apertura'])) ||
+        date('H:i', strtotime($horario_inicio)) > date('H:i', strtotime($entidad_info['horario_cierre']))
     )) {
-        $ap_f = date('H:i', strtotime($poli_info['horario_apertura']));
-        $ci_f = date('H:i', strtotime($poli_info['horario_cierre']));
+        $ap_f = date('H:i', strtotime($entidad_info['horario_apertura']));
+        $ci_f = date('H:i', strtotime($entidad_info['horario_cierre']));
         $ini_f = date('H:i', strtotime($horario_inicio));
         $error_msg = "La hora de inicio ($ini_f hs) debe estar dentro del horario de atención de la entidad ($ap_f a $ci_f hs).";
-    } elseif ($poli_info && !empty($poli_info['horario_apertura']) && !empty($poli_info['horario_cierre']) && (
-        date('H:i', strtotime($horario_cierre)) < date('H:i', strtotime($poli_info['horario_apertura'])) ||
-        date('H:i', strtotime($horario_cierre)) > date('H:i', strtotime($poli_info['horario_cierre']))
+    } elseif ($entidad_info && !empty($entidad_info['horario_apertura']) && !empty($entidad_info['horario_cierre']) && (
+        date('H:i', strtotime($horario_cierre)) < date('H:i', strtotime($entidad_info['horario_apertura'])) ||
+        date('H:i', strtotime($horario_cierre)) > date('H:i', strtotime($entidad_info['horario_cierre']))
     )) {
-        $ap_f = date('H:i', strtotime($poli_info['horario_apertura']));
-        $ci_f = date('H:i', strtotime($poli_info['horario_cierre']));
+        $ap_f = date('H:i', strtotime($entidad_info['horario_apertura']));
+        $ci_f = date('H:i', strtotime($entidad_info['horario_cierre']));
         $fin_f = date('H:i', strtotime($horario_cierre));
         $error_msg = "La hora de cierre ($fin_f hs) debe estar dentro del horario de atención de la entidad ($ap_f a $ci_f hs).";
     } elseif (empty($dias_seleccionados)) {
@@ -102,15 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
         if (!empty($dias_invalidos)) {
             $str_invalidos = implode(', ', $dias_invalidos);
-            $rango_atencion = ($poli_info && !empty($poli_info['nombre_apertura'])) ? " (Atención: {$poli_info['nombre_apertura']} a {$poli_info['nombre_cierre']})" : "";
+            $rango_atencion = ($entidad_info && !empty($entidad_info['nombre_apertura'])) ? " (Atención: {$entidad_info['nombre_apertura']} a {$entidad_info['nombre_cierre']})" : "";
             $error_msg = "No es posible asignar el módulo el/los día(s) $str_invalidos ya que la entidad permanece cerrada{$rango_atencion}.";
         } else {
             $sub_valida = true;
             $chk_id = ($_POST['action'] ?? '') == 'editar' ? intval($_POST['id']) : 0;
 
             if (($_POST['action'] ?? '') == 'editar') {
-                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_deporte, fk_categoria, fk_subcategoria FROM clases WHERE id = ? AND fk_polideportivo = ?");
-                $stmt_orig->execute([$chk_id, $poli_id]);
+                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_deporte, fk_categoria, fk_subcategoria FROM clases WHERE id = ? AND fk_entidad = ?");
+                $stmt_orig->execute([$chk_id, $entidad_id]);
                 $clase_orig = $stmt_orig->fetch();
 
                 if (!$clase_orig) {
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         JOIN dias_clases dc ON c.id = dc.fk_clase
                         JOIN dias d ON dc.fk_dia = d.id
                         JOIN canchas can ON c.fk_canchas = can.id
-                        WHERE c.fk_polideportivo = ?
+                        WHERE c.fk_entidad = ?
                           AND c.fk_canchas = ?
                           AND c.estado = TRUE
                           AND c.id != ?
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                           AND c.horario_inicio < ?
                           AND c.horario_cierre > ?
                     ";
-                    $params_cancha = array_merge([$poli_id, $fk_canchas, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
+                    $params_cancha = array_merge([$entidad_id, $fk_canchas, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
                     $stmt_cancha = $pdo->prepare($sql_cancha);
                     $stmt_cancha->execute($params_cancha);
                     $solapados_cancha = $stmt_cancha->fetchAll();
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                         FROM clases c
                         JOIN dias_clases dc ON c.id = dc.fk_clase
                         JOIN dias d ON dc.fk_dia = d.id
-                        WHERE c.fk_polideportivo = ?
+                        WHERE c.fk_entidad = ?
                           AND c.fk_canchas IS NULL
                           AND c.estado = TRUE
                           AND c.id != ?
@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                           AND c.horario_inicio < ?
                           AND c.horario_cierre > ?
                     ";
-                    $params_general = array_merge([$poli_id, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
+                    $params_general = array_merge([$entidad_id, $chk_id], array_map('intval', $dias_seleccionados), [$horario_cierre, $horario_inicio]);
                     $stmt_general = $pdo->prepare($sql_general);
                     $stmt_general->execute($params_general);
                     $solapados_gen = $stmt_general->fetchAll();
@@ -189,17 +189,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
             }
 
-            // 2. Validar solapamiento de horario del Profesor en cualquier entidad/polideportivo
+            // 2. Validar solapamiento de horario del Profesor en cualquier entidad
             if ($sub_valida && $fk_usuario_profesor !== null && !empty($dias_seleccionados)) {
                 $placeholders_dias = implode(',', array_fill(0, count($dias_seleccionados), '?'));
                 $sql_prof = "
                     SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre, 
-                                    u.nombre as prof_nombre, u.apellido as prof_apellido, p.nombre as poli_nombre
+                                    u.nombre as prof_nombre, u.apellido as prof_apellido, e.nombre as entidad_nombre
                     FROM clases c
                     JOIN dias_clases dc ON c.id = dc.fk_clase
                     JOIN dias d ON dc.fk_dia = d.id
                     JOIN usuarios u ON c.fk_usuario_profesor = u.id
-                    JOIN polideportivos p ON c.fk_polideportivo = p.id
+                    JOIN entidades e ON c.fk_entidad = e.id
                     WHERE c.fk_usuario_profesor = ?
                       AND c.estado = TRUE
                       AND c.id != ?
@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $ini_conf = date('H:i', strtotime($mod_conf['horario_inicio']));
                     $fin_conf = date('H:i', strtotime($mod_conf['horario_cierre']));
                     $prof_nombre_completo = trim($mod_conf['prof_nombre'] . ' ' . $mod_conf['prof_apellido']);
-                    $error_msg = "El profesor $prof_nombre_completo ya tiene asignado el módulo \"{$mod_conf['nombre']}\" el/los día(s) $dias_conf de $ini_conf a $fin_conf hs en \"{$mod_conf['poli_nombre']}\".";
+                    $error_msg = "El profesor $prof_nombre_completo ya tiene asignado el módulo \"{$mod_conf['nombre']}\" el/los día(s) $dias_conf de $ini_conf a $fin_conf hs en \"{$mod_conf['entidad_nombre']}\".";
                     $sub_valida = false;
                 }
             }
@@ -260,18 +260,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if ($_POST['action'] == 'crear') {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_polideportivo, estado)
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         RETURNING id
                     ");
-                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $poli_id]);
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $entidad_id]);
                     $clase_id = $stmt->fetchColumn();
                 } else {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_polideportivo, estado)
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                     ");
-                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $poli_id]);
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $entidad_id]);
                     $clase_id = $pdo->lastInsertId();
                 }
                 
@@ -289,9 +289,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $stmt = $pdo->prepare("
                     UPDATE clases 
                     SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_deporte = ?, fk_canchas = ?, fk_categoria = ?, fk_subcategoria = ?
-                    WHERE id = ? AND fk_polideportivo = ?
+                    WHERE id = ? AND fk_entidad = ?
                 ");
-                $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $id, $poli_id]);
+                $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_canchas, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
                 
                 // Limpiar días anteriores y re-insertar
                 $stmt_del = $pdo->prepare("DELETE FROM dias_clases WHERE fk_clase = ?");
@@ -319,8 +319,8 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE clases SET estado = $nuevo_estado WHERE id = ? AND fk_polideportivo = ?");
-        $stmt->execute([$id, $poli_id]);
+        $stmt = $pdo->prepare("UPDATE clases SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+        $stmt->execute([$id, $entidad_id]);
         $success_msg = 'Estado del módulo actualizado.';
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
@@ -339,10 +339,10 @@ try {
         LEFT JOIN canchas can ON c.fk_canchas = can.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-        WHERE c.fk_polideportivo = ?
+        WHERE c.fk_entidad = ?
         ORDER BY c.id ASC
     ");
-    $stmt->execute([$poli_id]);
+    $stmt->execute([$entidad_id]);
     $clases = $stmt->fetchAll();
     
     // Cargar días para cada clase
@@ -363,23 +363,23 @@ $subcategorias = [];
 $dias = [];
 
 try {
-    $stmt = $pdo->prepare("SELECT id, nombre, apellido FROM usuarios WHERE fk_polideportivo = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor') ORDER BY nombre ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT id, nombre, apellido FROM usuarios WHERE fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor') ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
     $profesores = $stmt->fetchAll();
     
-    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_polideportivo = ? AND estado = TRUE ORDER BY nombre ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
     $deportes = $stmt->fetchAll();
     
-    $stmt = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_polideportivo = ? AND estado = TRUE ORDER BY nombre ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
     $canchas = $stmt->fetchAll();
     
     $stmt = $pdo->query("SELECT id, nombre, edad_minima, edad_maxima FROM categoria ORDER BY id ASC");
     $categorias = $stmt->fetchAll();
     
-    $stmt = $pdo->prepare("SELECT id, nombre, edad_minima, edad_maxima, fk_categoria, fk_deporte FROM subcategorias WHERE fk_polideportivo = ? AND estado = TRUE ORDER BY nombre ASC");
-    $stmt->execute([$poli_id]);
+    $stmt = $pdo->prepare("SELECT id, nombre, edad_minima, edad_maxima, fk_categoria, fk_deporte FROM subcategorias WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt->execute([$entidad_id]);
     $subcategorias = $stmt->fetchAll();
     
     $stmt = $pdo->query("SELECT id, nombre FROM dias ORDER BY orden ASC");
@@ -393,7 +393,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark m-0">ABM Módulos</h2>
-            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_polideportivo_nombre'] ?? 'Mi Entidad'); ?></strong></small>
+            <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
         <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearClaseModal">Agregar Módulo</button>
     </div>
@@ -497,20 +497,20 @@ require_once __DIR__ . '/../includes/header.php';
                             <label class="form-label fw-bold">Hora Inicio *</label>
                             <input type="time" name="horario_inicio" class="form-control rounded-pill px-3" required 
                                    value="<?= $clase['horario_inicio']; ?>"
-                                   <?= ($poli_info && !empty($poli_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($poli_info['horario_apertura'])) . '"' : ''; ?>
-                                   <?= ($poli_info && !empty($poli_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($poli_info['horario_cierre'])) . '"' : ''; ?>>
-                            <?php if ($poli_info && !empty($poli_info['horario_apertura'])): ?>
-                                <small class="text-muted d-block ms-2 mt-1">Apertura entidad: <?= date('H:i', strtotime($poli_info['horario_apertura'])); ?> hs</small>
+                                   <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
+                                   <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
+                            <?php if ($entidad_info && !empty($entidad_info['horario_apertura'])): ?>
+                                <small class="text-muted d-block ms-2 mt-1">Apertura entidad: <?= date('H:i', strtotime($entidad_info['horario_apertura'])); ?> hs</small>
                             <?php endif; ?>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Hora Cierre *</label>
                             <input type="time" name="horario_cierre" class="form-control rounded-pill px-3" required 
                                    value="<?= $clase['horario_cierre']; ?>"
-                                   <?= ($poli_info && !empty($poli_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($poli_info['horario_apertura'])) . '"' : ''; ?>
-                                   <?= ($poli_info && !empty($poli_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($poli_info['horario_cierre'])) . '"' : ''; ?>>
-                            <?php if ($poli_info && !empty($poli_info['horario_cierre'])): ?>
-                                <small class="text-muted d-block ms-2 mt-1">Cierre entidad: <?= date('H:i', strtotime($poli_info['horario_cierre'])); ?> hs</small>
+                                   <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
+                                   <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
+                            <?php if ($entidad_info && !empty($entidad_info['horario_cierre'])): ?>
+                                <small class="text-muted d-block ms-2 mt-1">Cierre entidad: <?= date('H:i', strtotime($entidad_info['horario_cierre'])); ?> hs</small>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -574,8 +574,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="mb-3">
                         <label class="form-label fw-bold d-block">
                             Días de Dictado * 
-                            <?php if ($poli_info && !empty($poli_info['nombre_apertura'])): ?>
-                                <small class="text-muted fw-normal ms-2">(Atención de la entidad: <?= htmlspecialchars($poli_info['nombre_apertura']); ?> a <?= htmlspecialchars($poli_info['nombre_cierre']); ?>)</small>
+                            <?php if ($entidad_info && !empty($entidad_info['nombre_apertura'])): ?>
+                                <small class="text-muted fw-normal ms-2">(Atención de la entidad: <?= htmlspecialchars($entidad_info['nombre_apertura']); ?> a <?= htmlspecialchars($entidad_info['nombre_cierre']); ?>)</small>
                             <?php endif; ?>
                         </label>
                         <div class="d-flex flex-wrap gap-3">
@@ -634,20 +634,20 @@ require_once __DIR__ . '/../includes/header.php';
                         <label class="form-label fw-bold">Hora Inicio *</label>
                         <input type="time" name="horario_inicio" class="form-control rounded-pill px-3" required 
                                value="17:00"
-                               <?= ($poli_info && !empty($poli_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($poli_info['horario_apertura'])) . '"' : ''; ?>
-                               <?= ($poli_info && !empty($poli_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($poli_info['horario_cierre'])) . '"' : ''; ?>>
-                        <?php if ($poli_info && !empty($poli_info['horario_apertura'])): ?>
-                            <small class="text-muted d-block ms-2 mt-1">Apertura entidad: <?= date('H:i', strtotime($poli_info['horario_apertura'])); ?> hs</small>
+                               <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
+                               <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
+                        <?php if ($entidad_info && !empty($entidad_info['horario_apertura'])): ?>
+                            <small class="text-muted d-block ms-2 mt-1">Apertura entidad: <?= date('H:i', strtotime($entidad_info['horario_apertura'])); ?> hs</small>
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Hora Cierre *</label>
                         <input type="time" name="horario_cierre" class="form-control rounded-pill px-3" required 
                                value="19:00"
-                               <?= ($poli_info && !empty($poli_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($poli_info['horario_apertura'])) . '"' : ''; ?>
-                               <?= ($poli_info && !empty($poli_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($poli_info['horario_cierre'])) . '"' : ''; ?>>
-                        <?php if ($poli_info && !empty($poli_info['horario_cierre'])): ?>
-                            <small class="text-muted d-block ms-2 mt-1">Cierre entidad: <?= date('H:i', strtotime($poli_info['horario_cierre'])); ?> hs</small>
+                               <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
+                               <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
+                        <?php if ($entidad_info && !empty($entidad_info['horario_cierre'])): ?>
+                            <small class="text-muted d-block ms-2 mt-1">Cierre entidad: <?= date('H:i', strtotime($entidad_info['horario_cierre'])); ?> hs</small>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -713,8 +713,8 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="mb-3">
                     <label class="form-label fw-bold d-block">
                         Días de Dictado * 
-                        <?php if ($poli_info && !empty($poli_info['nombre_apertura'])): ?>
-                            <small class="text-muted fw-normal ms-2">(Atención de la entidad: <?= htmlspecialchars($poli_info['nombre_apertura']); ?> a <?= htmlspecialchars($poli_info['nombre_cierre']); ?>)</small>
+                        <?php if ($entidad_info && !empty($entidad_info['nombre_apertura'])): ?>
+                            <small class="text-muted fw-normal ms-2">(Atención de la entidad: <?= htmlspecialchars($entidad_info['nombre_apertura']); ?> a <?= htmlspecialchars($entidad_info['nombre_cierre']); ?>)</small>
                         <?php endif; ?>
                     </label>
                     <div class="d-flex flex-wrap gap-3">

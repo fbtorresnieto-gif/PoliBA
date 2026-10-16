@@ -10,10 +10,10 @@ if ($deporte_id > 0) {
     try {
         // Query sport details
         $stmt = $pdo->prepare("
-            SELECT d.*, p.nombre as polideportivo_nombre 
+            SELECT d.*, e.nombre as entidad_nombre
             FROM deportes d
-            JOIN polideportivos p ON d.fk_polideportivo = p.id
-            WHERE d.id = ? AND d.estado = TRUE AND p.estado = TRUE
+            JOIN entidades e ON d.fk_entidad = e.id
+            WHERE d.id = ? AND d.estado = TRUE AND e.estado = TRUE
         ");
         $stmt->execute([$deporte_id]);
         $deporte = $stmt->fetch();
@@ -101,7 +101,7 @@ require_once __DIR__ . '/includes/header.php';
             <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded shadow-sm w-100" style="max-height: 350px; object-fit: cover;" alt="<?= htmlspecialchars($deporte['nombre']); ?>">
         </div>
         <div class="col-md-7 mt-4 mt-md-0">
-            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['polideportivo_nombre']); ?></span>
+            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['entidad_nombre']); ?></span>
             <h1 class="fw-bold text-dark mb-3"><?= htmlspecialchars($deporte['nombre']); ?></h1>
             <p class="fs-5 text-dark" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($deporte['texto'])); ?></p>
         </div>
