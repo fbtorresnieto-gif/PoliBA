@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/db.php';
 
 $actividad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $actividad = null;
-$clases = [];
+$modulos = [];
 
 if ($actividad_id > 0) {
     try {
@@ -26,7 +26,7 @@ if ($actividad_id > 0) {
                        cat.nombre as cat_nombre,
                        sub.nombre as sub_nombre,
                        esp.nombre as espacio_nombre
-                FROM clases c
+                FROM modulos c
                 LEFT JOIN usuarios u ON c.fk_usuario_profesor = u.id
                 LEFT JOIN categoria cat ON c.fk_categoria = cat.id
                 LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
@@ -35,31 +35,31 @@ if ($actividad_id > 0) {
                 ORDER BY c.nombre ASC
             ");
             $stmt->execute([$actividad_id]);
-            $clases = $stmt->fetchAll();
+            $modulos = $stmt->fetchAll();
             
             // For each class, query days of class and count current enrollment
-            foreach ($clases as &$clase) {
+            foreach ($modulos as &$modulo) {
                 // Get days
                 $stmt_days = $pdo->prepare("
                     SELECT d.nombre 
-                    FROM dias_clases dc
+                    FROM dias_modulos dc
                     JOIN dias d ON dc.fk_dia = d.id
-                    WHERE dc.fk_clase = ?
+                    WHERE dc.fk_modulo = ?
                     ORDER BY d.orden ASC
                 ");
-                $stmt_days->execute([$clase['id']]);
-                $clase['dias'] = $stmt_days->fetchAll(PDO::FETCH_COLUMN);
+                $stmt_days->execute([$modulo['id']]);
+                $modulo['dias'] = $stmt_days->fetchAll(PDO::FETCH_COLUMN);
                 
                 // Count active students in class (not in waitlist)
                 $stmt_count = $pdo->prepare("
                     SELECT COUNT(*) 
                     FROM inscripcion 
-                    WHERE fk_clase = ? AND lista_espera = FALSE AND estado = 'activo'
+                    WHERE fk_modulo = ? AND lista_espera = FALSE AND estado = 'activo'
                 ");
-                $stmt_count->execute([$clase['id']]);
-                $clase['inscriptos_cantidad'] = $stmt_count->fetchColumn();
+                $stmt_count->execute([$modulo['id']]);
+                $modulo['inscriptos_cantidad'] = $stmt_count->fetchColumn();
             }
-            unset($clase); // break reference
+            unset($modulo); // break reference
         }
     } catch (PDOException $e) {
         // Log error
@@ -112,57 +112,57 @@ require_once __DIR__ . '/includes/header.php';
         Módulos y Horarios Disponibles
     </h3>
     
-    <?php if (empty($clases)): ?>
+    <?php if (empty($modulos)): ?>
         <div class="alert alert-info">
             <i class="bi bi-info-circle-fill me-2"></i> No hay módulos programados para esta actividad en este momento.
         </div>
     <?php else: ?>
         <div class="row g-4">
-            <?php foreach ($clases as $clase): 
-                $cupos_libres = max(0, $clase['cupo_maximo'] - $clase['inscriptos_cantidad']);
+            <?php foreach ($modulos as $modulo):
+                $cupos_libres = max(0, $modulo['cupo_maximo'] - $modulo['inscriptos_cantidad']);
             ?>
                 <div class="col-lg-6">
                     <div class="poliba-container-card mt-0 p-4 h-100 border">
                         <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h4 class="fw-bold text-dark m-0"><?= htmlspecialchars($clase['nombre']); ?></h4>
+                            <h4 class="fw-bold text-dark m-0"><?= htmlspecialchars($modulo['nombre']); ?></h4>
                             <span class="badge <?= $cupos_libres > 0 ? 'bg-success' : 'bg-warning text-dark'; ?> rounded-pill px-3 py-2">
                                 <?= $cupos_libres > 0 ? "$cupos_libres vacantes" : 'Lista de Espera'; ?>
                             </span>
                         </div>
                         
-                        <p class="text-muted mb-3"><?= htmlspecialchars($clase['descripcion']); ?></p>
+                        <p class="text-muted mb-3"><?= htmlspecialchars($modulo['descripcion']); ?></p>
                         
                         <div class="row mb-3" style="font-size: 0.95rem;">
                             <div class="col-6 mb-2">
                                 <strong><i class="bi bi-calendar-check text-muted me-2"></i>Días:</strong> 
-                                <?= !empty($clase['dias']) ? htmlspecialchars(implode(', ', $clase['dias'])) : 'Sin asignar'; ?>
+                                <?= !empty($modulo['dias']) ? htmlspecialchars(implode(', ', $modulo['dias'])) : 'Sin asignar'; ?>
                             </div>
                             <div class="col-6 mb-2">
                                 <strong><i class="bi bi-clock text-muted me-2"></i>Horario:</strong> 
-                                <?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?>
+                                <?= date('H:i', strtotime($modulo['horario_inicio'])); ?> - <?= date('H:i', strtotime($modulo['horario_cierre'])); ?>
                             </div>
                             <div class="col-6 mb-2">
                                 <strong><i class="bi bi-person-badge text-muted me-2"></i>Profesor:</strong> 
-                                <?= !empty($clase['prof_nombre']) ? htmlspecialchars($clase['prof_nombre'] . ' ' . $clase['prof_apellido']) : 'Sin asignar'; ?>
+                                <?= !empty($modulo['prof_nombre']) ? htmlspecialchars($modulo['prof_nombre'] . ' ' . $modulo['prof_apellido']) : 'Sin asignar'; ?>
                             </div>
                             <div class="col-6 mb-2">
                                 <strong><i class="bi bi-grid-3x3-gap text-muted me-2"></i>Espacio:</strong> 
-                                <?= !empty($clase['espacio_nombre']) ? htmlspecialchars($clase['espacio_nombre']) : 'Espacio General'; ?>
+                                <?= !empty($modulo['espacio_nombre']) ? htmlspecialchars($modulo['espacio_nombre']) : 'Espacio General'; ?>
                             </div>
                             <div class="col-6">
                                 <strong><i class="bi bi-people text-muted me-2"></i>Cupo total:</strong> 
-                                <?= $clase['cupo_maximo']; ?> alumnos
+                                <?= $modulo['cupo_maximo']; ?> alumnos
                             </div>
                             <div class="col-6">
                                 <strong><i class="bi bi-tag text-muted me-2"></i>Categoría:</strong> 
-                                <?= htmlspecialchars($clase['cat_nombre'] ?? 'General'); ?>
-                                <?= !empty($clase['sub_nombre']) ? " (" . htmlspecialchars($clase['sub_nombre']) . ")" : ""; ?>
+                                <?= htmlspecialchars($modulo['cat_nombre'] ?? 'General'); ?>
+                                <?= !empty($modulo['sub_nombre']) ? " (" . htmlspecialchars($modulo['sub_nombre']) . ")" : ""; ?>
                             </div>
                         </div>
                         
                         <div class="mt-4 pt-2 border-top d-flex justify-content-end align-items-center">
                             <?php if (is_logged_in() && has_role('Alumno')): ?>
-                                <a href="abm/alumno_inscripcion.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn">
+                                <a href="abm/alumno_inscripcion.php?modulo_id=<?= $modulo['id']; ?>" class="poliba-btn">
                                     <?= $cupos_libres > 0 ? 'Inscribirse' : 'Entrar a Lista de Espera'; ?>
                                 </a>
                             <?php elseif (!is_logged_in()): ?>

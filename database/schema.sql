@@ -96,7 +96,7 @@ CREATE TABLE categoria (
     edad_maxima INT NOT NULL
 );
 
--- 10. Tabla de Subcategorias (Rangos acotados para clases por actividad/entidad)
+-- 10. Tabla de Subcategorias (Rangos acotados para modulos por actividad/entidad)
 CREATE TABLE subcategorias (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
@@ -108,8 +108,8 @@ CREATE TABLE subcategorias (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 11. Tabla de Clases
-CREATE TABLE clases (
+-- 11. Tabla de Modulos
+CREATE TABLE modulos (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
     descripcion TEXT,
@@ -125,18 +125,18 @@ CREATE TABLE clases (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 12. Tabla de Relación Clases y Dias (Muchos a Muchos)
-CREATE TABLE dias_clases (
+-- 12. Tabla de Relación Modulos y Dias (Muchos a Muchos)
+CREATE TABLE dias_modulos (
     id SERIAL PRIMARY KEY,
-    fk_clase INT NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
+    fk_modulo INT NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
     fk_dia INT NOT NULL REFERENCES dias(id) ON DELETE CASCADE,
-    CONSTRAINT uq_clase_dia UNIQUE (fk_clase, fk_dia)
+    CONSTRAINT uq_clase_dia UNIQUE (fk_modulo, fk_dia)
 );
 
--- 13. Tabla de Inscripciones a Clases
+-- 13. Tabla de Inscripciones a Modulos
 CREATE TABLE inscripcion (
     id SERIAL PRIMARY KEY,
-    fk_clase INT NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
+    fk_modulo INT NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
     fk_usuario INT REFERENCES usuarios(id) ON DELETE CASCADE, -- Alumno Mayor
     fk_menor INT REFERENCES menores(id) ON DELETE CASCADE,     -- O Alumno Menor (uno de los dos debe ser no nulo)
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -148,11 +148,11 @@ CREATE TABLE inscripcion (
     )
 );
 
--- 14. Tabla de Asistencias (Toma de asistencia por clase)
+-- 14. Tabla de Asistencias (Toma de asistencia por modulo)
 CREATE TABLE asistencia (
     id SERIAL PRIMARY KEY,
     fk_inscripcion INT NOT NULL REFERENCES inscripcion(id) ON DELETE CASCADE,
-    fk_clase INT NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
+    fk_modulo INT NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
     asistencia VARCHAR(20) NOT NULL, -- 'presente', 'ausente', 'lluvia'
     fecha DATE NOT NULL,
     CONSTRAINT uq_asistencia_inscripcion_fecha UNIQUE (fk_inscripcion, fecha)

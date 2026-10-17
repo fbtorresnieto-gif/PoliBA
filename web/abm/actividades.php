@@ -140,7 +140,7 @@ if (isset($_GET['toggle_estado'])) {
             $stmt = $pdo->prepare("UPDATE actividades SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
             $stmt->execute([$id, $entidad_id]);
 
-            $stmt_c = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_actividad = ? AND fk_entidad = ?");
+            $stmt_c = $pdo->prepare("UPDATE modulos SET estado = FALSE WHERE fk_actividad = ? AND fk_entidad = ?");
             $stmt_c->execute([$id, $entidad_id]);
 
             $pdo->commit();

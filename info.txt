@@ -1,6 +1,6 @@
 asistencia	id		integer
 asistencia	fk_inscripcion	integer
-asistencia	fk_clase	integer
+asistencia	fk_modulo	integer
 asistencia	asistencia	character varying
 asistencia	fecha		date
 espacios	id		integer
@@ -14,19 +14,19 @@ categoria	id		integer
 categoria	nombre		character varying
 categoria	edad_minima	integer
 categoria	edad_maxima	integer
-clases		id		integer
-clases		nombre		character varying
-clases		descripcion	text
-clases		horario_inicio	time without time zone
-clases		horario_cierre	time without time zone
-clases		cupo_maximo	integer
-clases		fk_usuario_profesor	integer
-clases		fk_actividad	integer
-clases		fk_espacio	integer
-clases		fk_categoria	integer
-clases		fk_subcategoria	integer
-clases		fk_entidad	integer
-clases		estado		boolean
+modulos		id		integer
+modulos		nombre		character varying
+modulos		descripcion	text
+modulos		horario_inicio	time without time zone
+modulos		horario_cierre	time without time zone
+modulos		cupo_maximo	integer
+modulos		fk_usuario_profesor	integer
+modulos		fk_actividad	integer
+modulos		fk_espacio	integer
+modulos		fk_categoria	integer
+modulos		fk_subcategoria	integer
+modulos		fk_entidad	integer
+modulos		estado		boolean
 actividades	id		integer
 actividades	nombre		character varying
 actividades	texto		text
@@ -36,11 +36,11 @@ actividades	estado		boolean
 dias		id		integer
 dias		nombre		character varying
 dias	orden	integer
-dias_clases	id		integer
-dias_clases	fk_clase	integer
-dias_clases	fk_dia		integer
+dias_modulos	id		integer
+dias_modulos	fk_modulo	integer
+dias_modulos	fk_dia		integer
 inscripcion	id		integer
-inscripcion	fk_clase	integer
+inscripcion	fk_modulo	integer
 inscripcion	fk_usuario	integer
 inscripcion	fk_menor	integer
 inscripcion	fecha		timestamp without time zone

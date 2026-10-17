@@ -10,16 +10,16 @@ $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
 
-$pre_clase_id = isset($_GET['clase_id']) ? intval($_GET['clase_id']) : 0;
+$pre_modulo_id = isset($_GET['modulo_id']) ? intval($_GET['modulo_id']) : 0;
 
-// Cargar Clases Activas para el selector
-$clases = [];
+// Cargar Modulos Activas para el selector
+$modulos = [];
 try {
     $stmt = $pdo->query("
         SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre,
                COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
                COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
-        FROM clases c
+        FROM modulos c
         JOIN actividades d ON c.fk_actividad = d.id
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
@@ -27,7 +27,7 @@ try {
         WHERE c.estado = TRUE AND e.estado = TRUE
         ORDER BY e.nombre, d.nombre, c.nombre ASC
     ");
-    $clases = $stmt->fetchAll();
+    $modulos = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 // Cargar Menores del Usuario
@@ -40,19 +40,19 @@ try {
 
 // Procesar Inscripción
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'inscribirse') {
-    $clase_id = intval($_POST['clase_id']);
+    $modulo_id = intval($_POST['modulo_id']);
     $inscribir_a = $_POST['inscribir_a']; // 'tutor' (el padre) o el ID del menor
     
-    // Obtener detalles de la clase y edad límite
-    $clase_sel = null;
-    foreach ($clases as $c) {
-        if ($c['id'] == $clase_id) {
-            $clase_sel = $c;
+    // Obtener detalles de la modulo y edad límite
+    $modulo_sel = null;
+    foreach ($modulos as $c) {
+        if ($c['id'] == $modulo_id) {
+            $modulo_sel = $c;
             break;
         }
     }
     
-    if (!$clase_sel) {
+    if (!$modulo_sel) {
         $error_msg = 'El módulo seleccionado no existe o no está activo.';
     } else {
         // Obtener datos de la persona a inscribir
@@ -86,21 +86,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         } else {
             // Calcular edad
             $age = date_diff(date_create($persona_nacimiento), date_create('today'))->y;
-            $edad_min = $clase_sel['edad_min'];
-            $edad_max = $clase_sel['edad_max'];
+            $edad_min = $modulo_sel['edad_min'];
+            $edad_max = $modulo_sel['edad_max'];
             
             // Validar edad
             if ($age < $edad_min || $age > $edad_max) {
                 $error_msg = "Error de Inscripción: $persona_nombre tiene $age años. Este módulo está permitido únicamente para edades entre $edad_min y $edad_max años.";
             } else {
                 try {
-                    // Verificar si ya está inscripto en esta clase
+                    // Verificar si ya está inscripto en esta modulo
                     $stmt_chk = $pdo->prepare("
                         SELECT COUNT(*) 
                         FROM inscripcion 
-                        WHERE fk_clase = ? AND (fk_usuario = ? OR fk_menor = ?) AND estado = 'activo'
+                        WHERE fk_modulo = ? AND (fk_usuario = ? OR fk_menor = ?) AND estado = 'activo'
                     ");
-                    $stmt_chk->execute([$clase_id, $fk_usuario, $fk_menor]);
+                    $stmt_chk->execute([$modulo_id, $fk_usuario, $fk_menor]);
                     $duplicado = $stmt_chk->fetchColumn();
                     
                     if ($duplicado > 0) {
@@ -110,20 +110,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                         $stmt_cnt = $pdo->prepare("
                             SELECT COUNT(*) 
                             FROM inscripcion 
-                            WHERE fk_clase = ? AND lista_espera = FALSE AND estado = 'activo'
+                            WHERE fk_modulo = ? AND lista_espera = FALSE AND estado = 'activo'
                         ");
-                        $stmt_cnt->execute([$clase_id]);
+                        $stmt_cnt->execute([$modulo_id]);
                         $activos = $stmt_cnt->fetchColumn();
                         
-                        $lista_espera = $activos >= $clase_sel['cupo_maximo'] ? 1 : 0;
+                        $lista_espera = $activos >= $modulo_sel['cupo_maximo'] ? 1 : 0;
                         
                         // Insertar inscripción
                         $stmt_ins = $pdo->prepare("
-                            INSERT INTO inscripcion (fk_clase, fk_usuario, fk_menor, lista_espera, estado)
+                            INSERT INTO inscripcion (fk_modulo, fk_usuario, fk_menor, lista_espera, estado)
                             VALUES (?, ?, ?, ?, 'activo')
                         ");
                         // SQLite no soporta boolean directamente, usamos 1 o 0
-                        $stmt_ins->execute([$clase_id, $fk_usuario, $fk_menor, $lista_espera]);
+                        $stmt_ins->execute([$modulo_id, $fk_usuario, $fk_menor, $lista_espera]);
                         
                         if ($lista_espera) {
                             $success_msg = "¡Inscripción registrada! Debido a que el cupo está completo, $persona_nombre ha sido ingresado a la <strong>LISTA DE ESPERA</strong> del módulo.";
@@ -203,13 +203,13 @@ require_once __DIR__ . '/../includes/header.php';
                         </div>
                     </div>
                     
-                    <!-- 2. Seleccionar la clase -->
+                    <!-- 2. Seleccionar la modulo -->
                     <div class="mb-4">
                         <label class="form-label fw-bold text-dark fs-5">2. Seleccioná el Módulo de la Actividad</label>
-                        <select name="clase_id" class="form-select rounded-pill px-3" required>
+                        <select name="modulo_id" class="form-select rounded-pill px-3" required>
                             <option value="">-- Elegir Módulo --</option>
-                            <?php foreach ($clases as $cl): 
-                                $selected = ($pre_clase_id == $cl['id']) ? 'selected' : '';
+                            <?php foreach ($modulos as $cl):
+                                $selected = ($pre_modulo_id == $cl['id']) ? 'selected' : '';
                             ?>
                                 <option value="<?= $cl['id']; ?>" <?= $selected; ?>>
                                     [<?= htmlspecialchars($cl['entidad_nombre']); ?>] <?= htmlspecialchars($cl['actividad_nombre']); ?> - <?= htmlspecialchars($cl['nombre']); ?> (Edades: <?= $cl['edad_min']; ?> a <?= $cl['edad_max']; ?>)

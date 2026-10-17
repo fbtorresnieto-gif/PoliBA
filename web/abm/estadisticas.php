@@ -53,7 +53,7 @@ try {
     $total_espacios = $stmt->fetchColumn() ?: 0;
 
     // Módulos activos
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM clases WHERE fk_entidad = ? AND estado = TRUE");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM modulos WHERE fk_entidad = ? AND estado = TRUE");
     $stmt->execute([$entidad_id]);
     $total_modulos = $stmt->fetchColumn() ?: 0;
 
@@ -73,7 +73,7 @@ try {
             SUM(CASE WHEN i.lista_espera = FALSE AND i.estado = 'activo' THEN 1 ELSE 0 END) as activos,
             SUM(CASE WHEN i.lista_espera = TRUE AND i.estado = 'activo' THEN 1 ELSE 0 END) as espera
         FROM inscripcion i
-        JOIN clases c ON i.fk_clase = c.id
+        JOIN modulos c ON i.fk_modulo = c.id
         WHERE c.fk_entidad = ?
     ");
     $stmt->execute([$entidad_id]);
@@ -90,7 +90,7 @@ try {
             e.id, e.nombre, e.techado, e.estado,
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'reservado') as reservas_activas,
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'cancelado') as reservas_canceladas,
-            (SELECT COUNT(*) FROM clases cl WHERE cl.fk_espacio = e.id AND cl.estado = TRUE) as modulos_asignados
+            (SELECT COUNT(*) FROM modulos cl WHERE cl.fk_espacio = e.id AND cl.estado = TRUE) as modulos_asignados
         FROM espacios e
         WHERE e.fk_entidad = ?
         ORDER BY reservas_activas DESC, e.nombre ASC
@@ -110,17 +110,17 @@ try {
             (
                 SELECT COUNT(*)
                 FROM inscripcion i
-                JOIN clases cl ON i.fk_clase = cl.id
+                JOIN modulos cl ON i.fk_modulo = cl.id
                 WHERE cl.fk_actividad = d.id AND i.lista_espera = FALSE AND i.estado = 'activo'
             ) as alumnos_inscriptos,
             (
                 SELECT COUNT(*)
                 FROM inscripcion i
-                JOIN clases cl ON i.fk_clase = cl.id
+                JOIN modulos cl ON i.fk_modulo = cl.id
                 WHERE cl.fk_actividad = d.id AND i.lista_espera = TRUE AND i.estado = 'activo'
             ) as alumnos_espera
         FROM actividades d
-        LEFT JOIN clases c ON c.fk_actividad = d.id AND c.estado = TRUE
+        LEFT JOIN modulos c ON c.fk_actividad = d.id AND c.estado = TRUE
         WHERE d.fk_entidad = ?
         GROUP BY d.id, d.nombre, d.estado
         ORDER BY alumnos_inscriptos DESC, d.nombre ASC

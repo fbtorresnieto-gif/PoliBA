@@ -10,26 +10,26 @@ $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
 
-// Procesar promoción de clase
+// Procesar promoción de modulo
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'promocionar') {
     $inscripcion_id = intval($_POST['inscripcion_id']);
-    $nueva_clase_id = intval($_POST['nueva_clase_id']);
+    $nueva_modulo_id = intval($_POST['nueva_modulo_id']);
     $alumno_nombre = $_POST['alumno_nombre'];
     $alumno_email = $_POST['alumno_email'];
     
     try {
-        // Obtener límites de edad de la nueva clase
+        // Obtener límites de edad de la nueva modulo
         $stmt = $pdo->prepare("
             SELECT c.id, c.nombre, 
                    COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
                    COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
-            FROM clases c
+            FROM modulos c
             LEFT JOIN categoria cat ON c.fk_categoria = cat.id
             LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
             WHERE c.id = ?
         ");
-        $stmt->execute([$nueva_clase_id]);
-        $target_clase = $stmt->fetch();
+        $stmt->execute([$nueva_modulo_id]);
+        $target_modulo = $stmt->fetch();
         
         // Obtener fecha de nacimiento del alumno
         $stmt_nac = $pdo->prepare("
@@ -44,13 +44,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         
         $age = date_diff(date_create($nac), date_create('today'))->y;
         
-        if ($age < $target_clase['edad_min'] || $age > $target_clase['edad_max']) {
-            $error_msg = "No se puede promocionar a $alumno_nombre: su edad ($age años) no cumple con el rango permitido para {$target_clase['nombre']} ({$target_clase['edad_min']} a {$target_clase['edad_max']} años).";
+        if ($age < $target_modulo['edad_min'] || $age > $target_modulo['edad_max']) {
+            $error_msg = "No se puede promocionar a $alumno_nombre: su edad ($age años) no cumple con el rango permitido para {$target_modulo['nombre']} ({$target_modulo['edad_min']} a {$target_modulo['edad_max']} años).";
         } else {
-            // Realizar promoción (cambiar clase en la inscripción)
-            $stmt_prom = $pdo->prepare("UPDATE inscripcion SET fk_clase = ?, lista_espera = FALSE WHERE id = ?");
-            if ($stmt_prom->execute([$nueva_clase_id, $inscripcion_id])) {
-                $success_msg = "¡Promoción exitosa! $alumno_nombre promovido al módulo: {$target_clase['nombre']}. " .
+            // Realizar promoción (cambiar modulo en la inscripción)
+            $stmt_prom = $pdo->prepare("UPDATE inscripcion SET fk_modulo = ?, lista_espera = FALSE WHERE id = ?");
+            if ($stmt_prom->execute([$nueva_modulo_id, $inscripcion_id])) {
+                $success_msg = "¡Promoción exitosa! $alumno_nombre promovido al módulo: {$target_modulo['nombre']}. " .
                                "Se envió un correo de notificación a $alumno_email. Recuerda informarle telefónicamente.";
             }
         }
@@ -59,18 +59,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Cargar todos los alumnos inscriptos en clases dictadas por este profesor
+// Cargar todos los alumnos inscriptos en modulos dictadas por este profesor
 $alumnos_inscritos = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT i.id as inscripcion_id, i.fk_clase,
-               c.nombre as clase_actual_nombre, c.fk_actividad, c.fk_entidad,
+        SELECT i.id as inscripcion_id, i.fk_modulo,
+               c.nombre as modulo_actual_nombre, c.fk_actividad, c.fk_entidad,
                COALESCE(sub.edad_minima, cat.edad_minima, 0) as cat_edad_min,
                COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as cat_edad_max,
                u.nombre as alu_nombre, u.apellido as alu_apellido, u.email as alu_email, u.telefono as alu_telefono, u.fecha_nacimiento as alu_nac,
                m.nombre as men_nombre, m.apellido as men_apellido, tutor.email as tut_email, tutor.telefono as tut_telefono, m.fecha_nacimiento as men_nac
         FROM inscripcion i
-        JOIN clases c ON i.fk_clase = c.id
+        JOIN modulos c ON i.fk_modulo = c.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
         LEFT JOIN usuarios u ON i.fk_usuario = u.id
@@ -82,7 +82,7 @@ try {
     $stmt->execute([$user['id']]);
     $alumnos_inscritos = $stmt->fetchAll();
     
-    // Para cada alumno, buscar clases alternativas en la misma actividad y entidad
+    // Para cada alumno, buscar modulos alternativas en la misma actividad y entidad
     foreach ($alumnos_inscritos as &$al) {
         $es_menor = !empty($al['men_nombre']);
         $nombre = $es_menor ? $al['men_nombre'] : $al['alu_nombre'];
@@ -96,24 +96,24 @@ try {
         $al['display_telefono'] = $telefono;
         $al['edad'] = date_diff(date_create($nac), date_create('today'))->y;
         
-        // Buscar otras clases de la misma actividad en esta entidad
+        // Buscar otras modulos de la misma actividad en esta entidad
         $stmt_cls = $pdo->prepare("
             SELECT c.id, c.nombre, 
                    COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
                    COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
-            FROM clases c
+            FROM modulos c
             LEFT JOIN categoria cat ON c.fk_categoria = cat.id
             LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
             WHERE c.fk_actividad = ? AND c.fk_entidad = ? AND c.id != ? AND c.estado = TRUE
         ");
-        $stmt_cls->execute([$al['fk_actividad'], $al['fk_entidad'], $al['fk_clase']]);
-        $clases_alternativas = $stmt_cls->fetchAll();
+        $stmt_cls->execute([$al['fk_actividad'], $al['fk_entidad'], $al['fk_modulo']]);
+        $modulos_alternativas = $stmt_cls->fetchAll();
         
-        // Filtrar solo las clases aptas para la edad actual del alumno
-        $al['clases_aptas'] = [];
-        foreach ($clases_alternativas as $ca) {
+        // Filtrar solo las modulos aptas para la edad actual del alumno
+        $al['modulos_aptas'] = [];
+        foreach ($modulos_alternativas as $ca) {
             if ($al['edad'] >= $ca['edad_min'] && $al['edad'] <= $ca['edad_max']) {
-                $al['clases_aptas'][] = $ca;
+                $al['modulos_aptas'][] = $ca;
             }
         }
     }
@@ -162,10 +162,10 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?= $al['edad']; ?> años</td>
-                            <td><span class="badge bg-info text-dark"><?= htmlspecialchars($al['clase_actual_nombre']); ?></span></td>
+                            <td><span class="badge bg-info text-dark"><?= htmlspecialchars($al['modulo_actual_nombre']); ?></span></td>
                             <td><?= $al['cat_edad_min']; ?> a <?= $al['cat_edad_max']; ?> años</td>
                             <td>
-                                <?php if (empty($al['clases_aptas'])): ?>
+                                <?php if (empty($al['modulos_aptas'])): ?>
                                     <span class="text-muted small">No hay categorías alternativas para su edad.</span>
                                 <?php else: ?>
                                     <form action="profesor_promocion.php" method="POST" class="d-flex gap-2">
@@ -174,9 +174,9 @@ require_once __DIR__ . '/../includes/header.php';
                                         <input type="hidden" name="alumno_nombre" value="<?= htmlspecialchars($al['display_nombre']); ?>">
                                         <input type="hidden" name="alumno_email" value="<?= htmlspecialchars($al['display_email']); ?>">
                                         
-                                        <select name="nueva_clase_id" class="form-select form-select-sm rounded-pill px-3" required style="max-width:250px;">
+                                        <select name="nueva_modulo_id" class="form-select form-select-sm rounded-pill px-3" required style="max-width:250px;">
                                             <option value="">-- Seleccionar Módulo --</option>
-                                            <?php foreach ($al['clases_aptas'] as $ca): ?>
+                                            <?php foreach ($al['modulos_aptas'] as $ca): ?>
                                                 <option value="<?= $ca['id']; ?>">
                                                     <?= htmlspecialchars($ca['nombre']); ?> (<?= $ca['edad_min']; ?>-<?= $ca['edad_max']; ?>)
                                                 </option>

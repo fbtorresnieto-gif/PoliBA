@@ -26,7 +26,7 @@ INSERT INTO categoria (nombre, edad_minima, edad_maxima) VALUES
 
 -- 4. Inserción de Entidades
 INSERT INTO entidades (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre) VALUES
-('Polideportivo Colegiales', 'Freire 234, Colegiales, CABA', '08:00:00', '22:00:00', '-34.5746766,-58.4485984', 'Entidad barrial con canchas de voley, futbol, basquet y tenis. Clases gratuitas para todas las edades.', 'colegiales.jpg', 1, 6),
+('Polideportivo Colegiales', 'Freire 234, Colegiales, CABA', '08:00:00', '22:00:00', '-34.5746766,-58.4485984', 'Entidad barrial con canchas de voley, futbol, basquet y tenis. Modulos gratuitas para todas las edades.', 'colegiales.jpg', 1, 6),
 ('Polideportivo Parque Sarmiento', 'Av. Dr. Ricardo Balbín 4750, Saavedra, CABA', '07:00:00', '21:00:00', '-34.5539281,-58.5005872', 'Gran entidad deportiva con pistas de atletismo, canchas de futbol profesional, tenis y piscinas.', 'parque_sarmiento.jpg', 2, 7);
 
 -- 5. Inserción de Usuarios de Prueba
@@ -60,9 +60,9 @@ INSERT INTO menores (nombre, apellido, dni, direccion, fecha_nacimiento, relacio
 INSERT INTO actividades (nombre, texto, imagenURL, fk_entidad) VALUES
 ('Vóley', 'El vóley es una actividad de equipo practicada en una cancha dividida por una red. Ideal para coordinación y agilidad.', 'voley.jpg', 1),
 ('Básquet', 'El básquetbol es una disciplina de velocidad, pases rápidos y encestes. Contamos con aros profesionales.', 'basquet.jpg', 1),
-('Fútbol 5', 'Disfrutá del fútbol en canchas sintéticas reglamentarias. Alquiler y clases de formación.', 'futbol.jpg', 1),
+('Fútbol 5', 'Disfrutá del fútbol en canchas sintéticas reglamentarias. Alquiler y modulos de formación.', 'futbol.jpg', 1),
 ('Tenis', 'Tenis individual o dobles. Contamos con canchas de polvo de ladrillo y cemento.', 'tenis.jpg', 1),
-('Natación', 'Clases de natación en piscina climatizada y libre recreativa.', 'natacion.jpg', 2);
+('Natación', 'Modulos de natación en piscina climatizada y libre recreativa.', 'natacion.jpg', 2);
 
 -- 8. Inserción de Espacios
 INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad) VALUES
@@ -79,26 +79,26 @@ INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_actividad, fk_ca
 ('Vóley Mayores A', 18, 40, 1, 3, 1),
 ('Vóley Recreativo Senior', 60, 80, 1, 4, 1);
 
--- 10. Inserción de Clases
-INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad) VALUES
-('Vóley Mayores Inicial', 'Clase recreativa y técnica de voley para mayores de 18 años.', '18:00:00', '20:00:00', 15, 4, 1, 1, 3, 3, 1),
+-- 10. Inserción de Modulos
+INSERT INTO modulos (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad) VALUES
+('Vóley Mayores Inicial', 'Modulo recreativa y técnica de voley para mayores de 18 años.', '18:00:00', '20:00:00', 15, 4, 1, 1, 3, 3, 1),
 ('Mini Básquet Colegiales', 'Iniciación al basquet para niños y niñas de 6 a 12 años.', '16:00:00', '17:30:00', 2, 5, 2, 3, 1, NULL, 1); -- Cupo bajo para probar listas de espera
 
--- 11. Asociación Clases - Días
-INSERT INTO dias_clases (fk_clase, fk_dia) VALUES 
+-- 11. Asociación Modulos - Días
+INSERT INTO dias_modulos (fk_modulo, fk_dia) VALUES
 (1, 1), -- Lunes
 (1, 3), -- Miércoles
 (2, 2), -- Martes
 (2, 4); -- Jueves
 
 -- 12. Inscripciones de Prueba
-INSERT INTO inscripcion (fk_clase, fk_usuario, fk_menor, lista_espera, estado) VALUES 
-(1, 6, NULL, FALSE, 'activo'), -- Geronimo (ID 6) inscripto a Vóley Mayores Inicial (clase activa)
-(2, NULL, 1, FALSE, 'activo'),  -- Menor Carlos (ID 1) inscripto a Mini Básquet (clase activa)
+INSERT INTO inscripcion (fk_modulo, fk_usuario, fk_menor, lista_espera, estado) VALUES
+(1, 6, NULL, FALSE, 'activo'), -- Geronimo (ID 6) inscripto a Vóley Mayores Inicial (modulo activa)
+(2, NULL, 1, FALSE, 'activo'),  -- Menor Carlos (ID 1) inscripto a Mini Básquet (modulo activa)
 (2, 7, NULL, TRUE, 'activo');   -- Flor (ID 7) inscripta a Mini Básquet en LISTA DE ESPERA (por cupo de 2 alcanzado)
 
 -- 13. Asistencias de Prueba
-INSERT INTO asistencia (fk_inscripcion, fk_clase, asistencia, fecha) VALUES 
+INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha) VALUES
 (1, 1, 'presente', '2026-07-27'), -- Asistencia Lunes pasado
 (1, 1, 'presente', '2026-07-29'); -- Asistencia Miércoles pasado
 

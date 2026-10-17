@@ -81,19 +81,19 @@ try {
     // Log
 }
 
-// Obtener las clases programadas para este espacio en este día de la semana
-$clases_dia = [];
+// Obtener las modulos programadas para este espacio en este día de la semana
+$modulos_dia = [];
 try {
     $stmt = $pdo->prepare("
         SELECT c.id, c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as actividad_nombre
-        FROM clases c
-        JOIN dias_clases dc ON c.id = dc.fk_clase
+        FROM modulos c
+        JOIN dias_modulos dc ON c.id = dc.fk_modulo
         JOIN dias dia ON dc.fk_dia = dia.id
         LEFT JOIN actividades d ON c.fk_actividad = d.id
         WHERE c.fk_espacio = ? AND dia.orden = ? AND c.estado = TRUE
     ");
     $stmt->execute([$espacio_id, $dia_semana_num]);
-    $clases_dia = $stmt->fetchAll();
+    $modulos_dia = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Log
 }
@@ -120,22 +120,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     } elseif (in_array($horario, $reservas_existentes)) {
         $error_msg = 'El horario seleccionado ya se encuentra reservado por otro usuario.';
     } else {
-        // 2. Validar que no colisione con ninguna clase de actividad
+        // 2. Validar que no colisione con ninguna modulo de actividad
         $slot_start_sec = strtotime("1970-01-01 $horario");
         $slot_end_sec = $slot_start_sec + 3600;
-        $clase_collision = null;
+        $modulo_collision = null;
         
-        foreach ($clases_dia as $cl) {
+        foreach ($modulos_dia as $cl) {
             $cl_start_sec = strtotime("1970-01-01 " . $cl['horario_inicio']);
             $cl_end_sec = strtotime("1970-01-01 " . $cl['horario_cierre']);
             if ($slot_start_sec < $cl_end_sec && $slot_end_sec > $cl_start_sec) {
-                $clase_collision = $cl;
+                $modulo_collision = $cl;
                 break;
             }
         }
         
-        if ($clase_collision) {
-            $error_msg = 'El horario seleccionado no está disponible debido al módulo de la actividad "' . htmlspecialchars($clase_collision['nombre']) . '" (' . date('H:i', strtotime($clase_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($clase_collision['horario_cierre'])) . ' hs).';
+        if ($modulo_collision) {
+            $error_msg = 'El horario seleccionado no está disponible debido al módulo de la actividad "' . htmlspecialchars($modulo_collision['nombre']) . '" (' . date('H:i', strtotime($modulo_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($modulo_collision['horario_cierre'])) . ' hs).';
         } else {
             try {
                 if ($db_driver_used === 'postgresql') {
@@ -292,13 +292,13 @@ require_once __DIR__ . '/includes/header.php';
                             // 1. ¿Está reservado por un alumno?
                             $is_reserved = in_array($time_val, $reservas_existentes);
                             
-                            // 2. ¿Está ocupado por una clase de actividad?
-                            $clase_ocupante = null;
-                            foreach ($clases_dia as $cl) {
+                            // 2. ¿Está ocupado por una modulo de actividad?
+                            $modulo_ocupante = null;
+                            foreach ($modulos_dia as $cl) {
                                 $cl_start_sec = strtotime("1970-01-01 " . $cl['horario_inicio']);
                                 $cl_end_sec = strtotime("1970-01-01 " . $cl['horario_cierre']);
                                 if ($slot_start_sec < $cl_end_sec && $slot_end_sec > $cl_start_sec) {
-                                    $clase_ocupante = $cl;
+                                    $modulo_ocupante = $cl;
                                     break;
                                 }
                             }
@@ -312,7 +312,7 @@ require_once __DIR__ . '/includes/header.php';
                                 }
                             }
                             
-                            $is_available = !$is_reserved && !$clase_ocupante && !$is_past;
+                            $is_available = !$is_reserved && !$modulo_ocupante && !$is_past;
                             if ($is_available) $disponibles_count++;
                         ?>
                             <div class="col-sm-6 col-md-4 col-lg-3">
@@ -324,11 +324,11 @@ require_once __DIR__ . '/includes/header.php';
                                             <i class="bi bi-x-circle-fill me-1"></i>Ocupado
                                         </span>
                                     </div>
-                                <?php elseif ($clase_ocupante): ?>
-                                    <!-- Slot Ocupado por Clase de Actividad Programada -->
-                                    <div class="border border-warning bg-warning bg-opacity-10 rounded-pill p-2 text-center position-relative d-flex align-items-center justify-content-between h-100 px-3" style="min-height: 55px;" title="Ocupado por Módulo: <?= htmlspecialchars($clase_ocupante['nombre']); ?> (<?= date('H:i', strtotime($clase_ocupante['horario_inicio'])); ?> a <?= date('H:i', strtotime($clase_ocupante['horario_cierre'])); ?> hs)">
+                                <?php elseif ($modulo_ocupante): ?>
+                                    <!-- Slot Ocupado por Modulo de Actividad Programada -->
+                                    <div class="border border-warning bg-warning bg-opacity-10 rounded-pill p-2 text-center position-relative d-flex align-items-center justify-content-between h-100 px-3" style="min-height: 55px;" title="Ocupado por Módulo: <?= htmlspecialchars($modulo_ocupante['nombre']); ?> (<?= date('H:i', strtotime($modulo_ocupante['horario_inicio'])); ?> a <?= date('H:i', strtotime($modulo_ocupante['horario_cierre'])); ?> hs)">
                                         <span class="text-decoration-line-through text-dark fw-bold"><?= $label; ?></span>
-                                        <span class="badge bg-warning text-dark rounded-pill px-2 py-1 text-truncate" style="font-size: 0.72rem; max-width: 110px;" title="<?= htmlspecialchars($clase_ocupante['nombre']); ?>">
+                                        <span class="badge bg-warning text-dark rounded-pill px-2 py-1 text-truncate" style="font-size: 0.72rem; max-width: 110px;" title="<?= htmlspecialchars($modulo_ocupante['nombre']); ?>">
                                             <i class="bi bi-calendar-x-fill me-1"></i>Módulo
                                         </span>
                                     </div>

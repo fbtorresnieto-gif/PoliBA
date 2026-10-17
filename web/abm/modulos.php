@@ -109,21 +109,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] ?? '') == 'editar' ? intval($_POST['id']) : 0;
 
             if (($_POST['action'] ?? '') == 'editar') {
-                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_actividad, fk_categoria, fk_subcategoria FROM clases WHERE id = ? AND fk_entidad = ?");
+                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_actividad, fk_categoria, fk_subcategoria FROM modulos WHERE id = ? AND fk_entidad = ?");
                 $stmt_orig->execute([$chk_id, $entidad_id]);
-                $clase_orig = $stmt_orig->fetch();
+                $modulo_orig = $stmt_orig->fetch();
 
-                if (!$clase_orig) {
+                if (!$modulo_orig) {
                     $error_msg = 'El módulo a editar no fue encontrado.';
                     $sub_valida = false;
-                } elseif ($cupo_maximo < intval($clase_orig['cupo_maximo'])) {
-                    $error_msg = "El cupo máximo no se puede reducir. Debe ser mayor o igual al cupo guardado previamente ({$clase_orig['cupo_maximo']}).";
+                } elseif ($cupo_maximo < intval($modulo_orig['cupo_maximo'])) {
+                    $error_msg = "El cupo máximo no se puede reducir. Debe ser mayor o igual al cupo guardado previamente ({$modulo_orig['cupo_maximo']}).";
                     $sub_valida = false;
                 } else {
                     // Forzar inmutabilidad de actividad, categoría y subcategoría al editar
-                    $fk_actividad = intval($clase_orig['fk_actividad']);
-                    $fk_categoria = !empty($clase_orig['fk_categoria']) ? intval($clase_orig['fk_categoria']) : null;
-                    $fk_subcategoria = !empty($clase_orig['fk_subcategoria']) ? intval($clase_orig['fk_subcategoria']) : null;
+                    $fk_actividad = intval($modulo_orig['fk_actividad']);
+                    $fk_categoria = !empty($modulo_orig['fk_categoria']) ? intval($modulo_orig['fk_categoria']) : null;
+                    $fk_subcategoria = !empty($modulo_orig['fk_subcategoria']) ? intval($modulo_orig['fk_subcategoria']) : null;
                 }
             }
 
@@ -134,8 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($fk_espacio !== null) {
                     $sql_espacio = "
                         SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre, esp.nombre as espacio_nombre
-                        FROM clases c
-                        JOIN dias_clases dc ON c.id = dc.fk_clase
+                        FROM modulos c
+                        JOIN dias_modulos dc ON c.id = dc.fk_modulo
                         JOIN dias d ON dc.fk_dia = d.id
                         JOIN espacios esp ON c.fk_espacio = esp.id
                         WHERE c.fk_entidad = ?
@@ -162,8 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 } else {
                     $sql_general = "
                         SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre
-                        FROM clases c
-                        JOIN dias_clases dc ON c.id = dc.fk_clase
+                        FROM modulos c
+                        JOIN dias_modulos dc ON c.id = dc.fk_modulo
                         JOIN dias d ON dc.fk_dia = d.id
                         WHERE c.fk_entidad = ?
                           AND c.fk_espacio IS NULL
@@ -195,8 +195,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $sql_prof = "
                     SELECT DISTINCT c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as dia_nombre, 
                                     u.nombre as prof_nombre, u.apellido as prof_apellido, e.nombre as entidad_nombre
-                    FROM clases c
-                    JOIN dias_clases dc ON c.id = dc.fk_clase
+                    FROM modulos c
+                    JOIN dias_modulos dc ON c.id = dc.fk_modulo
                     JOIN dias d ON dc.fk_dia = d.id
                     JOIN usuarios u ON c.fk_usuario_profesor = u.id
                     JOIN entidades e ON c.fk_entidad = e.id
@@ -260,25 +260,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if ($_POST['action'] == 'crear') {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        INSERT INTO modulos (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         RETURNING id
                     ");
                     $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
-                    $clase_id = $stmt->fetchColumn();
+                    $modulo_id = $stmt->fetchColumn();
                 } else {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        INSERT INTO modulos (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                     ");
                     $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
-                    $clase_id = $pdo->lastInsertId();
+                    $modulo_id = $pdo->lastInsertId();
                 }
                 
                 // Insertar los días
-                $stmt_dia = $pdo->prepare("INSERT INTO dias_clases (fk_clase, fk_dia) VALUES (?, ?)");
+                $stmt_dia = $pdo->prepare("INSERT INTO dias_modulos (fk_modulo, fk_dia) VALUES (?, ?)");
                 foreach ($dias_seleccionados as $dia_id) {
-                    $stmt_dia->execute([$clase_id, intval($dia_id)]);
+                    $stmt_dia->execute([$modulo_id, intval($dia_id)]);
                 }
                 
                 $pdo->commit();
@@ -287,17 +287,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $id = intval($_POST['id']);
                 
                 $stmt = $pdo->prepare("
-                    UPDATE clases 
+                    UPDATE modulos
                     SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_actividad = ?, fk_espacio = ?, fk_categoria = ?, fk_subcategoria = ?
                     WHERE id = ? AND fk_entidad = ?
                 ");
                 $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
                 
                 // Limpiar días anteriores y re-insertar
-                $stmt_del = $pdo->prepare("DELETE FROM dias_clases WHERE fk_clase = ?");
+                $stmt_del = $pdo->prepare("DELETE FROM dias_modulos WHERE fk_modulo = ?");
                 $stmt_del->execute([$id]);
                 
-                $stmt_dia = $pdo->prepare("INSERT INTO dias_clases (fk_clase, fk_dia) VALUES (?, ?)");
+                $stmt_dia = $pdo->prepare("INSERT INTO dias_modulos (fk_modulo, fk_dia) VALUES (?, ?)");
                 foreach ($dias_seleccionados as $dia_id) {
                     $stmt_dia->execute([$id, intval($dia_id)]);
                 }
@@ -319,7 +319,7 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE clases SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+        $stmt = $pdo->prepare("UPDATE modulos SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
         $stmt->execute([$id, $entidad_id]);
         $success_msg = 'Estado del módulo actualizado.';
     } catch (PDOException $e) {
@@ -327,13 +327,13 @@ if (isset($_GET['toggle_estado'])) {
     }
 }
 
-// Cargar Clases de la sede
-$clases = [];
+// Cargar Modulos de la sede
+$modulos = [];
 try {
     $stmt = $pdo->prepare("
         SELECT c.*, d.nombre as actividad_nombre, prof.nombre as prof_nombre, prof.apellido as prof_apellido,
                esp.nombre as espacio_nombre, cat.nombre as categoria_nombre, sub.nombre as subcategoria_nombre
-        FROM clases c
+        FROM modulos c
         JOIN actividades d ON c.fk_actividad = d.id
         LEFT JOIN usuarios prof ON c.fk_usuario_profesor = prof.id
         LEFT JOIN espacios esp ON c.fk_espacio = esp.id
@@ -343,15 +343,15 @@ try {
         ORDER BY c.id ASC
     ");
     $stmt->execute([$entidad_id]);
-    $clases = $stmt->fetchAll();
+    $modulos = $stmt->fetchAll();
     
-    // Cargar días para cada clase
-    foreach ($clases as &$clase) {
-        $stmt_d = $pdo->prepare("SELECT fk_dia FROM dias_clases WHERE fk_clase = ?");
-        $stmt_d->execute([$clase['id']]);
-        $clase['dias'] = $stmt_d->fetchAll(PDO::FETCH_COLUMN);
+    // Cargar días para cada modulo
+    foreach ($modulos as &$modulo) {
+        $stmt_d = $pdo->prepare("SELECT fk_dia FROM dias_modulos WHERE fk_modulo = ?");
+        $stmt_d->execute([$modulo['id']]);
+        $modulo['dias'] = $stmt_d->fetchAll(PDO::FETCH_COLUMN);
     }
-    unset($clase);
+    unset($modulo);
 } catch (PDOException $e) {}
 
 // Cargar catálogo de soporte (profesores, actividades, espacios, categorías, subcategorías y días)
@@ -395,7 +395,7 @@ require_once __DIR__ . '/../includes/header.php';
             <h2 class="fw-bold text-dark m-0">ABM Módulos</h2>
             <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearClaseModal">Agregar Módulo</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearModuloModal">Agregar Módulo</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -419,46 +419,46 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($clases)): ?>
+                <?php if (empty($modulos)): ?>
                     <tr>
                         <td colspan="7" class="text-center text-muted">No hay módulos registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($clases as $clase): 
+                    <?php foreach ($modulos as $modulo):
                         // Mapear nombres de días
                         $dias_nombres = [];
                         foreach ($dias as $d) {
-                            if (in_array($d['id'], $clase['dias'])) {
+                            if (in_array($d['id'], $modulo['dias'])) {
                                 $dias_nombres[] = substr($d['nombre'], 0, 2);
                             }
                         }
                     ?>
                         <tr>
                             <td class="fw-bold">
-                                <?= htmlspecialchars($clase['nombre']); ?>
+                                <?= htmlspecialchars($modulo['nombre']); ?>
                                 <div class="small text-muted font-normal">
-                                    Cat: <?= htmlspecialchars($clase['categoria_nombre'] ?? 'General'); ?> 
-                                    <?= !empty($clase['subcategoria_nombre']) ? ' (' . htmlspecialchars($clase['subcategoria_nombre']) . ')' : ''; ?>
+                                    Cat: <?= htmlspecialchars($modulo['categoria_nombre'] ?? 'General'); ?>
+                                    <?= !empty($modulo['subcategoria_nombre']) ? ' (' . htmlspecialchars($modulo['subcategoria_nombre']) . ')' : ''; ?>
                                 </div>
                             </td>
-                            <td><?= htmlspecialchars($clase['actividad_nombre']); ?></td>
-                            <td><?= !empty($clase['prof_nombre']) ? htmlspecialchars($clase['prof_nombre'] . ' ' . $clase['prof_apellido']) : 'Sin asignar'; ?></td>
+                            <td><?= htmlspecialchars($modulo['actividad_nombre']); ?></td>
+                            <td><?= !empty($modulo['prof_nombre']) ? htmlspecialchars($modulo['prof_nombre'] . ' ' . $modulo['prof_apellido']) : 'Sin asignar'; ?></td>
                             <td>
-                                <strong><?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?></strong>
+                                <strong><?= date('H:i', strtotime($modulo['horario_inicio'])); ?> - <?= date('H:i', strtotime($modulo['horario_cierre'])); ?></strong>
                                 <div class="small text-muted">[<?= implode(', ', $dias_nombres); ?>]</div>
                             </td>
-                            <td><?= $clase['cupo_maximo']; ?></td>
+                            <td><?= $modulo['cupo_maximo']; ?></td>
                             <td>
-                                <span class="badge rounded-pill <?= $clase['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?= $clase['estado'] ? 'Activa' : 'Inactiva'; ?>
+                                <span class="badge rounded-pill <?= $modulo['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?= $modulo['estado'] ? 'Activa' : 'Inactiva'; ?>
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-dark rounded-pill px-3 mb-1" data-bs-toggle="modal" data-bs-target="#editClaseModal<?= $clase['id']; ?>">Editar</button>
-                                <a href="clases.php?toggle_estado=<?= $clase['id']; ?>&estado=<?= $clase['estado'] ? '1' : '0'; ?>" 
-                                   class="btn btn-sm <?= $clase['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                                <button class="btn btn-sm btn-dark rounded-pill px-3 mb-1" data-bs-toggle="modal" data-bs-target="#editModuloModal<?= $modulo['id']; ?>">Editar</button>
+                                <a href="modulos.php?toggle_estado=<?= $modulo['id']; ?>&estado=<?= $modulo['estado'] ? '1' : '0'; ?>"
+                                   class="btn btn-sm <?= $modulo['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
                                    onclick="return confirm('¿Seguro deseas cambiar el estado de este módulo?');">
-                                    <?= $clase['estado'] ? 'Desactivar' : 'Activar'; ?>
+                                    <?= $modulo['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
                         </tr>
@@ -469,34 +469,34 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Modales Editar Clase (Fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($clases as $clase): ?>
-    <div class="modal fade" id="editClaseModal<?= $clase['id']; ?>" tabindex="-1" aria-hidden="true">
+<!-- Modales Editar Modulo (Fuera de la tabla para Bootstrap 5) -->
+<?php foreach ($modulos as $modulo): ?>
+    <div class="modal fade" id="editModuloModal<?= $modulo['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
-            <form action="clases.php" method="POST" class="modal-content border-0 shadow">
+            <form action="modulos.php" method="POST" class="modal-content border-0 shadow">
                 <input type="hidden" name="action" value="editar">
-                <input type="hidden" name="id" value="<?= $clase['id']; ?>">
+                <input type="hidden" name="id" value="<?= $modulo['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Módulo #<?= $clase['id']; ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Módulo #<?= $modulo['id']; ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Nombre del Módulo *</label>
-                            <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($clase['nombre']); ?>">
+                            <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($modulo['nombre']); ?>">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Cupo Máximo *</label>
-                            <input type="number" name="cupo_maximo" class="form-control rounded-pill px-3" required value="<?= $clase['cupo_maximo']; ?>" min="<?= $clase['cupo_maximo']; ?>">
-                            <small class="text-muted d-block ms-2 mt-1">Mínimo: <?= $clase['cupo_maximo']; ?> (no se puede reducir)</small>
+                            <input type="number" name="cupo_maximo" class="form-control rounded-pill px-3" required value="<?= $modulo['cupo_maximo']; ?>" min="<?= $modulo['cupo_maximo']; ?>">
+                            <small class="text-muted d-block ms-2 mt-1">Mínimo: <?= $modulo['cupo_maximo']; ?> (no se puede reducir)</small>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Hora Inicio *</label>
                             <input type="time" name="horario_inicio" class="form-control rounded-pill px-3" required 
-                                   value="<?= $clase['horario_inicio']; ?>"
+                                   value="<?= $modulo['horario_inicio']; ?>"
                                    <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
                                    <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
                             <?php if ($entidad_info && !empty($entidad_info['horario_apertura'])): ?>
@@ -506,7 +506,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Hora Cierre *</label>
                             <input type="time" name="horario_cierre" class="form-control rounded-pill px-3" required 
-                                   value="<?= $clase['horario_cierre']; ?>"
+                                   value="<?= $modulo['horario_cierre']; ?>"
                                    <?= ($entidad_info && !empty($entidad_info['horario_apertura'])) ? 'min="' . date('H:i', strtotime($entidad_info['horario_apertura'])) . '"' : ''; ?>
                                    <?= ($entidad_info && !empty($entidad_info['horario_cierre'])) ? 'max="' . date('H:i', strtotime($entidad_info['horario_cierre'])) . '"' : ''; ?>>
                             <?php if ($entidad_info && !empty($entidad_info['horario_cierre'])): ?>
@@ -519,17 +519,17 @@ require_once __DIR__ . '/../includes/header.php';
                             <label class="form-label fw-bold">Actividad * <small class="text-muted">(Fija)</small></label>
                             <select class="form-select rounded-pill px-3" disabled>
                                 <?php foreach ($actividades as $act): ?>
-                                    <option value="<?= $act['id']; ?>" <?= $clase['fk_actividad'] == $act['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($act['nombre']); ?></option>
+                                    <option value="<?= $act['id']; ?>" <?= $modulo['fk_actividad'] == $act['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($act['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="hidden" name="fk_actividad" value="<?= $clase['fk_actividad']; ?>">
+                            <input type="hidden" name="fk_actividad" value="<?= $modulo['fk_actividad']; ?>">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Profesor</label>
                             <select name="fk_usuario_profesor" class="form-select rounded-pill px-3">
                                 <option value="">-- Sin asignar --</option>
                                 <?php foreach ($profesores as $prof): ?>
-                                    <option value="<?= $prof['id']; ?>" <?= $clase['fk_usuario_profesor'] == $prof['id'] ? 'selected' : ''; ?>>
+                                    <option value="<?= $prof['id']; ?>" <?= $modulo['fk_usuario_profesor'] == $prof['id'] ? 'selected' : ''; ?>>
                                         <?= htmlspecialchars($prof['nombre'] . ' ' . $prof['apellido']); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -540,7 +540,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <select name="fk_espacio" class="form-select rounded-pill px-3">
                                 <option value="">-- Entidad General --</option>
                                 <?php foreach ($espacios as $espacio): ?>
-                                    <option value="<?= $espacio['id']; ?>" <?= $clase['fk_espacio'] == $espacio['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($espacio['nombre']); ?></option>
+                                    <option value="<?= $espacio['id']; ?>" <?= $modulo['fk_espacio'] == $espacio['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($espacio['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -551,24 +551,24 @@ require_once __DIR__ . '/../includes/header.php';
                             <select class="form-select rounded-pill px-3" disabled>
                                 <option value="">-- General --</option>
                                 <?php foreach ($categorias as $cat): ?>
-                                    <option value="<?= $cat['id']; ?>" <?= $clase['fk_categoria'] == $cat['id'] ? 'selected' : ''; ?>>
+                                    <option value="<?= $cat['id']; ?>" <?= $modulo['fk_categoria'] == $cat['id'] ? 'selected' : ''; ?>>
                                         <?= htmlspecialchars($cat['nombre']); ?> (<?= $cat['edad_minima']; ?>-<?= $cat['edad_maxima']; ?> años)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="hidden" name="fk_categoria" value="<?= $clase['fk_categoria']; ?>">
+                            <input type="hidden" name="fk_categoria" value="<?= $modulo['fk_categoria']; ?>">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Subcategoría Especial <small class="text-muted">(Fija)</small></label>
                             <select class="form-select rounded-pill px-3" disabled>
                                 <option value="">-- Ninguna --</option>
                                 <?php foreach ($subcategorias as $sub): ?>
-                                    <option value="<?= $sub['id']; ?>" <?= $clase['fk_subcategoria'] == $sub['id'] ? 'selected' : ''; ?>>
+                                    <option value="<?= $sub['id']; ?>" <?= $modulo['fk_subcategoria'] == $sub['id'] ? 'selected' : ''; ?>>
                                         <?= htmlspecialchars($sub['nombre']); ?> (<?= $sub['edad_minima']; ?>-<?= $sub['edad_maxima']; ?> años)
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="hidden" name="fk_subcategoria" value="<?= $clase['fk_subcategoria']; ?>">
+                            <input type="hidden" name="fk_subcategoria" value="<?= $modulo['fk_subcategoria']; ?>">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -583,11 +583,11 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php $es_abierto = in_array(intval($dia['id']), $dias_abiertos_ids); ?>
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" name="dias[]" 
-                                           id="editDia_<?= $clase['id']; ?>_<?= $dia['id']; ?>" 
+                                           id="editDia_<?= $modulo['id']; ?>_<?= $dia['id']; ?>"
                                            value="<?= $dia['id']; ?>" 
-                                           <?= in_array($dia['id'], $clase['dias']) ? 'checked' : ''; ?>
+                                           <?= in_array($dia['id'], $modulo['dias']) ? 'checked' : ''; ?>
                                            <?= !$es_abierto ? 'disabled' : ''; ?>>
-                                    <label class="form-check-label <?= !$es_abierto ? 'text-muted text-decoration-line-through' : ''; ?>" for="editDia_<?= $clase['id']; ?>_<?= $dia['id']; ?>">
+                                    <label class="form-check-label <?= !$es_abierto ? 'text-muted text-decoration-line-through' : ''; ?>" for="editDia_<?= $modulo['id']; ?>_<?= $dia['id']; ?>">
                                         <?= htmlspecialchars($dia['nombre']); ?>
                                         <?= !$es_abierto ? '<small class="text-danger ps-1">(Cerrado)</small>' : ''; ?>
                                     </label>
@@ -597,7 +597,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Requisitos</label>
-                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($clase['descripcion'] ?? ''); ?></textarea>
+                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($modulo['descripcion'] ?? ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -610,9 +610,9 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endforeach; ?>
 
 <!-- Modal Crear Módulo -->
-<div class="modal fade" id="crearClaseModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="crearModuloModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <form action="clases.php" method="POST" class="modal-content border-0 shadow">
+        <form action="modulos.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Módulo</h5>
@@ -745,7 +745,7 @@ require_once __DIR__ . '/../includes/header.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const forms = document.querySelectorAll('form[action="clases.php"]');
+    const forms = document.querySelectorAll('form[action="modulos.php"]');
     forms.forEach(form => {
         const selectActividad = form.querySelector('select[name="fk_actividad"]');
         const selectCat = form.querySelector('select[name="fk_categoria"]');

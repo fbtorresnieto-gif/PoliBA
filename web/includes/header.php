@@ -123,7 +123,7 @@ if (!isset($base_path)) {
                 <a href="<?= $base_path; ?>abm/estadisticas.php" class="sidebar-btn"><i class="bi bi-graph-up-arrow me-2"></i>Estadísticas</a>
                 <a href="<?= $base_path; ?>abm/actividades.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Actividades</a>
                 <a href="<?= $base_path; ?>abm/espacios.php" class="sidebar-btn"><i class="bi bi-grid-3x3-gap me-2"></i>Espacios</a>
-                <a href="<?= $base_path; ?>abm/clases.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Módulos</a>
+                <a href="<?= $base_path; ?>abm/modulos.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Módulos</a>
                 <a href="<?= $base_path; ?>abm/novedades.php" class="sidebar-btn"><i class="bi bi-newspaper me-2"></i>Novedades</a>
                 <a href="<?= $base_path; ?>abm/profesores.php" class="sidebar-btn"><i class="bi bi-person-badge me-2"></i>Profesores</a>
                 <a href="<?= $base_path; ?>abm/subcategorias.php" class="sidebar-btn"><i class="bi bi-tags me-2"></i>Subcategorías</a>
@@ -133,7 +133,7 @@ if (!isset($base_path)) {
 
             <!-- Botones del PROFESOR -->
             <?php if (has_role('Profesor')): ?>
-                <a href="<?= $base_path; ?>abm/profesor_clases.php" class="sidebar-btn"><i class="bi bi-journal-check me-2"></i>Mis módulos</a>
+                <a href="<?= $base_path; ?>abm/profesor_modulos.php" class="sidebar-btn"><i class="bi bi-journal-check me-2"></i>Mis módulos</a>
                 <a href="<?= $base_path; ?>abm/profesor_espera.php" class="sidebar-btn"><i class="bi bi-hourglass-split me-2"></i>Lista de espera</a>
                 <a href="<?= $base_path; ?>abm/profesor_promocion.php" class="sidebar-btn"><i class="bi bi-arrow-up-circle me-2"></i>Promoción</a>
             <?php endif; ?>
@@ -141,7 +141,7 @@ if (!isset($base_path)) {
             <!-- Botones del ALUMNO (Usuario Común) -->
             <?php if (has_role('Alumno')): ?>
                 <a href="<?= $base_path; ?>abm/alumno_inscripcion.php" class="sidebar-btn"><i class="bi bi-file-earmark-plus me-2"></i>Inscribirse a Actividades</a>
-                <a href="<?= $base_path; ?>perfil.php#mis-clases" class="sidebar-btn"><i class="bi bi-journal-check me-2"></i>Mis Módulos</a>
+                <a href="<?= $base_path; ?>perfil.php#mis-modulos" class="sidebar-btn"><i class="bi bi-journal-check me-2"></i>Mis Módulos</a>
                 <a href="<?= $base_path; ?>espacios.php" class="sidebar-btn"><i class="bi bi-calendar-event me-2"></i>Reservar Espacio</a>
                 <a href="<?= $base_path; ?>perfil.php#mis-reservas" class="sidebar-btn"><i class="bi bi-ticket-perforated me-2"></i>Mis Reservas</a>
             <?php endif; ?>

@@ -52,7 +52,7 @@ require_once __DIR__ . '/includes/header.php';
                             <p class="poliba-card-text">
                                 <?= htmlspecialchars(substr($actividad['texto'], 0, 100)) . (strlen($actividad['texto']) > 100 ? '...' : ''); ?>
                             </p>
-                            <a href="actividad.php?id=<?= $actividad['id']; ?>" class="poliba-card-link mt-auto">Ver Actividad y Clases <i class="bi bi-arrow-right ms-1"></i></a>
+                            <a href="actividad.php?id=<?= $actividad['id']; ?>" class="poliba-card-link mt-auto">Ver Actividad y Modulos <i class="bi bi-arrow-right ms-1"></i></a>
                         </div>
                     </div>
                 </div>

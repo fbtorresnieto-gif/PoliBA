@@ -11,7 +11,7 @@ Desarrollo de una plataforma integral (Web y Mobile) diseñada para facilitar la
 ## Funcionalidades Principales (Alcance Inicial)
 1. **Reserva de Espacios:** Registro y reserva de espacios para distintas actividades.
 2. **Gestión de Usuarios:** Administración de los perfiles de las personas que asisten a la entidad.
-3. **Inscripciones a Clases:** Sistema para anotarse a las diferentes clases deportivas y actividades ofrecidas en el establecimiento.
+3. **Inscripciones a Modulos:** Sistema para anotarse a las diferentes modulos deportivas y actividades ofrecidas en el establecimiento.
 
 ## Mi Rol como Asistente (IA)
 - **Project Manager (PM) Funcional y Técnico.**

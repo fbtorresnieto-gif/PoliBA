@@ -10,24 +10,24 @@ $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
 
-$clase_id = isset($_GET['clase_id']) ? intval($_GET['clase_id']) : 0;
-$clase = null;
+$modulo_id = isset($_GET['modulo_id']) ? intval($_GET['modulo_id']) : 0;
+$modulo = null;
 
-// Validar que la clase pertenezca a este profesor
-if ($clase_id > 0) {
+// Validar que la modulo pertenezca a este profesor
+if ($modulo_id > 0) {
     try {
         $stmt = $pdo->prepare("
             SELECT c.*, e.nombre as entidad_nombre
-            FROM clases c
+            FROM modulos c
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.id = ? AND c.fk_usuario_profesor = ? AND c.estado = TRUE
         ");
-        $stmt->execute([$clase_id, $user['id']]);
-        $clase = $stmt->fetch();
+        $stmt->execute([$modulo_id, $user['id']]);
+        $modulo = $stmt->fetch();
     } catch (PDOException $e) {}
     
-    if (!$clase) {
-        header("Location: profesor_clases.php");
+    if (!$modulo) {
+        header("Location: profesor_modulos.php");
         exit;
     }
 }
@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                 $stmt->execute([$estado_asistencia, $exist['id']]);
             } else {
                 // Insertar
-                $stmt = $pdo->prepare("INSERT INTO asistencia (fk_inscripcion, fk_clase, asistencia, fecha) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$inscripcion_id, $clase_id, $estado_asistencia, $fecha]);
+                $stmt = $pdo->prepare("INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$inscripcion_id, $modulo_id, $estado_asistencia, $fecha]);
             }
             $success_msg = 'Asistencia cargada con éxito.';
         } catch (PDOException $e) {
@@ -64,9 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Cargar Alumnos de la clase (Inscripciones activas, tanto mayores como menores)
+// Cargar Alumnos de la modulo (Inscripciones activas, tanto mayores como menores)
 $alumnos = [];
-if ($clase) {
+if ($modulo) {
     try {
         $stmt = $pdo->prepare("
             SELECT i.id as inscripcion_id, i.lista_espera,
@@ -75,10 +75,10 @@ if ($clase) {
             FROM inscripcion i
             LEFT JOIN usuarios u ON i.fk_usuario = u.id
             LEFT JOIN menores m ON i.fk_menor = m.id
-            WHERE i.fk_clase = ? AND i.estado = 'activo' AND i.lista_espera = FALSE
+            WHERE i.fk_modulo = ? AND i.estado = 'activo' AND i.lista_espera = FALSE
             ORDER BY u.apellido, u.nombre, m.apellido, m.nombre ASC
         ");
-        $stmt->execute([$clase_id]);
+        $stmt->execute([$modulo_id]);
         $alumnos = $stmt->fetchAll();
         
         // Cargar asistencia de cada alumno para la fecha seleccionada
@@ -91,20 +91,20 @@ if ($clase) {
     } catch (PDOException $e) {}
 }
 
-// Cargar Clases de este Profesor (Para la vista general)
-$clases_profesor = [];
-if ($clase_id == 0) {
+// Cargar Modulos de este Profesor (Para la vista general)
+$modulos_profesor = [];
+if ($modulo_id == 0) {
     try {
         $stmt = $pdo->prepare("
             SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre
-            FROM clases c
+            FROM modulos c
             JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
             ORDER BY c.nombre ASC
         ");
         $stmt->execute([$user['id']]);
-        $clases_profesor = $stmt->fetchAll();
+        $modulos_profesor = $stmt->fetchAll();
     } catch (PDOException $e) {}
 }
 
@@ -112,16 +112,16 @@ require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container my-4">
-    <?php if ($clase_id == 0): ?>
+    <?php if ($modulo_id == 0): ?>
         <!-- VISTA GENERAL: Listado de Módulos -->
         <h2 class="section-title text-dark">Mis Módulos Asignados</h2>
         <p class="text-center text-muted mb-4">Selecciona un módulo para gestionar tus alumnos y tomar asistencia.</p>
         
-        <?php if (empty($clases_profesor)): ?>
+        <?php if (empty($modulos_profesor)): ?>
             <div class="alert alert-info text-center">No tienes módulos de actividades asignados actualmente.</div>
         <?php else: ?>
             <div class="row g-4">
-                <?php foreach ($clases_profesor as $cl): ?>
+                <?php foreach ($modulos_profesor as $cl): ?>
                     <div class="col-md-6 col-lg-4">
                         <div class="poliba-card">
                             <div class="poliba-card-body p-4">
@@ -130,7 +130,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($cl['entidad_nombre']); ?></div>
                                 <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($cl['horario_inicio'])); ?> - <?= date('H:i', strtotime($cl['horario_cierre'])); ?> hs</div>
                                 <div class="d-grid mt-auto">
-                                    <a href="profesor_clases.php?clase_id=<?= $cl['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia</a>
+                                    <a href="profesor_modulos.php?modulo_id=<?= $cl['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia</a>
                                 </div>
                             </div>
                         </div>
@@ -140,13 +140,13 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endif; ?>
 
     <?php else: ?>
-        <!-- VISTA DE ASISTENCIA: Tomar lista en una clase -->
+        <!-- VISTA DE ASISTENCIA: Tomar lista en una modulo -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($clase['nombre']); ?></h2>
-                <small class="text-muted">Cargar Asistencia - Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></small>
+                <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($modulo['nombre']); ?></h2>
+                <small class="text-muted">Cargar Asistencia - Entidad: <?= htmlspecialchars($modulo['entidad_nombre']); ?></small>
             </div>
-            <a href="profesor_clases.php" class="poliba-btn-dark py-2 px-4 rounded-pill text-decoration-none">Volver</a>
+            <a href="profesor_modulos.php" class="poliba-btn-dark py-2 px-4 rounded-pill text-decoration-none">Volver</a>
         </div>
 
         <?php if (!empty($error_msg)): ?>
@@ -158,8 +158,8 @@ require_once __DIR__ . '/../includes/header.php';
 
         <!-- Selector de fecha -->
         <div class="poliba-container-card mt-0 p-4 mb-4">
-            <form action="profesor_clases.php" method="GET" class="row align-items-end g-3">
-                <input type="hidden" name="clase_id" value="<?= $clase_id; ?>">
+            <form action="profesor_modulos.php" method="GET" class="row align-items-end g-3">
+                <input type="hidden" name="modulo_id" value="<?= $modulo_id; ?>">
                 <div class="col-md-5">
                     <label class="form-label fw-bold text-dark">Fecha de Asistencia</label>
                     <input type="date" name="fecha" class="form-control rounded-pill px-4" 
@@ -204,7 +204,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <!-- Botones de Acción de Asistencia -->
                                     <div class="d-flex justify-content-center gap-2">
                                         <!-- Presente -->
-                                        <form action="profesor_clases.php?clase_id=<?= $clase_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
+                                        <form action="profesor_modulos.php?modulo_id=<?= $modulo_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
                                             <input type="hidden" name="action" value="cargar_asistencia">
                                             <input type="hidden" name="inscripcion_id" value="<?= $al['inscripcion_id']; ?>">
                                             <input type="hidden" name="estado_asistencia" value="presente">
@@ -215,7 +215,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         </form>
 
                                         <!-- Ausente -->
-                                        <form action="profesor_clases.php?clase_id=<?= $clase_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
+                                        <form action="profesor_modulos.php?modulo_id=<?= $modulo_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
                                             <input type="hidden" name="action" value="cargar_asistencia">
                                             <input type="hidden" name="inscripcion_id" value="<?= $al['inscripcion_id']; ?>">
                                             <input type="hidden" name="estado_asistencia" value="ausente">
@@ -226,7 +226,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         </form>
 
                                         <!-- Lluvia -->
-                                        <form action="profesor_clases.php?clase_id=<?= $clase_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
+                                        <form action="profesor_modulos.php?modulo_id=<?= $modulo_id; ?>&fecha=<?= $selected_date; ?>" method="POST">
                                             <input type="hidden" name="action" value="cargar_asistencia">
                                             <input type="hidden" name="inscripcion_id" value="<?= $al['inscripcion_id']; ?>">
                                             <input type="hidden" name="estado_asistencia" value="lluvia">

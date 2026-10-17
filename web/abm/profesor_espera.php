@@ -13,21 +13,21 @@ $success_msg = '';
 // Procesar traspaso de Lista de Espera a Cupo Activo
 if (isset($_GET['activar_inscripcion'])) {
     $ins_id = intval($_GET['activar_inscripcion']);
-    $cl_id = intval($_GET['clase_id']);
+    $cl_id = intval($_GET['modulo_id']);
     
-    // Validar que la clase pertenezca a este profesor
+    // Validar que la modulo pertenezca a este profesor
     try {
-        $stmt = $pdo->prepare("SELECT cupo_maximo FROM clases WHERE id = ? AND fk_usuario_profesor = ?");
+        $stmt = $pdo->prepare("SELECT cupo_maximo FROM modulos WHERE id = ? AND fk_usuario_profesor = ?");
         $stmt->execute([$cl_id, $user['id']]);
-        $clase_info = $stmt->fetch();
+        $modulo_info = $stmt->fetch();
         
-        if ($clase_info) {
+        if ($modulo_info) {
             // Contar inscriptos activos actuales
-            $stmt_cnt = $pdo->prepare("SELECT COUNT(*) FROM inscripcion WHERE fk_clase = ? AND lista_espera = FALSE AND estado = 'activo'");
+            $stmt_cnt = $pdo->prepare("SELECT COUNT(*) FROM inscripcion WHERE fk_modulo = ? AND lista_espera = FALSE AND estado = 'activo'");
             $stmt_cnt->execute([$cl_id]);
             $inscriptos = $stmt_cnt->fetchColumn();
             
-            if ($inscriptos < $clase_info['cupo_maximo']) {
+            if ($inscriptos < $modulo_info['cupo_maximo']) {
                 $stmt_act = $pdo->prepare("UPDATE inscripcion SET lista_espera = FALSE WHERE id = ?");
                 if ($stmt_act->execute([$ins_id])) {
                     $success_msg = 'Alumno incorporado al módulo con éxito. Recuerda contactarlo por teléfono para avisarle.';
@@ -43,17 +43,17 @@ if (isset($_GET['activar_inscripcion'])) {
     }
 }
 
-// Cargar alumnos en Lista de Espera para las clases dictadas por este profesor
+// Cargar alumnos en Lista de Espera para las modulos dictadas por este profesor
 $lista_espera = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT i.id as inscripcion_id, i.fecha, i.fk_clase,
-               c.nombre as clase_nombre, c.cupo_maximo,
+        SELECT i.id as inscripcion_id, i.fecha, i.fk_modulo,
+               c.nombre as modulo_nombre, c.cupo_maximo,
                u.nombre as alu_nombre, u.apellido as alu_apellido, u.dni as alu_dni, u.telefono as alu_telefono, u.email as alu_email,
                m.nombre as men_nombre, m.apellido as men_apellido, m.dni as men_dni,
                tutor.telefono as tut_telefono, tutor.email as tut_email
         FROM inscripcion i
-        JOIN clases c ON i.fk_clase = c.id
+        JOIN modulos c ON i.fk_modulo = c.id
         LEFT JOIN usuarios u ON i.fk_usuario = u.id
         LEFT JOIN menores m ON i.fk_menor = m.id
         LEFT JOIN usuarios tutor ON m.fk_usuario = tutor.id
@@ -63,17 +63,17 @@ try {
     $stmt->execute([$user['id']]);
     $lista_espera = $stmt->fetchAll();
     
-    // Calcular vacantes para cada clase de este profesor en lista
-    $vacantes_por_clase = [];
+    // Calcular vacantes para cada modulo de este profesor en lista
+    $vacantes_por_modulo = [];
     foreach ($lista_espera as &$item) {
-        $cl_id = $item['fk_clase'];
-        if (!isset($vacantes_por_clase[$cl_id])) {
-            $stmt_cnt = $pdo->prepare("SELECT COUNT(*) FROM inscripcion WHERE fk_clase = ? AND lista_espera = FALSE AND estado = 'activo'");
+        $cl_id = $item['fk_modulo'];
+        if (!isset($vacantes_por_modulo[$cl_id])) {
+            $stmt_cnt = $pdo->prepare("SELECT COUNT(*) FROM inscripcion WHERE fk_modulo = ? AND lista_espera = FALSE AND estado = 'activo'");
             $stmt_cnt->execute([$cl_id]);
             $activos = $stmt_cnt->fetchColumn();
-            $vacantes_por_clase[$cl_id] = max(0, $item['cupo_maximo'] - $activos);
+            $vacantes_por_modulo[$cl_id] = max(0, $item['cupo_maximo'] - $activos);
         }
-        $item['vacantes_disponibles'] = $vacantes_por_clase[$cl_id];
+        $item['vacantes_disponibles'] = $vacantes_por_modulo[$cl_id];
     }
     unset($item);
 } catch (PDOException $e) {}
@@ -124,7 +124,7 @@ require_once __DIR__ . '/../includes/header.php';
                     ?>
                         <tr>
                             <td><?= date('d/m/Y H:i', strtotime($item['fecha'])); ?> hs</td>
-                            <td class="fw-bold"><?= htmlspecialchars($item['clase_nombre']); ?></td>
+                            <td class="fw-bold"><?= htmlspecialchars($item['modulo_nombre']); ?></td>
                             <td>
                                 <div><?= htmlspecialchars($nombre . ' ' . $apellido); ?></div>
                                 <?php if ($es_menor): ?>
@@ -143,7 +143,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </td>
                             <td>
                                 <?php if ($has_vacante): ?>
-                                    <a href="profesor_espera.php?activar_inscripcion=<?= $item['inscripcion_id']; ?>&clase_id=<?= $item['fk_clase']; ?>" 
+                                    <a href="profesor_espera.php?activar_inscripcion=<?= $item['inscripcion_id']; ?>&modulo_id=<?= $item['fk_modulo']; ?>"
                                        class="poliba-btn btn-sm text-decoration-none px-3"
                                        onclick="return confirm('¿Seguro deseas incorporar a este alumno al cupo activo? Se liberará una vacante.');">
                                         Pasar a Activo

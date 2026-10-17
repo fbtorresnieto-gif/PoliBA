@@ -1,16 +1,12 @@
 <?php
 // Configuración de Conexión a la Base de Datos para PoliBA
 // ----------------------------------------------------------
-// Conexión principal: PostgreSQL en Neon.tech (base de datos en la nube)
 
-// $db_host = 'ep-billowing-hill-aycuwnf6.c-5.us-east-2.aws.neon.tech';
+
+
 $db_host = getenv('PGHOST') ?: '';
-//$db_port = '5432';
 $db_port = getenv('PGPORT') ?: '5432';
-//$db_name = 'neondb';
 $db_name = getenv('PGDATABASE') ?: '';
-//$db_user = 'neondb_owner';
-//$db_pass = 'npg_m6TU1orRAjQF';
 $db_user = getenv('PGUSER') ?: '';
 $db_pass = getenv('PGPASSWORD') ?: '';
 

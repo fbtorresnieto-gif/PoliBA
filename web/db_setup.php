@@ -1,15 +1,4 @@
 <?php
-/**
- * db_setup.php - Script de Inicialización de Base de Datos para PoliBA
- * -----------------------------------------------------------------------
- * Ejecutá este script UNA SOLA VEZ desde tu navegador para crear todas las
- * tablas e insertar los datos de prueba en tu base de datos de Neon.tech.
- *
- * URL de acceso: http://localhost/PoliBA/web/db_setup.php
- *
- * IMPORTANTE: Una vez que termine con éxito, podés eliminar este archivo
- * por seguridad, o simplemente dejarlo (no hace nada si las tablas ya existen).
- */
 
 require_once __DIR__ . '/includes/db.php';
 

@@ -116,10 +116,10 @@ if (isset($_GET['cancelar_reserva'])) {
     }
 }
 
-// 5. Procesar Cancelar/Reanudar Clase
-if (isset($_GET['cambiar_estado_clase']) && isset($_GET['inscripcion_id'])) {
+// 5. Procesar Cancelar/Reanudar Modulo
+if (isset($_GET['cambiar_estado_modulo']) && isset($_GET['inscripcion_id'])) {
     $ins_id = intval($_GET['inscripcion_id']);
-    $nuevo_estado = $_GET['cambiar_estado_clase'] == 'reanudar' ? 'activo' : 'cancelado';
+    $nuevo_estado = $_GET['cambiar_estado_modulo'] == 'reanudar' ? 'activo' : 'cancelado';
     
     try {
         // Si cancela a mitad de año, advertir sobre la regla de negocio
@@ -185,37 +185,37 @@ if (has_role('Alumno')) {
     } catch (PDOException $e) {}
 }
 
-// Cargar Clases del Usuario (Alumno o Profesor)
-$clases_inscriptas = [];
+// Cargar Modulos del Usuario (Alumno o Profesor)
+$modulos_inscriptas = [];
 if (has_role('Alumno')) {
     try {
-        // Clases propias
+        // Modulos propias
         $stmt = $pdo->prepare("
             SELECT i.id as inscripcion_id, i.lista_espera, i.estado as inscripcion_estado,
-                   c.nombre as clase_nombre, c.horario_inicio, c.horario_cierre,
+                   c.nombre as modulo_nombre, c.horario_inicio, c.horario_cierre,
                    d.nombre as actividad_nombre, e.nombre as entidad_nombre
             FROM inscripcion i
-            JOIN clases c ON i.fk_clase = c.id
+            JOIN modulos c ON i.fk_modulo = c.id
             JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE i.fk_usuario = ? AND i.fk_menor IS NULL
             ORDER BY c.nombre ASC
         ");
         $stmt->execute([$user['id']]);
-        $clases_inscriptas = $stmt->fetchAll();
+        $modulos_inscriptas = $stmt->fetchAll();
     } catch (PDOException $e) {}
 } elseif (has_role('Profesor')) {
     try {
         $stmt = $pdo->prepare("
             SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre
-            FROM clases c
+            FROM modulos c
             JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
             ORDER BY c.nombre ASC
         ");
         $stmt->execute([$user['id']]);
-        $clases_inscriptas = $stmt->fetchAll();
+        $modulos_inscriptas = $stmt->fetchAll();
     } catch (PDOException $e) {}
 }
 
@@ -326,43 +326,43 @@ require_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
 
     <!-- Sección 3: Mis Módulos (Alumnos/Profesores, Basada en Prototipo Mi Perfil.png) -->
-    <div class="my-5" id="mis-clases">
+    <div class="my-5" id="mis-modulos">
         <h3 class="fw-bold mb-4 text-center text-dark">
             <?= has_role('Profesor') ? 'Módulos que Dicto' : 'Mis Módulos'; ?>
         </h3>
         
-        <?php if (empty($clases_inscriptas)): ?>
+        <?php if (empty($modulos_inscriptas)): ?>
             <div class="alert alert-info text-center">
                 <?= has_role('Profesor') ? 'No tienes módulos asignados actualmente.' : 'No estás inscripto en ningún módulo actualmente. <a href="actividades.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
             </div>
         <?php else: ?>
             <div class="row g-4">
                 <?php if (has_role('Alumno')): ?>
-                    <?php foreach ($clases_inscriptas as $clase): 
-                        $status_badge = $clase['lista_espera'] ? 'badge-espera' : 'badge-activo';
-                        if ($clase['inscripcion_estado'] == 'cancelado') $status_badge = 'badge-cancelado';
+                    <?php foreach ($modulos_inscriptas as $modulo):
+                        $status_badge = $modulo['lista_espera'] ? 'badge-espera' : 'badge-activo';
+                        if ($modulo['inscripcion_estado'] == 'cancelado') $status_badge = 'badge-cancelado';
                     ?>
                         <div class="col-md-6 col-lg-3">
                             <div class="poliba-card border-top border-5 border-info">
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge rounded-pill <?= $status_badge; ?>">
-                                            <?= $clase['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($clase['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
+                                            <?= $modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
                                         </span>
-                                        <small class="text-muted">#<?= $clase['inscripcion_id']; ?></small>
+                                        <small class="text-muted">#<?= $modulo['inscripcion_id']; ?></small>
                                     </div>
-                                    <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($clase['clase_nombre']); ?></h5>
-                                    <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($clase['actividad_nombre']); ?></div>
-                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></div>
+                                    <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($modulo['modulo_nombre']); ?></h5>
+                                    <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($modulo['actividad_nombre']); ?></div>
+                                    <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($modulo['entidad_nombre']); ?></div>
                                     
                                     <div class="d-grid mt-auto gap-2">
-                                        <?php if ($clase['inscripcion_estado'] == 'activo'): ?>
-                                            <a href="perfil.php?cambiar_estado_clase=cancelar&inscripcion_id=<?= $clase['inscripcion_id']; ?>" 
+                                        <?php if ($modulo['inscripcion_estado'] == 'activo'): ?>
+                                            <a href="perfil.php?cambiar_estado_modulo=cancelar&inscripcion_id=<?= $modulo['inscripcion_id']; ?>"
                                                class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro quieres darte de baja de este módulo?');">
                                                 Darse de baja
                                             </a>
                                         <?php else: ?>
-                                            <a href="perfil.php?cambiar_estado_clase=reanudar&inscripcion_id=<?= $clase['inscripcion_id']; ?>" 
+                                            <a href="perfil.php?cambiar_estado_modulo=reanudar&inscripcion_id=<?= $modulo['inscripcion_id']; ?>"
                                                class="btn btn-outline-success btn-sm">
                                                 Reanudar módulo
                                             </a>
@@ -373,18 +373,18 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     <?php endforeach; ?>
                 <?php elseif (has_role('Profesor')): ?>
-                    <!-- Profesor Clases List -->
-                    <?php foreach ($clases_inscriptas as $clase): ?>
+                    <!-- Profesor Modulos List -->
+                    <?php foreach ($modulos_inscriptas as $modulo): ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="poliba-card">
                                 <div class="poliba-card-body p-3">
-                                    <h5 class="fw-bold text-dark mb-2"><?= htmlspecialchars($clase['nombre']); ?></h5>
-                                    <p class="text-muted small mb-3"><?= htmlspecialchars($clase['descripcion']); ?></p>
-                                    <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?></div>
-                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></div>
+                                    <h5 class="fw-bold text-dark mb-2"><?= htmlspecialchars($modulo['nombre']); ?></h5>
+                                    <p class="text-muted small mb-3"><?= htmlspecialchars($modulo['descripcion']); ?></p>
+                                    <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($modulo['horario_inicio'])); ?> - <?= date('H:i', strtotime($modulo['horario_cierre'])); ?></div>
+                                    <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($modulo['entidad_nombre']); ?></div>
                                     
                                     <div class="d-grid gap-2 mt-auto">
-                                        <a href="abm/profesor_clases.php?clase_id=<?= $clase['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia / Alumnos</a>
+                                        <a href="abm/profesor_modulos.php?modulo_id=<?= $modulo['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia / Alumnos</a>
                                     </div>
                                 </div>
                             </div>
