@@ -26,17 +26,10 @@ if ($entidad_id > 0) {
             $stmt->execute([$entidad_id]);
             $deportes = $stmt->fetchAll();
             
-<<<<<<< HEAD
-            // Consultar canchas de esta entidad
-            $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? AND estado = TRUE");
-            $stmt->execute([$entidad_id]);
-            $canchas = $stmt->fetchAll();
-=======
             // Consultar espacios de esta entidad
             $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? AND estado = TRUE");
             $stmt->execute([$entidad_id]);
             $espacios = $stmt->fetchAll();
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
         }
     } catch (PDOException $e) {
         // Log o mostrar mensaje

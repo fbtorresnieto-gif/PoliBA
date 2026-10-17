@@ -97,11 +97,7 @@ if (isset($_GET['toggle_estado'])) {
             $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
-<<<<<<< HEAD
-            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE fk_entidad = ?");
-=======
             $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE fk_entidad = ?");
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
             $stmt->execute([$id]);
 
             $stmt = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_entidad = ?");

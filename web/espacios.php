@@ -5,19 +5,11 @@ require_once __DIR__ . '/includes/db.php';
 $espacios = [];
 try {
     $stmt = $pdo->query("
-<<<<<<< HEAD:web/canchas.php
-        SELECT c.*, e.nombre as entidad_nombre
-        FROM canchas c
-        JOIN entidades e ON c.fk_entidad = e.id
-        WHERE c.estado = TRUE AND e.estado = TRUE
-        ORDER BY e.nombre ASC, c.nombre ASC
-=======
         SELECT esp.*, e.nombre as entidad_nombre
         FROM espacios esp
         JOIN entidades e ON esp.fk_entidad = e.id
         WHERE esp.estado = TRUE AND e.estado = TRUE
         ORDER BY e.nombre ASC, esp.nombre ASC
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacios.php
     ");
     $espacios = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -59,11 +51,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card-body">
                             <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($espacio['nombre']); ?></h5>
                             <p class="poliba-card-meta mb-2">
-<<<<<<< HEAD:web/canchas.php
-                                <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($cancha['entidad_nombre']); ?>
-=======
                                 <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($espacio['entidad_nombre']); ?>
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/espacios.php
                             </p>
                             <p class="poliba-card-text">
                                 <?= htmlspecialchars($espacio['descripcion']); ?>

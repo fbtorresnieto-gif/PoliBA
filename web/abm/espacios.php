@@ -56,15 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Validar unicidad y similitud inteligente dentro de la entidad
-<<<<<<< HEAD:web/abm/canchas.php
-            $stmt_all = $pdo->prepare("SELECT id, nombre FROM canchas WHERE fk_entidad = ? AND id != ?");
-            $stmt_all->execute([$entidad_id, $chk_id]);
-            $canchas_existentes = $stmt_all->fetchAll();
-=======
             $stmt_all = $pdo->prepare("SELECT id, nombre FROM espacios WHERE fk_entidad = ? AND id != ?");
             $stmt_all->execute([$entidad_id, $chk_id]);
             $espacios_existentes = $stmt_all->fetchAll();
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
 
             $norm_nuevo = normalizar_espacio($nombre);
             $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
@@ -114,11 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-<<<<<<< HEAD:web/abm/canchas.php
-                            INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
-=======
                             INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
                             VALUES (?, ?, ?, ?, ?, TRUE)
                         ");
                         $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $entidad_id]);
@@ -158,21 +148,13 @@ if (isset($_GET['toggle_estado'])) {
             if (!$entidad_row || !$entidad_row['estado']) {
                 $error_msg = 'No se puede activar el espacio porque la entidad se encuentra desactivada.';
             } else {
-<<<<<<< HEAD:web/abm/canchas.php
-                $stmt = $pdo->prepare("UPDATE canchas SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
-=======
                 $stmt = $pdo->prepare("UPDATE espacios SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
                 $stmt->execute([$id, $entidad_id]);
                 $success_msg = 'Espacio activado con éxito.';
             }
         } else {
             // Desactivar espacio
-<<<<<<< HEAD:web/abm/canchas.php
-            $stmt = $pdo->prepare("UPDATE canchas SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
-=======
             $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
             $stmt->execute([$id, $entidad_id]);
             $success_msg = 'Espacio desactivado con éxito.';
         }
@@ -184,15 +166,9 @@ if (isset($_GET['toggle_estado'])) {
 // Cargar espacios de la entidad
 $espacios = [];
 try {
-<<<<<<< HEAD:web/abm/canchas.php
-    $stmt = $pdo->prepare("SELECT * FROM canchas WHERE fk_entidad = ? ORDER BY id ASC");
-    $stmt->execute([$entidad_id]);
-    $canchas = $stmt->fetchAll();
-=======
     $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? ORDER BY id ASC");
     $stmt->execute([$entidad_id]);
     $espacios = $stmt->fetchAll();
->>>>>>> 52d9ac9 (Actualiza canchas por espacios):web/abm/espacios.php
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';

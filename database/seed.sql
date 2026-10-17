@@ -64,45 +64,23 @@ INSERT INTO deportes (nombre, texto, imagenURL, fk_entidad) VALUES
 ('Tenis', 'Tenis individual o dobles. Contamos con canchas de polvo de ladrillo y cemento.', 'tenis.jpg', 1),
 ('Natación', 'Clases de natación en piscina climatizada y libre recreativa.', 'natacion.jpg', 2);
 
-<<<<<<< HEAD
--- 8. Inserción de Canchas
-INSERT INTO canchas (nombre, descripcion, imagenURL, techado, fk_entidad) VALUES
-=======
 -- 8. Inserción de Espacios
 INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad) VALUES
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 ('Cancha de Vóley 1', 'Cancha de parquet flotante profesional para vóley.', 'cancha_voley_1.jpg', TRUE, 1),
 ('Cancha de Vóley 2', 'Cancha exterior de voley sobre cemento.', 'cancha_voley_2.jpg', FALSE, 1),
 ('Cancha de Básquet 1', 'Cancha reglamentaria de basquet con aros movibles.', 'cancha_basquet.jpg', TRUE, 1),
 ('Cancha de Fútbol 5', 'Cancha de cesped sintético exterior con iluminación nocturna.', 'cancha_futbol.jpg', FALSE, 1),
 ('Cancha de Tenis 1', 'Cancha rápida de cemento para tenis.', 'cancha_tenis.jpg', FALSE, 1);
 
-<<<<<<< HEAD
--- 9. Asociación Deportes - Canchas
-INSERT INTO deportes_canchas (fk_deporte, fk_cancha) VALUES 
-(1, 1), -- Voley en Cancha Voley 1
-(1, 2), -- Voley en Cancha Voley 2
-(2, 3), -- Basquet en Cancha Basquet
-(3, 4), -- Futbol en Cancha Futbol
-(4, 5); -- Tenis en Cancha Tenis 1
-
--- 10. Inserción de Subcategorías (Por edad en Deporte)
-=======
 -- 9. Inserción de Subcategorías (Por edad en Deporte)
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_entidad) VALUES
 ('Mini Vóley', 6, 12, 1, 1, 1),
 ('Vóley Juvenil', 13, 17, 1, 2, 1),
 ('Vóley Mayores A', 18, 40, 1, 3, 1),
 ('Vóley Recreativo Senior', 60, 80, 1, 4, 1);
 
-<<<<<<< HEAD
--- 11. Inserción de Clases
-INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_canchas, fk_categoria, fk_subcategoria, fk_entidad) VALUES
-=======
 -- 10. Inserción de Clases
 INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad) VALUES
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 ('Vóley Mayores Inicial', 'Clase recreativa y técnica de voley para mayores de 18 años.', '18:00:00', '20:00:00', 15, 4, 1, 1, 3, 3, 1),
 ('Mini Básquet Colegiales', 'Iniciación al basquet para niños y niñas de 6 a 12 años.', '16:00:00', '17:30:00', 2, 5, 2, 3, 1, NULL, 1); -- Cupo bajo para probar listas de espera
 
@@ -129,11 +107,7 @@ INSERT INTO reservas (fk_espacio, fk_usuario, fecha_de_asistencia, horario, esta
 (5, 6, '2026-08-01', '18:00:00', 'reservado'), -- Reserva de Tenis 1 por Geronimo para mañana
 (4, 7, '2026-08-01', '19:00:00', 'reservado'); -- Reserva de Fútbol 5 por Flor
 
-<<<<<<< HEAD
--- 16. Novedades de Prueba
-=======
 -- 15. Novedades de Prueba
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 INSERT INTO novedades (nombre, descripcion, fecha_inicio, fecha_fin, imagenURL, fk_entidad) VALUES
 ('¡Inscripciones Abiertas 2026!', 'Comenzó el período de inscripción para las actividades deportivas del segundo cuatrimestre. ¡Anotate online!', 'novedad_inscripciones.jpg', '2026-07-01', '2026-08-31', 1),
 ('Torneo Interno de Vóley Colegiales', 'Este sábado desde las 9 AM se disputará el torneo relámpago mixto. ¡Vení a alentar a tu entidad!', 'novedad_torneo.jpg', '2026-07-25', '2026-08-05', 1),

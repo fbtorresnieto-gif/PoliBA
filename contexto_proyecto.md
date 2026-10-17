@@ -9,11 +9,7 @@
 Desarrollo de una plataforma integral (Web y Mobile) diseñada para facilitar las diversas tareas administrativas y de usuario dentro de una entidad deportiva.
 
 ## Funcionalidades Principales (Alcance Inicial)
-<<<<<<< HEAD
-1. **Reserva de Canchas:** Registro y reserva de espacios para distintos deportes.
-=======
 1. **Reserva de Espacios:** Registro y reserva de espacios para distintos deportes.
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 2. **Gestión de Usuarios:** Administración de los perfiles de las personas que asisten a la entidad.
 3. **Inscripciones a Clases:** Sistema para anotarse a las diferentes clases deportivas y actividades ofrecidas en el establecimiento.
 

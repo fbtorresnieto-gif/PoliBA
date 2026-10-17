@@ -8,19 +8,11 @@ $reserva = null;
 if ($reserva_id > 0) {
     try {
         $stmt = $pdo->prepare("
-<<<<<<< HEAD
-            SELECT r.*, c.nombre as cancha_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
-                   u.nombre as usuario_nombre, u.apellido as usuario_apellido
-            FROM reservas r
-            JOIN canchas c ON r.fk_cancha = c.id
-            JOIN entidades e ON c.fk_entidad = e.id
-=======
             SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
                    u.nombre as usuario_nombre, u.apellido as usuario_apellido
             FROM reservas r
             JOIN espacios esp ON r.fk_espacio = esp.id
             JOIN entidades e ON esp.fk_entidad = e.id
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
             JOIN usuarios u ON r.fk_usuario = u.id
             WHERE r.id = ?
         ");
