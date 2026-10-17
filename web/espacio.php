@@ -85,11 +85,11 @@ try {
 $clases_dia = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT c.id, c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as deporte_nombre
+        SELECT c.id, c.nombre, c.horario_inicio, c.horario_cierre, d.nombre as actividad_nombre
         FROM clases c
         JOIN dias_clases dc ON c.id = dc.fk_clase
         JOIN dias dia ON dc.fk_dia = dia.id
-        LEFT JOIN deportes d ON c.fk_deporte = d.id
+        LEFT JOIN actividades d ON c.fk_actividad = d.id
         WHERE c.fk_espacio = ? AND dia.orden = ? AND c.estado = TRUE
     ");
     $stmt->execute([$espacio_id, $dia_semana_num]);

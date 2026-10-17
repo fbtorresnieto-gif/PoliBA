@@ -16,11 +16,11 @@ $pre_clase_id = isset($_GET['clase_id']) ? intval($_GET['clase_id']) : 0;
 $clases = [];
 try {
     $stmt = $pdo->query("
-        SELECT c.*, d.nombre as deporte_nombre, e.nombre as entidad_nombre,
+        SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre,
                COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
                COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
         FROM clases c
-        JOIN deportes d ON c.fk_deporte = d.id
+        JOIN actividades d ON c.fk_actividad = d.id
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
@@ -212,7 +212,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 $selected = ($pre_clase_id == $cl['id']) ? 'selected' : '';
                             ?>
                                 <option value="<?= $cl['id']; ?>" <?= $selected; ?>>
-                                    [<?= htmlspecialchars($cl['entidad_nombre']); ?>] <?= htmlspecialchars($cl['deporte_nombre']); ?> - <?= htmlspecialchars($cl['nombre']); ?> (Edades: <?= $cl['edad_min']; ?> a <?= $cl['edad_max']; ?>)
+                                    [<?= htmlspecialchars($cl['entidad_nombre']); ?>] <?= htmlspecialchars($cl['actividad_nombre']); ?> - <?= htmlspecialchars($cl['nombre']); ?> (Edades: <?= $cl['edad_min']; ?> a <?= $cl['edad_max']; ?>)
                                 </option>
                             <?php endforeach; ?>
                         </select>

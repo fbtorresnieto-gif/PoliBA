@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
     $raw_min = $_POST['edad_minima'] ?? '';
     $raw_max = $_POST['edad_maxima'] ?? '';
-    $fk_deporte = intval($_POST['fk_deporte']);
+    $fk_actividad = intval($_POST['fk_actividad']);
     $fk_categoria = !empty($_POST['fk_categoria']) ? intval($_POST['fk_categoria']) : null;
     
     if (!is_numeric($raw_min) || !is_numeric($raw_max)) {
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $edad_minima = intval($raw_min);
         $edad_maxima = intval($raw_max);
         
-        if (empty($nombre) || $edad_minima < 0 || $edad_maxima <= 0 || $fk_deporte <= 0 || empty($fk_categoria)) {
+        if (empty($nombre) || $edad_minima < 0 || $edad_maxima <= 0 || $fk_actividad <= 0 || empty($fk_categoria)) {
         $error_msg = 'Por favor, completa todos los campos obligatorios (*).';
     } elseif ($edad_minima > $edad_maxima) {
         $error_msg = 'La edad mínima no puede ser mayor que la edad máxima.';
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Cargar todas las subcategorías de la entidad (excluyendo la actual en edición)
-            $stmt_all = $pdo->prepare("SELECT id, nombre, fk_deporte, fk_categoria, edad_minima, edad_maxima FROM subcategorias WHERE fk_entidad = ? AND id != ?");
+            $stmt_all = $pdo->prepare("SELECT id, nombre, fk_actividad, fk_categoria, edad_minima, edad_maxima FROM subcategorias WHERE fk_entidad = ? AND id != ?");
             $stmt_all->execute([$entidad_id, $chk_id]);
             $subcategorias_existentes = $stmt_all->fetchAll();
 
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 }
 
                 // 2. Validar mismo rango de edad para la misma actividad y misma categoría general
-                $misma_actividad = (intval($sub_ex['fk_deporte']) === $fk_deporte);
+                $misma_actividad = (intval($sub_ex['fk_actividad']) === $fk_actividad);
                 $misma_cat = (empty($sub_ex['fk_categoria']) && empty($fk_categoria)) || (intval($sub_ex['fk_categoria'] ?? 0) === intval($fk_categoria ?? 0));
                 $mismo_rango = (intval($sub_ex['edad_minima']) === $edad_minima && intval($sub_ex['edad_maxima']) === $edad_maxima);
 
@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-                            INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_entidad, estado)
+                            INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_actividad, fk_categoria, fk_entidad, estado)
                             VALUES (?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $entidad_id]);
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_actividad, $fk_categoria, $entidad_id]);
                         $success_msg = 'Subcategoría creada con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al crear la subcategoría.';
@@ -128,10 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     try {
                         $stmt = $pdo->prepare("
                             UPDATE subcategorias 
-                            SET nombre = ?, edad_minima = ?, edad_maxima = ?, fk_deporte = ?, fk_categoria = ? 
+                            SET nombre = ?, edad_minima = ?, edad_maxima = ?, fk_actividad = ?, fk_categoria = ?
                             WHERE id = ? AND fk_entidad = ?
                         ");
-                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_deporte, $fk_categoria, $id, $entidad_id]);
+                        $stmt->execute([$nombre, $edad_minima, $edad_maxima, $fk_actividad, $fk_categoria, $id, $entidad_id]);
                         $success_msg = 'Subcategoría modificada con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al modificar la subcategoría.';
@@ -160,9 +160,9 @@ if (isset($_GET['toggle_estado'])) {
 $subcategorias = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT s.*, d.nombre as deporte_nombre, c.nombre as categoria_nombre 
+        SELECT s.*, d.nombre as actividad_nombre, c.nombre as categoria_nombre
         FROM subcategorias s
-        JOIN deportes d ON s.fk_deporte = d.id
+        JOIN actividades d ON s.fk_actividad = d.id
         LEFT JOIN categoria c ON s.fk_categoria = c.id
         WHERE s.fk_entidad = ?
         ORDER BY s.id ASC
@@ -171,12 +171,12 @@ try {
     $subcategorias = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
-// Cargar Deportes para selects
-$deportes = [];
+// Cargar actividades para selects
+$actividades = [];
 try {
-    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt = $pdo->prepare("SELECT id, nombre FROM actividades WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
-    $deportes = $stmt->fetchAll();
+    $actividades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 // Cargar Categorías generales para selects con límites de edad
@@ -226,7 +226,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php foreach ($subcategorias as $sub): ?>
                         <tr>
                             <td class="fw-bold"><?= htmlspecialchars($sub['nombre']); ?></td>
-                            <td><?= htmlspecialchars($sub['deporte_nombre']); ?></td>
+                            <td><?= htmlspecialchars($sub['actividad_nombre']); ?></td>
                             <td><?= htmlspecialchars($sub['categoria_nombre'] ?? 'General'); ?></td>
                             <td><?= $sub['edad_minima']; ?> a <?= $sub['edad_maxima']; ?> años</td>
                             <td>
@@ -269,10 +269,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Actividad *</label>
-                            <select name="fk_deporte" class="form-select rounded-pill px-3" required>
-                                <?php foreach ($deportes as $dep): ?>
-                                    <option value="<?= $dep['id']; ?>" <?= $sub['fk_deporte'] == $dep['id'] ? 'selected' : ''; ?>>
-                                        <?= htmlspecialchars($dep['nombre']); ?>
+                            <select name="fk_actividad" class="form-select rounded-pill px-3" required>
+                                <?php foreach ($actividades as $act): ?>
+                                    <option value="<?= $act['id']; ?>" <?= $sub['fk_actividad'] == $act['id'] ? 'selected' : ''; ?>>
+                                        <?= htmlspecialchars($act['nombre']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -330,10 +330,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Actividad *</label>
-                        <select name="fk_deporte" class="form-select rounded-pill px-3" required>
+                        <select name="fk_actividad" class="form-select rounded-pill px-3" required>
                             <option value="">-- Seleccionar --</option>
-                            <?php foreach ($deportes as $dep): ?>
-                                <option value="<?= $dep['id']; ?>"><?= htmlspecialchars($dep['nombre']); ?></option>
+                            <?php foreach ($actividades as $act): ?>
+                                <option value="<?= $act['id']; ?>"><?= htmlspecialchars($act['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

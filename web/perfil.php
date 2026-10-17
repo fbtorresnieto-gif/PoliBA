@@ -193,10 +193,10 @@ if (has_role('Alumno')) {
         $stmt = $pdo->prepare("
             SELECT i.id as inscripcion_id, i.lista_espera, i.estado as inscripcion_estado,
                    c.nombre as clase_nombre, c.horario_inicio, c.horario_cierre,
-                   d.nombre as deporte_nombre, e.nombre as entidad_nombre
+                   d.nombre as actividad_nombre, e.nombre as entidad_nombre
             FROM inscripcion i
             JOIN clases c ON i.fk_clase = c.id
-            JOIN deportes d ON c.fk_deporte = d.id
+            JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE i.fk_usuario = ? AND i.fk_menor IS NULL
             ORDER BY c.nombre ASC
@@ -207,9 +207,9 @@ if (has_role('Alumno')) {
 } elseif (has_role('Profesor')) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.*, d.nombre as deporte_nombre, e.nombre as entidad_nombre
+            SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre
             FROM clases c
-            JOIN deportes d ON c.fk_deporte = d.id
+            JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
             ORDER BY c.nombre ASC
@@ -333,7 +333,7 @@ require_once __DIR__ . '/includes/header.php';
         
         <?php if (empty($clases_inscriptas)): ?>
             <div class="alert alert-info text-center">
-                <?= has_role('Profesor') ? 'No tienes módulos asignados actualmente.' : 'No estás inscripto en ningún módulo actualmente. <a href="deportes.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
+                <?= has_role('Profesor') ? 'No tienes módulos asignados actualmente.' : 'No estás inscripto en ningún módulo actualmente. <a href="actividades.php" class="alert-link text-decoration-none">Buscar actividades</a>'; ?>
             </div>
         <?php else: ?>
             <div class="row g-4">
@@ -352,7 +352,7 @@ require_once __DIR__ . '/includes/header.php';
                                         <small class="text-muted">#<?= $clase['inscripcion_id']; ?></small>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($clase['clase_nombre']); ?></h5>
-                                    <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($clase['deporte_nombre']); ?></div>
+                                    <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($clase['actividad_nombre']); ?></div>
                                     <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($clase['entidad_nombre']); ?></div>
                                     
                                     <div class="d-grid mt-auto gap-2">

@@ -43,7 +43,7 @@ try {
     $total_profesores = $stmt->fetchColumn() ?: 0;
 
     // Actividades activas
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM deportes WHERE fk_entidad = ? AND estado = TRUE");
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM actividades WHERE fk_entidad = ? AND estado = TRUE");
     $stmt->execute([$entidad_id]);
     $total_actividades = $stmt->fetchColumn() ?: 0;
 
@@ -99,7 +99,7 @@ try {
     $stats_espacios = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
-// 4. Estadísticas Detalladas por Actividad (Deportes)
+// 4. Estadísticas detalladas por actividad
 $stats_actividades = [];
 try {
     $stmt = $pdo->prepare("
@@ -111,16 +111,16 @@ try {
                 SELECT COUNT(*)
                 FROM inscripcion i
                 JOIN clases cl ON i.fk_clase = cl.id
-                WHERE cl.fk_deporte = d.id AND i.lista_espera = FALSE AND i.estado = 'activo'
+                WHERE cl.fk_actividad = d.id AND i.lista_espera = FALSE AND i.estado = 'activo'
             ) as alumnos_inscriptos,
             (
                 SELECT COUNT(*)
                 FROM inscripcion i
                 JOIN clases cl ON i.fk_clase = cl.id
-                WHERE cl.fk_deporte = d.id AND i.lista_espera = TRUE AND i.estado = 'activo'
+                WHERE cl.fk_actividad = d.id AND i.lista_espera = TRUE AND i.estado = 'activo'
             ) as alumnos_espera
-        FROM deportes d
-        LEFT JOIN clases c ON c.fk_deporte = d.id AND c.estado = TRUE
+        FROM actividades d
+        LEFT JOIN clases c ON c.fk_actividad = d.id AND c.estado = TRUE
         WHERE d.fk_entidad = ?
         GROUP BY d.id, d.nombre, d.estado
         ORDER BY alumnos_inscriptos DESC, d.nombre ASC

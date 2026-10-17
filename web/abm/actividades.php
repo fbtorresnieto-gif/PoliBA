@@ -32,7 +32,7 @@ if (!function_exists('normalizar_actividad')) {
     }
 }
 
-// Procesar Creación / Modificación de Deportes
+// Procesar creación / modificación de actividades
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $nombre = trim($_POST['nombre']);
     $texto = trim($_POST['texto']);
@@ -55,9 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             
             // Validar unicidad y similitud inteligente dentro de la entidad
-            $stmt_all = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_entidad = ? AND id != ?");
+            $stmt_all = $pdo->prepare("SELECT id, nombre FROM actividades WHERE fk_entidad = ? AND id != ?");
             $stmt_all->execute([$entidad_id, $chk_id]);
-            $deportes_existentes = $stmt_all->fetchAll();
+            $actividades_existentes = $stmt_all->fetchAll();
 
             $norm_nuevo = normalizar_actividad($nombre);
             $num_nuevo = preg_replace('/\D/', '', $norm_nuevo);
@@ -65,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $nombre_duplicado = null;
             $es_muy_similar = false;
 
-            foreach ($deportes_existentes as $dep_ex) {
-                $norm_existente = normalizar_actividad($dep_ex['nombre']);
+            foreach ($actividades_existentes as $act_ex) {
+                $norm_existente = normalizar_actividad($act_ex['nombre']);
                 $num_existente = preg_replace('/\D/', '', $norm_existente);
 
                 // Si ambos contienen números y son diferentes (ej. "futbol5" vs "futbol11"), son actividades distintas
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 
                 // 1. Coincidencia exacta ignorando tildes, mayúsculas y espacios
                 if ($norm_nuevo === $norm_existente) {
-                    $nombre_duplicado = $dep_ex['nombre'];
+                    $nombre_duplicado = $act_ex['nombre'];
                     break;
                 }
 
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 $es_prefijo = (strpos($norm_existente, $norm_nuevo) === 0 || strpos($norm_nuevo, $norm_existente) === 0) && abs(strlen($norm_nuevo) - strlen($norm_existente)) <= 4;
 
                 if ($percent >= 75 || $lev <= 2 || $es_prefijo) {
-                    $nombre_duplicado = $dep_ex['nombre'];
+                    $nombre_duplicado = $act_ex['nombre'];
                     $es_muy_similar = true;
                     break;
                 }
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-                            INSERT INTO deportes (nombre, texto, imagenURL, fk_entidad, estado)
+                            INSERT INTO actividades (nombre, texto, imagenURL, fk_entidad, estado)
                             VALUES (?, ?, ?, ?, TRUE)
                         ");
                         $stmt->execute([$nombre, $texto, $imagenURL, $entidad_id]);
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $id = intval($_POST['id']);
                     try {
                         $stmt = $pdo->prepare("
-                            UPDATE deportes 
+                            UPDATE actividades
                             SET nombre = ?, texto = ?, imagenURL = ? 
                             WHERE id = ? AND fk_entidad = ?
                         ");
@@ -137,10 +137,10 @@ if (isset($_GET['toggle_estado'])) {
         if ($nuevo_estado == 'FALSE') {
             // Desactivar actividad y en cascada todos sus módulos
             $pdo->beginTransaction();
-            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
+            $stmt = $pdo->prepare("UPDATE actividades SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
             $stmt->execute([$id, $entidad_id]);
 
-            $stmt_c = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_deporte = ? AND fk_entidad = ?");
+            $stmt_c = $pdo->prepare("UPDATE clases SET estado = FALSE WHERE fk_actividad = ? AND fk_entidad = ?");
             $stmt_c->execute([$id, $entidad_id]);
 
             $pdo->commit();
@@ -153,7 +153,7 @@ if (isset($_GET['toggle_estado'])) {
             if (!$entidad_row || !$entidad_row['estado']) {
                 $error_msg = 'No se puede activar la actividad porque la entidad a la que pertenece se encuentra desactivada.';
             } else {
-                $stmt = $pdo->prepare("UPDATE deportes SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
+                $stmt = $pdo->prepare("UPDATE actividades SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
                 $stmt->execute([$id, $entidad_id]);
                 $success_msg = 'Actividad activada con éxito.';
             }
@@ -166,12 +166,12 @@ if (isset($_GET['toggle_estado'])) {
     }
 }
 
-// Cargar Deportes de la sede
-$deportes = [];
+// Cargar actividades de la entidad
+$actividades = [];
 try {
-    $stmt = $pdo->prepare("SELECT * FROM deportes WHERE fk_entidad = ? ORDER BY id ASC");
+    $stmt = $pdo->prepare("SELECT * FROM actividades WHERE fk_entidad = ? ORDER BY id ASC");
     $stmt->execute([$entidad_id]);
-    $deportes = $stmt->fetchAll();
+    $actividades = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
             <h2 class="fw-bold text-dark m-0">ABM Actividades</h2>
             <small class="text-muted">Administrando Entidad: <strong><?= htmlspecialchars($user['fk_entidad_nombre'] ?? 'Mi Entidad'); ?></strong></small>
         </div>
-        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearDeporteModal">Agregar Actividad</button>
+        <button class="poliba-btn" data-bs-toggle="modal" data-bs-target="#crearActividadModal">Agregar Actividad</button>
     </div>
 
     <?php if (!empty($error_msg)): ?>
@@ -204,26 +204,26 @@ require_once __DIR__ . '/../includes/header.php';
                 </tr>
             </thead>
             <tbody>
-                <?php if (empty($deportes)): ?>
+                <?php if (empty($actividades)): ?>
                     <tr>
                         <td colspan="4" class="text-center text-muted">No hay actividades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($deportes as $dep): ?>
+                    <?php foreach ($actividades as $act): ?>
                         <tr>
-                            <td class="fw-bold"><?= htmlspecialchars($dep['nombre']); ?></td>
-                            <td><?= htmlspecialchars(substr($dep['texto'], 0, 150)) . (strlen($dep['texto']) > 150 ? '...' : ''); ?></td>
+                            <td class="fw-bold"><?= htmlspecialchars($act['nombre']); ?></td>
+                            <td><?= htmlspecialchars(substr($act['texto'], 0, 150)) . (strlen($act['texto']) > 150 ? '...' : ''); ?></td>
                             <td>
-                                <span class="badge rounded-pill <?= $dep['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?= $dep['estado'] ? 'Activo' : 'Inactivo'; ?>
+                                <span class="badge rounded-pill <?= $act['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?= $act['estado'] ? 'Activo' : 'Inactivo'; ?>
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editDeporteModal<?= $dep['id']; ?>">Editar</button>
-                                <a href="deportes.php?toggle_estado=<?= $dep['id']; ?>&estado=<?= $dep['estado'] ? '1' : '0'; ?>" 
-                                   class="btn btn-sm <?= $dep['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                                <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editActividadModal<?= $act['id']; ?>">Editar</button>
+                                <a href="actividades.php?toggle_estado=<?= $act['id']; ?>&estado=<?= $act['estado'] ? '1' : '0'; ?>"
+                                   class="btn btn-sm <?= $act['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
                                    onclick="return confirm('¿Seguro deseas cambiar el estado de esta actividad? Si la desactivas, todos sus módulos asociados se desactivarán automáticamente.');">
-                                    <?= $dep['estado'] ? 'Desactivar' : 'Activar'; ?>
+                                    <?= $act['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
                         </tr>
@@ -235,28 +235,28 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Modales Editar Actividad (Fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($deportes as $dep): ?>
-    <div class="modal fade" id="editDeporteModal<?= $dep['id']; ?>" tabindex="-1" aria-hidden="true">
+<?php foreach ($actividades as $act): ?>
+    <div class="modal fade" id="editActividadModal<?= $act['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
-            <form action="deportes.php" method="POST" class="modal-content border-0 shadow">
+            <form action="actividades.php" method="POST" class="modal-content border-0 shadow">
                 <input type="hidden" name="action" value="editar">
-                <input type="hidden" name="id" value="<?= $dep['id']; ?>">
+                <input type="hidden" name="id" value="<?= $act['id']; ?>">
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Actividad: <?= htmlspecialchars($dep['nombre']); ?></h5>
+                    <h5 class="modal-title fw-bold">Editar Actividad: <?= htmlspecialchars($act['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre de la Actividad *</label>
-                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($dep['nombre']); ?>">
+                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($act['nombre']); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen URL</label>
-                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/voley.jpg" value="<?= htmlspecialchars($dep['imagenurl'] ?? $dep['imagenURL'] ?? ''); ?>">
+                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/voley.jpg" value="<?= htmlspecialchars($act['imagenurl'] ?? $act['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Información</label>
-                        <textarea name="texto" class="form-control px-3" rows="4" style="border-radius:15px;"><?= htmlspecialchars($dep['texto'] ?? ''); ?></textarea>
+                        <textarea name="texto" class="form-control px-3" rows="4" style="border-radius:15px;"><?= htmlspecialchars($act['texto'] ?? ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -269,9 +269,9 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endforeach; ?>
 
 <!-- Modal Crear Actividad -->
-<div class="modal fade" id="crearDeporteModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="crearActividadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form action="deportes.php" method="POST" class="modal-content border-0 shadow">
+        <form action="actividades.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Actividad</h5>

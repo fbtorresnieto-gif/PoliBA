@@ -59,13 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $horario_cierre = $_POST['horario_cierre'];
     $cupo_maximo = intval($_POST['cupo_maximo']);
     $fk_usuario_profesor = !empty($_POST['fk_usuario_profesor']) ? intval($_POST['fk_usuario_profesor']) : null;
-    $fk_deporte = intval($_POST['fk_deporte']);
+    $fk_actividad = intval($_POST['fk_actividad']);
     $fk_espacio = !empty($_POST['fk_espacio']) ? intval($_POST['fk_espacio']) : null;
     $fk_categoria = !empty($_POST['fk_categoria']) ? intval($_POST['fk_categoria']) : null;
     $fk_subcategoria = !empty($_POST['fk_subcategoria']) ? intval($_POST['fk_subcategoria']) : null;
     $dias_seleccionados = isset($_POST['dias']) ? $_POST['dias'] : []; // Array de IDs de días
     
-    if (empty($nombre) || empty($horario_inicio) || empty($horario_cierre) || $cupo_maximo <= 0 || (($_POST['action'] ?? '') == 'crear' && ($fk_deporte <= 0 || empty($fk_categoria)))) {
+    if (empty($nombre) || empty($horario_inicio) || empty($horario_cierre) || $cupo_maximo <= 0 || (($_POST['action'] ?? '') == 'crear' && ($fk_actividad <= 0 || empty($fk_categoria)))) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
     } elseif ($horario_inicio >= $horario_cierre) {
         $error_msg = 'La hora de cierre debe ser posterior a la hora de inicio del módulo.';
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] ?? '') == 'editar' ? intval($_POST['id']) : 0;
 
             if (($_POST['action'] ?? '') == 'editar') {
-                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_deporte, fk_categoria, fk_subcategoria FROM clases WHERE id = ? AND fk_entidad = ?");
+                $stmt_orig = $pdo->prepare("SELECT cupo_maximo, fk_actividad, fk_categoria, fk_subcategoria FROM clases WHERE id = ? AND fk_entidad = ?");
                 $stmt_orig->execute([$chk_id, $entidad_id]);
                 $clase_orig = $stmt_orig->fetch();
 
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $sub_valida = false;
                 } else {
                     // Forzar inmutabilidad de actividad, categoría y subcategoría al editar
-                    $fk_deporte = intval($clase_orig['fk_deporte']);
+                    $fk_actividad = intval($clase_orig['fk_actividad']);
                     $fk_categoria = !empty($clase_orig['fk_categoria']) ? intval($clase_orig['fk_categoria']) : null;
                     $fk_subcategoria = !empty($clase_orig['fk_subcategoria']) ? intval($clase_orig['fk_subcategoria']) : null;
                 }
@@ -224,12 +224,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             }
 
         if ($sub_valida && $fk_subcategoria) {
-            $stmt_sub = $pdo->prepare("SELECT nombre, edad_minima, edad_maxima, fk_categoria, fk_deporte FROM subcategorias WHERE id = ?");
+            $stmt_sub = $pdo->prepare("SELECT nombre, edad_minima, edad_maxima, fk_categoria, fk_actividad FROM subcategorias WHERE id = ?");
             $stmt_sub->execute([$fk_subcategoria]);
             $sub_info = $stmt_sub->fetch();
 
             if ($sub_info) {
-                if ($sub_info['fk_deporte'] != $fk_deporte) {
+                if ($sub_info['fk_actividad'] != $fk_actividad) {
                     $error_msg = "La subcategoría \"{$sub_info['nombre']}\" no corresponde a la actividad seleccionada.";
                     $sub_valida = false;
                 } elseif ($fk_categoria) {
@@ -260,18 +260,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             if ($_POST['action'] == 'crear') {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         RETURNING id
                     ");
-                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
                     $clase_id = $stmt->fetchColumn();
                 } else {
                     $stmt = $pdo->prepare("
-                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
+                        INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad, estado)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                     ");
-                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
+                    $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $entidad_id]);
                     $clase_id = $pdo->lastInsertId();
                 }
                 
@@ -288,10 +288,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 
                 $stmt = $pdo->prepare("
                     UPDATE clases 
-                    SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_deporte = ?, fk_espacio = ?, fk_categoria = ?, fk_subcategoria = ?
+                    SET nombre = ?, descripcion = ?, horario_inicio = ?, horario_cierre = ?, cupo_maximo = ?, fk_usuario_profesor = ?, fk_actividad = ?, fk_espacio = ?, fk_categoria = ?, fk_subcategoria = ?
                     WHERE id = ? AND fk_entidad = ?
                 ");
-                $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_deporte, $fk_espacio, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
+                $stmt->execute([$nombre, $descripcion, $horario_inicio, $horario_cierre, $cupo_maximo, $fk_usuario_profesor, $fk_actividad, $fk_espacio, $fk_categoria, $fk_subcategoria, $id, $entidad_id]);
                 
                 // Limpiar días anteriores y re-insertar
                 $stmt_del = $pdo->prepare("DELETE FROM dias_clases WHERE fk_clase = ?");
@@ -331,10 +331,10 @@ if (isset($_GET['toggle_estado'])) {
 $clases = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT c.*, d.nombre as deporte_nombre, prof.nombre as prof_nombre, prof.apellido as prof_apellido,
+        SELECT c.*, d.nombre as actividad_nombre, prof.nombre as prof_nombre, prof.apellido as prof_apellido,
                esp.nombre as espacio_nombre, cat.nombre as categoria_nombre, sub.nombre as subcategoria_nombre
         FROM clases c
-        JOIN deportes d ON c.fk_deporte = d.id
+        JOIN actividades d ON c.fk_actividad = d.id
         LEFT JOIN usuarios prof ON c.fk_usuario_profesor = prof.id
         LEFT JOIN espacios esp ON c.fk_espacio = esp.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
@@ -354,9 +354,9 @@ try {
     unset($clase);
 } catch (PDOException $e) {}
 
-// Cargar catálogo de soporte (profesores, deportes, espacios, categorías, subcategorías y días)
+// Cargar catálogo de soporte (profesores, actividades, espacios, categorías, subcategorías y días)
 $profesores = [];
-$deportes = [];
+$actividades = [];
 $espacios = [];
 $categorias = [];
 $subcategorias = [];
@@ -367,9 +367,9 @@ try {
     $stmt->execute([$entidad_id]);
     $profesores = $stmt->fetchAll();
     
-    $stmt = $pdo->prepare("SELECT id, nombre FROM deportes WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt = $pdo->prepare("SELECT id, nombre FROM actividades WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
-    $deportes = $stmt->fetchAll();
+    $actividades = $stmt->fetchAll();
     
     $stmt = $pdo->prepare("SELECT id, nombre FROM espacios WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
@@ -378,7 +378,7 @@ try {
     $stmt = $pdo->query("SELECT id, nombre, edad_minima, edad_maxima FROM categoria ORDER BY id ASC");
     $categorias = $stmt->fetchAll();
     
-    $stmt = $pdo->prepare("SELECT id, nombre, edad_minima, edad_maxima, fk_categoria, fk_deporte FROM subcategorias WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
+    $stmt = $pdo->prepare("SELECT id, nombre, edad_minima, edad_maxima, fk_categoria, fk_actividad FROM subcategorias WHERE fk_entidad = ? AND estado = TRUE ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
     $subcategorias = $stmt->fetchAll();
     
@@ -441,7 +441,7 @@ require_once __DIR__ . '/../includes/header.php';
                                     <?= !empty($clase['subcategoria_nombre']) ? ' (' . htmlspecialchars($clase['subcategoria_nombre']) . ')' : ''; ?>
                                 </div>
                             </td>
-                            <td><?= htmlspecialchars($clase['deporte_nombre']); ?></td>
+                            <td><?= htmlspecialchars($clase['actividad_nombre']); ?></td>
                             <td><?= !empty($clase['prof_nombre']) ? htmlspecialchars($clase['prof_nombre'] . ' ' . $clase['prof_apellido']) : 'Sin asignar'; ?></td>
                             <td>
                                 <strong><?= date('H:i', strtotime($clase['horario_inicio'])); ?> - <?= date('H:i', strtotime($clase['horario_cierre'])); ?></strong>
@@ -518,11 +518,11 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Actividad * <small class="text-muted">(Fija)</small></label>
                             <select class="form-select rounded-pill px-3" disabled>
-                                <?php foreach ($deportes as $dep): ?>
-                                    <option value="<?= $dep['id']; ?>" <?= $clase['fk_deporte'] == $dep['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($dep['nombre']); ?></option>
+                                <?php foreach ($actividades as $act): ?>
+                                    <option value="<?= $act['id']; ?>" <?= $clase['fk_actividad'] == $act['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($act['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <input type="hidden" name="fk_deporte" value="<?= $clase['fk_deporte']; ?>">
+                            <input type="hidden" name="fk_actividad" value="<?= $clase['fk_actividad']; ?>">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-bold">Profesor</label>
@@ -654,10 +654,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-bold">Actividad *</label>
-                        <select name="fk_deporte" class="form-select rounded-pill px-3" required>
+                        <select name="fk_actividad" class="form-select rounded-pill px-3" required>
                             <option value="">-- Seleccionar --</option>
-                            <?php foreach ($deportes as $dep): ?>
-                                <option value="<?= $dep['id']; ?>"><?= htmlspecialchars($dep['nombre']); ?></option>
+                            <?php foreach ($actividades as $act): ?>
+                                <option value="<?= $act['id']; ?>"><?= htmlspecialchars($act['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -700,7 +700,7 @@ require_once __DIR__ . '/../includes/header.php';
                             <option value="">-- Ninguna --</option>
                             <?php foreach ($subcategorias as $sub): ?>
                                 <option value="<?= $sub['id']; ?>" 
-                                        data-deporte="<?= $sub['fk_deporte']; ?>"
+                                        data-actividad="<?= $sub['fk_actividad']; ?>"
                                         data-categoria="<?= $sub['fk_categoria'] ?? ''; ?>"
                                         data-min="<?= $sub['edad_minima']; ?>"
                                         data-max="<?= $sub['edad_maxima']; ?>">
@@ -747,14 +747,14 @@ require_once __DIR__ . '/../includes/header.php';
 document.addEventListener('DOMContentLoaded', function() {
     const forms = document.querySelectorAll('form[action="clases.php"]');
     forms.forEach(form => {
-        const selectDeporte = form.querySelector('select[name="fk_deporte"]');
+        const selectActividad = form.querySelector('select[name="fk_actividad"]');
         const selectCat = form.querySelector('select[name="fk_categoria"]');
         const selectSub = form.querySelector('select[name="fk_subcategoria"]');
 
         if (!selectSub) return;
 
         function filtrarSubcategorias() {
-            const deporteId = selectDeporte ? selectDeporte.value : '';
+            const actividadId = selectActividad ? selectActividad.value : '';
             const catId = selectCat ? selectCat.value : '';
             const selectedCatOpt = selectCat && selectCat.selectedIndex >= 0 ? selectCat.options[selectCat.selectedIndex] : null;
             const catMin = selectedCatOpt && selectedCatOpt.dataset.min ? parseInt(selectedCatOpt.dataset.min) : null;
@@ -767,14 +767,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const subDeporte = option.dataset.deporte;
+                const subActividad = option.dataset.actividad;
                 const subCat = option.dataset.categoria;
                 const subMin = option.dataset.min ? parseInt(option.dataset.min) : null;
                 const subMax = option.dataset.max ? parseInt(option.dataset.max) : null;
 
                 let visible = true;
 
-                if (deporteId && subDeporte && subDeporte !== deporteId) {
+                if (actividadId && subActividad && subActividad !== actividadId) {
                     visible = false;
                 }
 
@@ -798,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (selectDeporte) selectDeporte.addEventListener('change', filtrarSubcategorias);
+        if (selectActividad) selectActividad.addEventListener('change', filtrarSubcategorias);
         if (selectCat) selectCat.addEventListener('change', filtrarSubcategorias);
 
         filtrarSubcategorias();

@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/db.php';
 
 $entidad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $entidad = null;
-$deportes = [];
+$actividades = [];
 $espacios = [];
 
 if ($entidad_id > 0) {
@@ -21,10 +21,10 @@ if ($entidad_id > 0) {
         $entidad = $stmt->fetch();
         
         if ($entidad) {
-            // Consultar deportes de esta entidad
-            $stmt = $pdo->prepare("SELECT * FROM deportes WHERE fk_entidad = ? AND estado = TRUE");
+            // Consultar actividades de esta entidad
+            $stmt = $pdo->prepare("SELECT * FROM actividades WHERE fk_entidad = ? AND estado = TRUE");
             $stmt->execute([$entidad_id]);
-            $deportes = $stmt->fetchAll();
+            $actividades = $stmt->fetchAll();
             
             // Consultar espacios de esta entidad
             $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? AND estado = TRUE");
@@ -116,13 +116,13 @@ require_once __DIR__ . '/includes/header.php';
             Actividades Disponibles
         </h3>
         
-        <?php if (empty($deportes)): ?>
+        <?php if (empty($actividades)): ?>
             <p class="text-muted">No hay actividades registradas para esta entidad en este momento.</p>
         <?php else: ?>
             <div class="row g-4">
-                <?php foreach ($deportes as $deporte): 
+                <?php foreach ($actividades as $actividad):
                     $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600";
-                    $raw_img = $deporte['imagenurl'] ?? $deporte['imagenURL'] ?? '';
+                    $raw_img = $actividad['imagenurl'] ?? $actividad['imagenURL'] ?? '';
                     if (!empty($raw_img)) {
                         if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
                             $img_url = $raw_img;
@@ -135,11 +135,11 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="poliba-card">
                             <div class="poliba-card-img" style="background-image: url('<?= htmlspecialchars($img_url); ?>');"></div>
                             <div class="poliba-card-body">
-                                <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($deporte['nombre']); ?></h5>
+                                <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($actividad['nombre']); ?></h5>
                                 <p class="poliba-card-text">
-                                    <?= htmlspecialchars(substr($deporte['texto'], 0, 100)) . (strlen($deporte['texto']) > 100 ? '...' : ''); ?>
+                                    <?= htmlspecialchars(substr($actividad['texto'], 0, 100)) . (strlen($actividad['texto']) > 100 ? '...' : ''); ?>
                                 </p>
-                                <a href="deporte.php?id=<?= $deporte['id']; ?>" class="poliba-card-link mt-auto">Ver Actividades y Módulos <i class="bi bi-arrow-right ms-1"></i></a>
+                                <a href="actividad.php?id=<?= $actividad['id']; ?>" class="poliba-card-link mt-auto">Ver Actividades y Módulos <i class="bi bi-arrow-right ms-1"></i></a>
                             </div>
                         </div>
                     </div>

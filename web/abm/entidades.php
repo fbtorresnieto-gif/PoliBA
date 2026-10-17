@@ -89,12 +89,12 @@ if (isset($_GET['toggle_estado'])) {
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
         if ($nuevo_estado == 'FALSE') {
-            // Desactivación en cascada: entidad, deportes, espacios, clases y subcategorías
+            // Desactivación en cascada: entidad, actividades, espacios, clases y subcategorías
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("UPDATE entidades SET estado = FALSE WHERE id = ?");
             $stmt->execute([$id]);
 
-            $stmt = $pdo->prepare("UPDATE deportes SET estado = FALSE WHERE fk_entidad = ?");
+            $stmt = $pdo->prepare("UPDATE actividades SET estado = FALSE WHERE fk_entidad = ?");
             $stmt->execute([$id]);
 
             $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE fk_entidad = ?");

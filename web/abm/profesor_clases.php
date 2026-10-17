@@ -96,9 +96,9 @@ $clases_profesor = [];
 if ($clase_id == 0) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.*, d.nombre as deporte_nombre, e.nombre as entidad_nombre
+            SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre
             FROM clases c
-            JOIN deportes d ON c.fk_deporte = d.id
+            JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
             WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
             ORDER BY c.nombre ASC
@@ -126,7 +126,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="poliba-card">
                             <div class="poliba-card-body p-4">
                                 <h4 class="fw-bold text-dark mb-2"><?= htmlspecialchars($cl['nombre']); ?></h4>
-                                <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($cl['deporte_nombre']); ?></div>
+                                <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($cl['actividad_nombre']); ?></div>
                                 <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($cl['entidad_nombre']); ?></div>
                                 <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($cl['horario_inicio'])); ?> - <?= date('H:i', strtotime($cl['horario_cierre'])); ?> hs</div>
                                 <div class="d-grid mt-auto">

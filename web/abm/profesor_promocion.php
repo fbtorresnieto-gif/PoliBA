@@ -64,7 +64,7 @@ $alumnos_inscritos = [];
 try {
     $stmt = $pdo->prepare("
         SELECT i.id as inscripcion_id, i.fk_clase,
-               c.nombre as clase_actual_nombre, c.fk_deporte, c.fk_entidad,
+               c.nombre as clase_actual_nombre, c.fk_actividad, c.fk_entidad,
                COALESCE(sub.edad_minima, cat.edad_minima, 0) as cat_edad_min,
                COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as cat_edad_max,
                u.nombre as alu_nombre, u.apellido as alu_apellido, u.email as alu_email, u.telefono as alu_telefono, u.fecha_nacimiento as alu_nac,
@@ -82,7 +82,7 @@ try {
     $stmt->execute([$user['id']]);
     $alumnos_inscritos = $stmt->fetchAll();
     
-    // Para cada alumno, buscar clases alternativas en el mismo deporte y entidad
+    // Para cada alumno, buscar clases alternativas en la misma actividad y entidad
     foreach ($alumnos_inscritos as &$al) {
         $es_menor = !empty($al['men_nombre']);
         $nombre = $es_menor ? $al['men_nombre'] : $al['alu_nombre'];
@@ -96,7 +96,7 @@ try {
         $al['display_telefono'] = $telefono;
         $al['edad'] = date_diff(date_create($nac), date_create('today'))->y;
         
-        // Buscar otras clases del mismo deporte en esta entidad
+        // Buscar otras clases de la misma actividad en esta entidad
         $stmt_cls = $pdo->prepare("
             SELECT c.id, c.nombre, 
                    COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
@@ -104,9 +104,9 @@ try {
             FROM clases c
             LEFT JOIN categoria cat ON c.fk_categoria = cat.id
             LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-            WHERE c.fk_deporte = ? AND c.fk_entidad = ? AND c.id != ? AND c.estado = TRUE
+            WHERE c.fk_actividad = ? AND c.fk_entidad = ? AND c.id != ? AND c.estado = TRUE
         ");
-        $stmt_cls->execute([$al['fk_deporte'], $al['fk_entidad'], $al['fk_clase']]);
+        $stmt_cls->execute([$al['fk_actividad'], $al['fk_entidad'], $al['fk_clase']]);
         $clases_alternativas = $stmt_cls->fetchAll();
         
         // Filtrar solo las clases aptas para la edad actual del alumno

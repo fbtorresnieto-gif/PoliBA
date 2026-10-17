@@ -21,18 +21,18 @@ clases		horario_inicio	time without time zone
 clases		horario_cierre	time without time zone
 clases		cupo_maximo	integer
 clases		fk_usuario_profesor	integer
-clases		fk_deporte	integer
+clases		fk_actividad	integer
 clases		fk_espacio	integer
 clases		fk_categoria	integer
 clases		fk_subcategoria	integer
 clases		fk_entidad	integer
 clases		estado		boolean
-deportes	id		integer
-deportes	nombre		character varying
-deportes	texto		text
-deportes	imagenurl	character varying
-deportes	fk_entidad	integer
-deportes	estado		boolean
+actividades	id		integer
+actividades	nombre		character varying
+actividades	texto		text
+actividades	imagenurl	character varying
+actividades	fk_entidad	integer
+actividades	estado		boolean
 dias		id		integer
 dias		nombre		character varying
 dias	orden	integer
@@ -85,7 +85,7 @@ subcategorias	id		integer
 subcategorias	nombre		character varying
 subcategorias	edad_minima	integer
 subcategorias	edad_maxima	integer
-subcategorias	fk_deporte	integer
+subcategorias	fk_actividad	integer
 subcategorias	fk_categoria	integer
 subcategorias	fk_entidad	integer
 subcategorias	estado		boolean

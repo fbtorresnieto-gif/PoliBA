@@ -2,23 +2,23 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
-$deporte_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$deporte = null;
+$actividad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$actividad = null;
 $clases = [];
 
-if ($deporte_id > 0) {
+if ($actividad_id > 0) {
     try {
-        // Query sport details
+        // Consultar detalle de la actividad
         $stmt = $pdo->prepare("
             SELECT d.*, e.nombre as entidad_nombre
-            FROM deportes d
+            FROM actividades d
             JOIN entidades e ON d.fk_entidad = e.id
             WHERE d.id = ? AND d.estado = TRUE AND e.estado = TRUE
         ");
-        $stmt->execute([$deporte_id]);
-        $deporte = $stmt->fetch();
+        $stmt->execute([$actividad_id]);
+        $actividad = $stmt->fetch();
         
-        if ($deporte) {
+        if ($actividad) {
             // Query classes for this sport
             $stmt = $pdo->prepare("
                 SELECT c.*, 
@@ -31,10 +31,10 @@ if ($deporte_id > 0) {
                 LEFT JOIN categoria cat ON c.fk_categoria = cat.id
                 LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
                 LEFT JOIN espacios esp ON c.fk_espacio = esp.id
-                WHERE c.fk_deporte = ? AND c.estado = TRUE
+                WHERE c.fk_actividad = ? AND c.estado = TRUE
                 ORDER BY c.nombre ASC
             ");
-            $stmt->execute([$deporte_id]);
+            $stmt->execute([$actividad_id]);
             $clases = $stmt->fetchAll();
             
             // For each class, query days of class and count current enrollment
@@ -66,8 +66,8 @@ if ($deporte_id > 0) {
     }
 }
 
-if (!$deporte) {
-    header("Location: deportes.php");
+if (!$actividad) {
+    header("Location: actividades.php");
     exit;
 }
 
@@ -79,8 +79,8 @@ require_once __DIR__ . '/includes/header.php';
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.php" class="text-dark">Home</a></li>
-            <li class="breadcrumb-item"><a href="deportes.php" class="text-dark">Actividades</a></li>
-            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($deporte['nombre']); ?></li>
+            <li class="breadcrumb-item"><a href="actividades.php" class="text-dark">Actividades</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($actividad['nombre']); ?></li>
         </ol>
     </nav>
     
@@ -89,7 +89,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="col-md-5">
             <?php 
             $img_url = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=600";
-            $raw_img = $deporte['imagenurl'] ?? $deporte['imagenURL'] ?? '';
+            $raw_img = $actividad['imagenurl'] ?? $actividad['imagenURL'] ?? '';
             if (!empty($raw_img)) {
                 if (filter_var($raw_img, FILTER_VALIDATE_URL)) {
                     $img_url = $raw_img;
@@ -98,12 +98,12 @@ require_once __DIR__ . '/includes/header.php';
                 }
             }
             ?>
-            <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded shadow-sm w-100" style="max-height: 350px; object-fit: cover;" alt="<?= htmlspecialchars($deporte['nombre']); ?>">
+            <img src="<?= htmlspecialchars($img_url); ?>" class="img-fluid rounded shadow-sm w-100" style="max-height: 350px; object-fit: cover;" alt="<?= htmlspecialchars($actividad['nombre']); ?>">
         </div>
         <div class="col-md-7 mt-4 mt-md-0">
-            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($deporte['entidad_nombre']); ?></span>
-            <h1 class="fw-bold text-dark mb-3"><?= htmlspecialchars($deporte['nombre']); ?></h1>
-            <p class="fs-5 text-dark" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($deporte['texto'])); ?></p>
+            <span class="badge bg-dark rounded-pill px-3 py-2 mb-2"><i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($actividad['entidad_nombre']); ?></span>
+            <h1 class="fw-bold text-dark mb-3"><?= htmlspecialchars($actividad['nombre']); ?></h1>
+            <p class="fs-5 text-dark" style="line-height: 1.6;"><?= nl2br(htmlspecialchars($actividad['texto'])); ?></p>
         </div>
     </div>
     

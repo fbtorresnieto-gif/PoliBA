@@ -56,9 +56,9 @@ INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telef
 INSERT INTO menores (nombre, apellido, dni, direccion, fecha_nacimiento, relacion, fk_usuario) VALUES 
 ('Carlos', 'Giliberti', '55123456', 'Calle falsa 1234, Colegiales, CABA', '2015-05-10', 'Hijo/a', 6);
 
--- 7. Inserción de Deportes
-INSERT INTO deportes (nombre, texto, imagenURL, fk_entidad) VALUES
-('Vóley', 'El vóley es un deporte de equipo jugado en una cancha dividida por una red. Ideal para coordinacion y agilidad.', 'voley.jpg', 1),
+-- 7. Inserción de Actividades
+INSERT INTO actividades (nombre, texto, imagenURL, fk_entidad) VALUES
+('Vóley', 'El vóley es una actividad de equipo practicada en una cancha dividida por una red. Ideal para coordinación y agilidad.', 'voley.jpg', 1),
 ('Básquet', 'El básquetbol es una disciplina de velocidad, pases rápidos y encestes. Contamos con aros profesionales.', 'basquet.jpg', 1),
 ('Fútbol 5', 'Disfrutá del fútbol en canchas sintéticas reglamentarias. Alquiler y clases de formación.', 'futbol.jpg', 1),
 ('Tenis', 'Tenis individual o dobles. Contamos con canchas de polvo de ladrillo y cemento.', 'tenis.jpg', 1),
@@ -72,15 +72,15 @@ INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad) VALUE
 ('Cancha de Fútbol 5', 'Cancha de cesped sintético exterior con iluminación nocturna.', 'cancha_futbol.jpg', FALSE, 1),
 ('Cancha de Tenis 1', 'Cancha rápida de cemento para tenis.', 'cancha_tenis.jpg', FALSE, 1);
 
--- 9. Inserción de Subcategorías (Por edad en Deporte)
-INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_deporte, fk_categoria, fk_entidad) VALUES
+-- 9. Inserción de Subcategorías (Por edad en Actividad)
+INSERT INTO subcategorias (nombre, edad_minima, edad_maxima, fk_actividad, fk_categoria, fk_entidad) VALUES
 ('Mini Vóley', 6, 12, 1, 1, 1),
 ('Vóley Juvenil', 13, 17, 1, 2, 1),
 ('Vóley Mayores A', 18, 40, 1, 3, 1),
 ('Vóley Recreativo Senior', 60, 80, 1, 4, 1);
 
 -- 10. Inserción de Clases
-INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_deporte, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad) VALUES
+INSERT INTO clases (nombre, descripcion, horario_inicio, horario_cierre, cupo_maximo, fk_usuario_profesor, fk_actividad, fk_espacio, fk_categoria, fk_subcategoria, fk_entidad) VALUES
 ('Vóley Mayores Inicial', 'Clase recreativa y técnica de voley para mayores de 18 años.', '18:00:00', '20:00:00', 15, 4, 1, 1, 3, 3, 1),
 ('Mini Básquet Colegiales', 'Iniciación al basquet para niños y niñas de 6 a 12 años.', '16:00:00', '17:30:00', 2, 5, 2, 3, 1, NULL, 1); -- Cupo bajo para probar listas de espera
 

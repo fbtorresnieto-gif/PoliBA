@@ -67,8 +67,8 @@ CREATE TABLE novedades (
     estado BOOLEAN DEFAULT TRUE
 );
 
--- 7. Tabla de Deportes
-CREATE TABLE deportes (
+-- 7. Tabla de Actividades
+CREATE TABLE actividades (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     texto TEXT,
@@ -96,13 +96,13 @@ CREATE TABLE categoria (
     edad_maxima INT NOT NULL
 );
 
--- 10. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
+-- 10. Tabla de Subcategorias (Rangos acotados para clases por actividad/entidad)
 CREATE TABLE subcategorias (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,
     edad_minima INT NOT NULL,
     edad_maxima INT NOT NULL,
-    fk_deporte INT NOT NULL REFERENCES deportes(id) ON DELETE CASCADE,
+    fk_actividad INT NOT NULL REFERENCES actividades(id) ON DELETE CASCADE,
     fk_categoria INT REFERENCES categoria(id) ON DELETE SET NULL,
     fk_entidad INT NOT NULL REFERENCES entidades(id) ON DELETE CASCADE,
     estado BOOLEAN DEFAULT TRUE
@@ -117,7 +117,7 @@ CREATE TABLE clases (
     horario_cierre TIME NOT NULL,
     cupo_maximo INT NOT NULL,
     fk_usuario_profesor INT REFERENCES usuarios(id) ON DELETE SET NULL,
-    fk_deporte INT NOT NULL REFERENCES deportes(id) ON DELETE CASCADE,
+    fk_actividad INT NOT NULL REFERENCES actividades(id) ON DELETE CASCADE,
     fk_espacio INT REFERENCES espacios(id) ON DELETE SET NULL,
     fk_categoria INT REFERENCES categoria(id) ON DELETE SET NULL,
     fk_subcategoria INT REFERENCES subcategorias(id) ON DELETE SET NULL,
