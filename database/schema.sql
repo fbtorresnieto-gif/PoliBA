@@ -96,11 +96,7 @@ CREATE TABLE categoria (
     edad_maxima INT NOT NULL
 );
 
-<<<<<<< HEAD
--- 11. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
-=======
 -- 10. Tabla de Subcategorias (Rangos acotados para clases por deporte/entidad)
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
 CREATE TABLE subcategorias (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL,

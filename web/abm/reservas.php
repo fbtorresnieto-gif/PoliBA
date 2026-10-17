@@ -26,11 +26,7 @@ if (isset($_GET['cancelar_reserva_admin'])) {
         $stmt = $pdo->prepare("
             UPDATE reservas 
             SET estado = 'cancelado' 
-<<<<<<< HEAD
-            WHERE id = ? AND fk_cancha IN (SELECT id FROM canchas WHERE fk_entidad = ?)
-=======
             WHERE id = ? AND fk_espacio IN (SELECT id FROM espacios WHERE fk_entidad = ?)
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
         ");
         if ($stmt->execute([$res_id, $entidad_id])) {
             $success_msg = 'Reserva cancelada con éxito.';
@@ -48,13 +44,8 @@ try {
         FROM reservas r
         JOIN espacios e ON r.fk_espacio = e.id
         JOIN usuarios u ON r.fk_usuario = u.id
-<<<<<<< HEAD
-        WHERE c.fk_entidad = ? AND r.fecha_de_asistencia = ?
-        ORDER BY r.horario ASC, c.nombre ASC
-=======
         WHERE e.fk_entidad = ? AND r.fecha_de_asistencia = ?
         ORDER BY r.horario ASC, e.nombre ASC
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     ");
     $stmt->execute([$entidad_id, $selected_date]);
     $reservas = $stmt->fetchAll();

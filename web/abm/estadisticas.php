@@ -48,11 +48,7 @@ try {
     $total_actividades = $stmt->fetchColumn() ?: 0;
 
     // Espacios activos
-<<<<<<< HEAD
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM canchas WHERE fk_entidad = ? AND estado = TRUE");
-=======
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM espacios WHERE fk_entidad = ? AND estado = TRUE");
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     $stmt->execute([$entidad_id]);
     $total_espacios = $stmt->fetchColumn() ?: 0;
 
@@ -65,13 +61,8 @@ try {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) 
         FROM reservas r
-<<<<<<< HEAD
-        JOIN canchas c ON r.fk_cancha = c.id
-        WHERE c.fk_entidad = ? AND r.estado = 'reservado'
-=======
         JOIN espacios e ON r.fk_espacio = e.id
         WHERE e.fk_entidad = ? AND r.estado = 'reservado'
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     ");
     $stmt->execute([$entidad_id]);
     $total_reservas = $stmt->fetchColumn() ?: 0;
@@ -96,15 +87,6 @@ $stats_espacios = [];
 try {
     $stmt = $pdo->prepare("
         SELECT 
-<<<<<<< HEAD
-            c.id, c.nombre, c.techado, c.estado,
-            (SELECT COUNT(*) FROM reservas r WHERE r.fk_cancha = c.id AND r.estado = 'reservado') as reservas_activas,
-            (SELECT COUNT(*) FROM reservas r WHERE r.fk_cancha = c.id AND r.estado = 'cancelado') as reservas_canceladas,
-            (SELECT COUNT(*) FROM clases cl WHERE cl.fk_canchas = c.id AND cl.estado = TRUE) as modulos_asignados
-        FROM canchas c
-        WHERE c.fk_entidad = ?
-        ORDER BY reservas_activas DESC, c.nombre ASC
-=======
             e.id, e.nombre, e.techado, e.estado,
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'reservado') as reservas_activas,
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'cancelado') as reservas_canceladas,
@@ -112,7 +94,6 @@ try {
         FROM espacios e
         WHERE e.fk_entidad = ?
         ORDER BY reservas_activas DESC, e.nombre ASC
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
     ");
     $stmt->execute([$entidad_id]);
     $stats_espacios = $stmt->fetchAll();
@@ -194,13 +175,8 @@ try {
     $stmt = $pdo->prepare("
         SELECT r.horario, COUNT(*) as cantidad
         FROM reservas r
-<<<<<<< HEAD
-        JOIN canchas c ON r.fk_cancha = c.id
-        WHERE c.fk_entidad = ? AND r.estado = 'reservado'
-=======
         JOIN espacios e ON r.fk_espacio = e.id
         WHERE e.fk_entidad = ? AND r.estado = 'reservado'
->>>>>>> 52d9ac9 (Actualiza canchas por espacios)
         GROUP BY r.horario
         ORDER BY cantidad DESC, r.horario ASC
         LIMIT 5
