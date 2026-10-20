@@ -112,7 +112,7 @@ require_once __DIR__ . '/includes/header.php';
             </form>
             
             <div class="mb-4">
-                <a href="#" class="text-decoration-none text-dark fw-bold" onclick="alert('Se enviaría un correo de restauración al Gmail ingresado.'); return false;">
+                <a href="olvide_contrasena.php" class="text-decoration-none text-dark fw-bold">
                     Olvidé mi contraseña
                 </a>
             </div>

@@ -158,7 +158,16 @@ CREATE TABLE asistencia (
     CONSTRAINT uq_asistencia_inscripcion_fecha UNIQUE (fk_inscripcion, fecha)
 );
 
--- 15. Tabla de Reservas de Espacios
+-- 15. Tabla de Reset de Contraseña
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usado BOOLEAN DEFAULT FALSE
+);
+
+-- 16. Tabla de Reservas de Espacios
 CREATE TABLE reservas (
     id SERIAL PRIMARY KEY,
     fk_espacio INT NOT NULL REFERENCES espacios(id) ON DELETE CASCADE,
