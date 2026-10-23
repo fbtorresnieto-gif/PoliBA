@@ -4,14 +4,17 @@ require_once __DIR__ . '/_bootstrap.php';
 apiAceptarMetodo('GET');
 try {
     $pdo = apiBaseDatos();
-    $stmt = $pdo->query("
+    require_once __DIR__ . '/../../includes/novedades.php';
+    expirar_novedades($pdo);
+    $stmt = $pdo->prepare("
         SELECT n.id, n.nombre, n.descripcion, n.fecha_inicio, n.fecha_fin,
                n.imagenurl, n.fk_entidad, e.nombre AS entidad_nombre
         FROM novedades n
         LEFT JOIN entidades e ON n.fk_entidad = e.id
-        WHERE n.estado = TRUE
+        WHERE n.estado = TRUE AND n.fecha_fin >= ?
         ORDER BY n.fecha_inicio DESC
     ");
+    $stmt->execute([hoy_ar()]);
     $data = array_map(static fn (array $fila): array => [
         'id' => (int) $fila['id'], 'nombre' => $fila['nombre'],
         'descripcion' => $fila['descripcion'], 'fecha_inicio' => $fila['fecha_inicio'],

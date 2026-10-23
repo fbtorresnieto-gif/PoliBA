@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         global $pdo;
 
         // Verificar si el email existe en la BD
-        $stmt = $pdo->prepare("SELECT id, nombre FROM usuarios WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, nombre FROM usuarios WHERE email = ? AND estado = TRUE LIMIT 1");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 

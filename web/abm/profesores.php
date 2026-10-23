@@ -56,18 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Procesar Eliminación (Baja) de Profesor
-if (isset($_GET['eliminar_profesor'])) {
-    $id = intval($_GET['eliminar_profesor']);
+// Procesar Baja / Alta lógica de Profesor (cambia el estado, no borra de la DB)
+if (isset($_GET['cambiar_estado_profesor'])) {
+    $id = intval($_GET['cambiar_estado_profesor']);
+    $activar = (($_GET['estado'] ?? '') === '0'); // si estaba inactivo (0), se activa
     try {
         $stmt = $pdo->prepare("
-            DELETE FROM usuarios 
+            UPDATE usuarios SET estado = ?
             WHERE id = ? AND fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor')
         ");
-        $stmt->execute([$id, $entidad_id]);
-        $success_msg = 'Profesor dado de baja con éxito.';
+        $stmt->bindValue(1, $activar, PDO::PARAM_BOOL);
+        $stmt->bindValue(2, $id, PDO::PARAM_INT);
+        $stmt->bindValue(3, $entidad_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $success_msg = $activar ? 'Profesor activado con éxito.' : 'Profesor dado de baja con éxito.';
     } catch (PDOException $e) {
-        $error_msg = 'Error al eliminar el profesor. Puede estar asignado a módulos activos.';
+        $error_msg = 'Error al cambiar el estado del profesor.';
     }
 }
 
@@ -113,13 +117,14 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>Gmail</th>
                     <th>Teléfono</th>
                     <th>Nacimiento</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($profesores)): ?>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay profesores registrados para esta entidad.</td>
+                        <td colspan="7" class="text-center text-muted">No hay profesores registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($profesores as $prof): ?>
@@ -130,10 +135,15 @@ require_once __DIR__ . '/../includes/header.php';
                             <td><?= htmlspecialchars($prof['telefono'] ?? '-'); ?></td>
                             <td><?= $prof['fecha_nacimiento'] ? date('d/m/Y', strtotime($prof['fecha_nacimiento'])) : '-'; ?></td>
                             <td>
-                                <a href="profesores.php?eliminar_profesor=<?= $prof['id']; ?>" 
-                                   class="btn btn-sm btn-danger rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas dar de baja a este profesor del sistema?');">
-                                    Dar de Baja
+                                <span class="badge rounded-pill <?= $prof['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?= $prof['estado'] ? 'Activo' : 'Inactivo'; ?>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="profesores.php?cambiar_estado_profesor=<?= $prof['id']; ?>&estado=<?= $prof['estado'] ? '1' : '0'; ?>"
+                                   class="btn btn-sm <?= $prof['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                                   onclick="return confirm('<?= $prof['estado'] ? '¿Seguro deseas dar de baja a este profesor? No podrá iniciar sesión hasta que lo reactives.' : '¿Seguro deseas reactivar a este profesor?'; ?>');">
+                                    <?= $prof['estado'] ? 'Dar de Baja' : 'Activar'; ?>
                                 </a>
                             </td>
                         </tr>

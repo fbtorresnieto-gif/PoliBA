@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $imagenURL = trim($_POST['imagenURL'] ?? '');
     $fk_dia_apertura = !empty($_POST['fk_dia_apertura']) ? intval($_POST['fk_dia_apertura']) : null;
     $fk_dia_cierre = !empty($_POST['fk_dia_cierre']) ? intval($_POST['fk_dia_cierre']) : null;
+    $cuit = trim($_POST['cuit'] ?? '');
     
     if (empty($nombre) || empty($direccion) || empty($horario_apertura) || empty($horario_cierre)) {
         $error_msg = 'Por favor, completa los campos obligatorios (*).';
@@ -27,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'El nombre de la entidad debe tener al menos 3 caracteres.';
     } elseif (mb_strlen($direccion) < 5) {
         $error_msg = 'La dirección debe tener al menos 5 caracteres.';
+    } elseif (!preg_match('/^\d{11}$/', $cuit)) {
+        $error_msg = 'El CUIT debe contener exactamente 11 números (sin guiones ni espacios).';
     } elseif ($horario_apertura >= $horario_cierre) {
         $error_msg = "El horario de apertura ($horario_apertura hs) debe ser anterior al horario de cierre ($horario_cierre hs).";
     } else {
@@ -53,26 +56,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $chk_id = ($_POST['action'] == 'editar') ? intval($_POST['id']) : 0;
             // Validar unicidad del nombre
             try {
+                $stmt_cuit = $pdo->prepare("SELECT COUNT(*) FROM entidades WHERE cuit = ? AND id != ?");
+                $stmt_cuit->execute([$cuit, $chk_id]);
+                $cuit_dup = (int)$stmt_cuit->fetchColumn();
                 $stmt_chk = $pdo->prepare("SELECT COUNT(*) FROM entidades WHERE LOWER(nombre) = LOWER(?) AND id != ?");
                 $stmt_chk->execute([$nombre, $chk_id]);
-                if ($stmt_chk->fetchColumn() > 0) {
+                if ($cuit_dup > 0) {
+                    $error_msg = "Ya existe una entidad registrada con el CUIT $cuit.";
+                } elseif ($stmt_chk->fetchColumn() > 0) {
                     $error_msg = "Ya existe una entidad registrada con el nombre \"$nombre\".";
                 } else {
                     if ($_POST['action'] == 'crear') {
                         $stmt = $pdo->prepare("
-                            INSERT INTO entidades (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                            INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre]);
                         $success_msg = 'Entidad creada con éxito.';
                     } elseif ($_POST['action'] == 'editar') {
                         $id = intval($_POST['id']);
                         $stmt = $pdo->prepare("
                             UPDATE entidades
-                            SET nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
+                            SET cuit = ?, nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
                             WHERE id = ?
                         ");
-                        $stmt->execute([$nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $id]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $id]);
                         $success_msg = 'Entidad modificada con éxito.';
                     }
                 }
@@ -162,6 +170,7 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped">
             <thead>
                 <tr>
+                    <th>CUIT</th>
                     <th>Nombre</th>
                     <th>Dirección</th>
                     <th>Horario</th>
@@ -173,6 +182,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($entidades as $entidad): ?>
                     <tr>
+                        <td><?= htmlspecialchars($entidad['cuit'] ?? ''); ?></td>
                         <td class="fw-bold"><?= htmlspecialchars($entidad['nombre']); ?></td>
                         <td><?= htmlspecialchars($entidad['direccion']); ?></td>
                         <td><?= date('H:i', strtotime($entidad['horario_apertura'])); ?> - <?= date('H:i', strtotime($entidad['horario_cierre'])); ?></td>
@@ -209,6 +219,10 @@ require_once __DIR__ . '/../includes/header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">CUIT *</label>
+                        <input type="text" name="cuit" class="form-control rounded-pill px-3" required inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" title="Debe contener exactamente 11 números" oninput="this.value=this.value.replace(/\D/g,'')" value="<?= htmlspecialchars($entidad['cuit'] ?? ''); ?>">
+                    </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre *</label>
                         <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($entidad['nombre']); ?>">
@@ -277,6 +291,10 @@ require_once __DIR__ . '/../includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">CUIT *</label>
+                    <input type="text" name="cuit" class="form-control rounded-pill px-3" required inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" title="Debe contener exactamente 11 números" placeholder="20123456789" oninput="this.value=this.value.replace(/\D/g,'')">
+                </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nombre *</label>
                     <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Entidad Chacarita">

@@ -23,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             header("Location: perfil.php");
             exit;
         } else {
-            $error_msg = 'Correo electrónico o contraseña incorrectos. Si no te has registrado, haz clic en Registrate.';
+            $error_msg = !empty($GLOBALS['login_cuenta_inactiva'])
+                ? 'Tu cuenta está desactivada. Contactate con el Gestor.'
+                : 'Correo electrónico o contraseña incorrectos. Si no te has registrado, haz clic en Registrate.';
         }
     }
 }
@@ -37,7 +39,7 @@ if (isset($_GET['google_demo_login']) && $_GET['google_demo_login'] == 1) {
             SELECT u.*, r.nombre as rol_nombre 
             FROM usuarios u 
             JOIN roles r ON u.fk_rol = r.id 
-            WHERE u.email = ?
+            WHERE u.email = ? AND u.estado = TRUE
         ");
         $stmt->execute([$email]);
         $user = $stmt->fetch();

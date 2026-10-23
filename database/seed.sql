@@ -1,4 +1,4 @@
--- Datos Iniciales para PoliBA (PostgreSQL)
+-- Datos Iniciales para MultiPro (PostgreSQL)
 
 -- 1. Inserción de Roles
 INSERT INTO roles (nombre) VALUES 
@@ -25,13 +25,10 @@ INSERT INTO categoria (nombre, edad_minima, edad_maxima) VALUES
 ('Adultos Mayores', 60, 90);
 
 -- 4. Inserción de Entidades
-INSERT INTO entidades (nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre) VALUES
-('Polideportivo Colegiales', 'Freire 234, Colegiales, CABA', '08:00:00', '22:00:00', '-34.5746766,-58.4485984', 'Entidad barrial con canchas de voley, futbol, basquet y tenis. Modulos gratuitas para todas las edades.', 'colegiales.jpg', 1, 6),
-('Polideportivo Parque Sarmiento', 'Av. Dr. Ricardo Balbín 4750, Saavedra, CABA', '07:00:00', '21:00:00', '-34.5539281,-58.5005872', 'Gran entidad deportiva con pistas de atletismo, canchas de futbol profesional, tenis y piscinas.', 'parque_sarmiento.jpg', 2, 7);
+INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre) VALUES
+('30711111112', 'Polideportivo Colegiales', 'Freire 234, Colegiales, CABA', '08:00:00', '22:00:00', '-34.5746766,-58.4485984', 'Entidad barrial con canchas de voley, futbol, basquet y tenis. Modulos gratuitas para todas las edades.', 'colegiales.jpg', 1, 6),
+('30722222223', 'Polideportivo Parque Sarmiento', 'Av. Dr. Ricardo Balbín 4750, Saavedra, CABA', '07:00:00', '21:00:00', '-34.5539281,-58.5005872', 'Gran entidad deportiva con pistas de atletismo, canchas de futbol profesional, tenis y piscinas.', 'parque_sarmiento.jpg', 2, 7);
 
--- 5. Inserción de Usuarios de Prueba
--- Contraseña para todos: '123456' (Hash generado con password_hash de PHP utilizando BCRYPT)
--- Hash: $2y$10$H2eMvjK/QoP2k/4Hk0c2Eem2G3JqDkL2Tpx0V6Fp7j52X/98XhBvK
 
 -- Gestor (Administra todo el sistema de entidades)
 INSERT INTO usuarios (nombre, apellido, dni, direccion, email, contrasena, telefono, fecha_nacimiento, fk_entidad, fk_rol) VALUES

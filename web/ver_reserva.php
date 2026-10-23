@@ -2,10 +2,11 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
-$reserva_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$token = isset($_GET['t']) ? trim($_GET['t']) : '';
 $reserva = null;
 
-if ($reserva_id > 0) {
+// El link se identifica con un token secreto (no con el ID, que es adivinable)
+if (preg_match('/^[a-f0-9]{32}$/', $token)) {
     try {
         $stmt = $pdo->prepare("
             SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre, e.direccion as entidad_direccion,
@@ -14,18 +15,25 @@ if ($reserva_id > 0) {
             JOIN espacios esp ON r.fk_espacio = esp.id
             JOIN entidades e ON esp.fk_entidad = e.id
             JOIN usuarios u ON r.fk_usuario = u.id
-            WHERE r.id = ?
+            WHERE r.token_compartir = ?
         ");
-        $stmt->execute([$reserva_id]);
+        $stmt->execute([$token]);
         $reserva = $stmt->fetch();
     } catch (PDOException $e) {
         // Log
     }
 }
 
-if (!$reserva) {
+// Si no existe, está cancelada o ya pasó el horario de inicio, no se muestra ningún dato
+$disponible = false;
+if ($reserva && strtolower($reserva['estado']) === 'reservado') {
+    $inicio = strtotime($reserva['fecha_de_asistencia'] . ' ' . $reserva['horario']);
+    $disponible = $inicio !== false && $inicio > time();
+}
+
+if (!$disponible) {
     require_once __DIR__ . '/includes/header.php';
-    echo '<div class="container my-5 text-center"><div class="alert alert-danger">La reserva especificada no existe o ha sido eliminada.</div></div>';
+    echo '<div class="container my-5 text-center"><div class="alert alert-warning">Esta reserva ya no está disponible.</div></div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }

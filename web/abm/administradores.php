@@ -61,55 +61,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $error_msg = 'El correo electrónico o DNI ya se encuentra registrado.';
                 }
             }
-        } elseif ($_POST['action'] == 'editar') {
-            $id = intval($_POST['id']);
-            $contrasena = trim($_POST['contrasena'] ?? '');
-            if (!empty($contrasena) && strlen($contrasena) < 6) {
-                $error_msg = 'La nueva contraseña debe tener al menos 6 caracteres.';
-            } else {
-                try {
-                    if (!empty($contrasena)) {
-                        $hash = password_hash($contrasena, PASSWORD_BCRYPT);
-                        $stmt = $pdo->prepare("
-                            UPDATE usuarios 
-                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_entidad = ?, contrasena = ?
-                            WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
-                        ");
-                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $entidad_id, $hash, $id]);
-                    } else {
-                        $stmt = $pdo->prepare("
-                            UPDATE usuarios 
-                            SET nombre = ?, apellido = ?, dni = ?, direccion = ?, email = ?, telefono = ?, fecha_nacimiento = ?, fk_entidad = ?
-                            WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
-                        ");
-                        $stmt->execute([$nombre, $apellido, $dni, $direccion, $email, $telefono, $fecha_nacimiento, $entidad_id, $id]);
-                    }
-                    
-                    if ($user && $id == $user['id']) {
-                        unset($_SESSION['user_data']);
-                    }
-                    
-                    $success_msg = 'Administrador modificado con éxito.';
-                } catch (PDOException $e) {
-                    $error_msg = 'Error al actualizar los datos del administrador.';
-                }
-            }
         }
     }
 }
 
-// Procesar Baja (Eliminar de la DB)
-if (isset($_GET['eliminar_admin'])) {
-    $id = intval($_GET['eliminar_admin']);
+// Procesar Baja / Alta lógica (cambia el estado, no borra de la DB)
+if (isset($_GET['cambiar_estado_admin'])) {
+    $id = intval($_GET['cambiar_estado_admin']);
+    $activar = (($_GET['estado'] ?? '') === '0'); // si estaba inactivo (0), se activa
     try {
         $stmt = $pdo->prepare("
-            DELETE FROM usuarios 
+            UPDATE usuarios SET estado = ?
             WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
         ");
-        $stmt->execute([$id]);
-        $success_msg = 'Administrador eliminado con éxito.';
+        $stmt->bindValue(1, $activar, PDO::PARAM_BOOL);
+        $stmt->bindValue(2, $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $success_msg = $activar ? 'Administrador activado con éxito.' : 'Administrador desactivado con éxito.';
     } catch (PDOException $e) {
-        $error_msg = 'Error al eliminar el administrador. Podría tener elementos asociados.';
+        $error_msg = 'Error al cambiar el estado del administrador.';
     }
 }
 
@@ -153,13 +123,14 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>Gmail</th>
                     <th>Entidad Asignada</th>
                     <th>Teléfono</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($administradores)): ?>
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No hay administradores registrados en el sistema.</td>
+                        <td colspan="7" class="text-center text-muted">No hay administradores registrados en el sistema.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($administradores as $adm): ?>
@@ -174,11 +145,15 @@ require_once __DIR__ . '/../includes/header.php';
                             </td>
                             <td><?= htmlspecialchars($adm['telefono'] ?? '-'); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editAdminModal<?= $adm['id']; ?>">Editar</button>
-                                <a href="administradores.php?eliminar_admin=<?= $adm['id']; ?>" 
-                                   class="btn btn-sm btn-danger rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas eliminar a este administrador?');">
-                                    Eliminar
+                                <span class="badge rounded-pill <?= $adm['estado'] ? 'bg-success' : 'bg-danger'; ?>">
+                                    <?= $adm['estado'] ? 'Activo' : 'Inactivo'; ?>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="administradores.php?cambiar_estado_admin=<?= $adm['id']; ?>&estado=<?= $adm['estado'] ? '1' : '0'; ?>"
+                                   class="btn btn-sm <?= $adm['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
+                                   onclick="return confirm('<?= $adm['estado'] ? '¿Seguro deseas desactivar a este administrador? No podrá iniciar sesión hasta que lo reactives.' : '¿Seguro deseas reactivar a este administrador?'; ?>');">
+                                    <?= $adm['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
                             </td>
                         </tr>
@@ -188,76 +163,6 @@ require_once __DIR__ . '/../includes/header.php';
         </table>
     </div>
 </div>
-
-<!-- Modales Editar Administrador (Fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($administradores as $adm): ?>
-    <div class="modal fade" id="editAdminModal<?= $adm['id']; ?>" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <form action="administradores.php" method="POST" class="modal-content border-0 shadow">
-                <input type="hidden" name="action" value="editar">
-                <input type="hidden" name="id" value="<?= $adm['id']; ?>">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold">Editar Administrador</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Nombre *</label>
-                            <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($adm['nombre']); ?>">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Apellido *</label>
-                            <input type="text" name="apellido" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($adm['apellido']); ?>">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">DNI *</label>
-                            <input type="text" name="dni" class="form-control rounded-pill px-3" required pattern="[0-9]+" inputmode="numeric" title="El DNI debe contener únicamente números" value="<?= htmlspecialchars($adm['dni']); ?>">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Fecha de Nacimiento *</label>
-                            <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d', strtotime('-21 years')); ?>" value="<?= $adm['fecha_nacimiento']; ?>">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Dirección</label>
-                        <input type="text" name="direccion" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($adm['direccion'] ?? ''); ?>">
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Email *</label>
-                            <input type="email" name="email" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($adm['email']); ?>">
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-bold">Teléfono</label>
-                            <input type="text" name="telefono" class="form-control rounded-pill px-3" pattern="\+?[0-9]+" title="El teléfono solo puede contener números y opcionalmente el símbolo + al inicio" placeholder="Ej: +541122334455" value="<?= htmlspecialchars($adm['telefono'] ?? ''); ?>">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Entidad Asignada *</label>
-                        <select name="fk_entidad" class="form-select rounded-pill px-3" required>
-                            <?php foreach ($entidades as $entidad): ?>
-                                <option value="<?= $entidad['id']; ?>" <?= $adm['fk_entidad'] == $entidad['id'] ? 'selected' : ''; ?>>
-                                    <?= htmlspecialchars($entidad['nombre']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nueva Contraseña (Opcional)</label>
-                        <input type="password" name="contrasena" class="form-control rounded-pill px-3" minlength="6" placeholder="Dejar en blanco para no cambiar (Mín. 6 caracteres)">
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="poliba-btn py-2">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endforeach; ?>
 
 <!-- Modal Crear Administrador -->
 <div class="modal fade" id="crearAdminModal" tabindex="-1" aria-hidden="true">

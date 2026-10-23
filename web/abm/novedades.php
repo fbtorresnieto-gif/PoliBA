@@ -2,6 +2,7 @@
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/novedades.php';
 
 // Validar que sea Administrador
 redirect_if_not_logged_in(['Administrador']);
@@ -24,30 +25,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fecha_fin = $_POST['fecha_fin'];
     $imagenURL = trim($_POST['imagenURL']);
     
+    $hoy = hoy_ar();
+    
     if (empty($nombre) || empty($descripcion) || empty($fecha_inicio) || empty($fecha_fin)) {
         $error_msg = 'Por favor, completa los campos obligatorios.';
+    } elseif ($fecha_fin < $fecha_inicio) {
+        $error_msg = 'La fecha límite no puede ser anterior a la fecha de inicio.';
+    } elseif ($fecha_fin < $hoy) {
+        $error_msg = 'La fecha límite no puede ser anterior a la fecha de hoy.';
     } else {
         if ($_POST['action'] == 'crear') {
-            try {
-                $stmt = $pdo->prepare("
-                    INSERT INTO novedades (nombre, descripcion, fecha_inicio, fecha_fin, imagenURL, fk_entidad, estado)
-                    VALUES (?, ?, ?, ?, ?, ?, TRUE)
-                ");
-                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $entidad_id]);
-                $success_msg = 'Novedad publicada con éxito.';
-            } catch (PDOException $e) {
-                $error_msg = 'Error al crear la novedad.';
+            if ($fecha_inicio < $hoy) {
+                $error_msg = 'No se puede crear una novedad con fecha anterior a la fecha de hoy.';
+            } else {
+                try {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO novedades (nombre, descripcion, fecha_inicio, fecha_fin, imagenURL, fk_entidad, estado)
+                        VALUES (?, ?, ?, ?, ?, ?, TRUE)
+                    ");
+                    $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $entidad_id]);
+                    $success_msg = 'Novedad publicada con éxito.';
+                } catch (PDOException $e) {
+                    $error_msg = 'Error al crear la novedad.';
+                }
             }
         } elseif ($_POST['action'] == 'editar') {
             $id = intval($_POST['id']);
             try {
-                $stmt = $pdo->prepare("
-                    UPDATE novedades 
-                    SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, imagenURL = ? 
-                    WHERE id = ? AND fk_entidad = ?
-                ");
-                $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $id, $entidad_id]);
-                $success_msg = 'Novedad modificada con éxito.';
+                $stmt = $pdo->prepare("SELECT fecha_inicio, fecha_fin, estado FROM novedades WHERE id = ? AND fk_entidad = ?");
+                $stmt->execute([$id, $entidad_id]);
+                $actual = $stmt->fetch();
+                
+                if (!$actual) {
+                    $error_msg = 'La novedad no existe.';
+                } elseif (!$actual['estado'] && $actual['fecha_fin'] < $hoy) {
+                    // Novedad desactivada por vencimiento: solo se puede cambiar la fecha límite,
+                    // y al hacerlo vuelve a quedar activa.
+                    if ($fecha_fin < $actual['fecha_inicio']) {
+                        $error_msg = 'La fecha límite no puede ser anterior a la fecha de inicio de la novedad.';
+                    } else {
+                        $stmt = $pdo->prepare("UPDATE novedades SET fecha_fin = ?, estado = TRUE WHERE id = ? AND fk_entidad = ?");
+                        $stmt->execute([$fecha_fin, $id, $entidad_id]);
+                        $success_msg = 'Fecha límite actualizada. La novedad volvió a estar activa.';
+                    }
+                } else {
+                    $stmt = $pdo->prepare("
+                        UPDATE novedades 
+                        SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, imagenURL = ? 
+                        WHERE id = ? AND fk_entidad = ?
+                    ");
+                    $stmt->execute([$nombre, $descripcion, $fecha_inicio, $fecha_fin, $imagenURL, $id, $entidad_id]);
+                    $success_msg = 'Novedad modificada con éxito.';
+                }
             } catch (PDOException $e) {
                 $error_msg = 'Error al modificar la novedad.';
             }
@@ -60,9 +89,18 @@ if (isset($_GET['toggle_estado'])) {
     $id = intval($_GET['toggle_estado']);
     $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
     try {
-        $stmt = $pdo->prepare("UPDATE novedades SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+        $stmt = $pdo->prepare("SELECT fecha_fin FROM novedades WHERE id = ? AND fk_entidad = ?");
         $stmt->execute([$id, $entidad_id]);
-        $success_msg = 'Estado de la novedad actualizado.';
+        $fecha_fin_actual = $stmt->fetchColumn();
+        
+        if ($nuevo_estado == 'TRUE' && $fecha_fin_actual !== false && $fecha_fin_actual < hoy_ar()) {
+            // Una novedad vencida solo se reactiva cambiando su fecha límite.
+            $error_msg = 'Esta novedad superó su fecha límite. Para volver a activarla tenés que editarla y cambiar la fecha límite.';
+        } else {
+            $stmt = $pdo->prepare("UPDATE novedades SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
+            $stmt->execute([$id, $entidad_id]);
+            $success_msg = 'Estado de la novedad actualizado.';
+        }
     } catch (PDOException $e) {
         $error_msg = 'Error al actualizar el estado.';
     }
@@ -71,6 +109,7 @@ if (isset($_GET['toggle_estado'])) {
 // Cargar Novedades de la sede
 $novedades = [];
 try {
+    expirar_novedades($pdo); // desactiva las vencidas antes de listar
     $stmt = $pdo->prepare("SELECT * FROM novedades WHERE fk_entidad = ? ORDER BY id ASC");
     $stmt->execute([$entidad_id]);
     $novedades = $stmt->fetchAll();
@@ -111,22 +150,26 @@ require_once __DIR__ . '/../includes/header.php';
                         <td colspan="4" class="text-center text-muted">No hay novedades registradas para esta entidad.</td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($novedades as $nov): ?>
+                    <?php foreach ($novedades as $nov):
+                        $vencida = !$nov['estado'] && $nov['fecha_fin'] < hoy_ar();
+                    ?>
                         <tr>
                             <td class="fw-bold"><?= htmlspecialchars($nov['nombre']); ?></td>
                             <td><?= date('d/m/Y', strtotime($nov['fecha_inicio'])); ?> al <?= date('d/m/Y', strtotime($nov['fecha_fin'])); ?></td>
                             <td>
                                 <span class="badge rounded-pill <?= $nov['estado'] ? 'bg-success' : 'bg-danger'; ?>">
-                                    <?= $nov['estado'] ? 'Activa' : 'Inactiva'; ?>
+                                    <?= $nov['estado'] ? 'Activa' : ($vencida ? 'Inactiva (vencida)' : 'Inactiva'); ?>
                                 </span>
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editNovedadModal<?= $nov['id']; ?>">Editar</button>
+                                <?php if (!$vencida): ?>
                                 <a href="novedades.php?toggle_estado=<?= $nov['id']; ?>&estado=<?= $nov['estado'] ? '1' : '0'; ?>" 
                                    class="btn btn-sm <?= $nov['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
                                    onclick="return confirm('¿Seguro deseas cambiar el estado de esta novedad?');">
                                     <?= $nov['estado'] ? 'Desactivar' : 'Activar'; ?>
                                 </a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -137,7 +180,9 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Modales Editar Novedad (Fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($novedades as $nov): ?>
+<?php foreach ($novedades as $nov):
+    $vencida = !$nov['estado'] && $nov['fecha_fin'] < hoy_ar();
+?>
     <div class="modal fade" id="editNovedadModal<?= $nov['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form action="novedades.php" method="POST" class="modal-content border-0 shadow">
@@ -148,27 +193,30 @@ require_once __DIR__ . '/../includes/header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <?php if ($vencida): ?>
+                        <div class="alert alert-warning py-2">Esta novedad está desactivada por haber superado su fecha límite. Para volver a activarla, cambiá la fecha límite (debe ser hoy o posterior).</div>
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Título *</label>
-                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($nov['nombre']); ?>">
+                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required <?= $vencida ? 'readonly' : ''; ?> value="<?= htmlspecialchars($nov['nombre']); ?>">
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Fecha Inicio *</label>
-                            <input type="date" name="fecha_inicio" class="form-control rounded-pill px-3" required value="<?= $nov['fecha_inicio']; ?>">
+                            <input type="date" name="fecha_inicio" class="form-control rounded-pill px-3" required <?= $vencida ? 'readonly' : ''; ?> value="<?= $nov['fecha_inicio']; ?>">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Fecha Fin *</label>
-                            <input type="date" name="fecha_fin" class="form-control rounded-pill px-3" required value="<?= $nov['fecha_fin']; ?>">
+                            <input type="date" name="fecha_fin" class="form-control rounded-pill px-3" required min="<?= hoy_ar(); ?>" value="<?= $nov['fecha_fin']; ?>">
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen URL o Nombre del Archivo</label>
-                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" value="<?= htmlspecialchars($nov['imagenurl'] ?? $nov['imagenURL'] ?? ''); ?>">
+                        <input type="text" name="imagenURL" class="form-control rounded-pill px-3" <?= $vencida ? 'readonly' : ''; ?> value="<?= htmlspecialchars($nov['imagenurl'] ?? $nov['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción *</label>
-                        <textarea name="descripcion" class="form-control px-3" rows="4" style="border-radius:15px;" required><?= htmlspecialchars($nov['descripcion'] ?? ''); ?></textarea>
+                        <textarea name="descripcion" class="form-control px-3" rows="4" style="border-radius:15px;" required <?= $vencida ? 'readonly' : ''; ?>><?= htmlspecialchars($nov['descripcion'] ?? ''); ?></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
@@ -197,11 +245,11 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha Inicio *</label>
-                        <input type="date" name="fecha_inicio" class="form-control rounded-pill px-3" required value="<?= date('Y-m-d'); ?>">
+                        <input type="date" name="fecha_inicio" class="form-control rounded-pill px-3" required min="<?= hoy_ar(); ?>" value="<?= hoy_ar(); ?>">
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha Fin *</label>
-                        <input type="date" name="fecha_fin" class="form-control rounded-pill px-3" required value="<?= date('Y-m-d', strtotime('+1 week')); ?>">
+                        <input type="date" name="fecha_fin" class="form-control rounded-pill px-3" required min="<?= hoy_ar(); ?>" value="<?= date('Y-m-d', strtotime(hoy_ar() . ' +1 week')); ?>">
                     </div>
                 </div>
                 <div class="mb-3">

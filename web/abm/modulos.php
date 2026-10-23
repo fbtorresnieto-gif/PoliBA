@@ -363,7 +363,7 @@ $subcategorias = [];
 $dias = [];
 
 try {
-    $stmt = $pdo->prepare("SELECT id, nombre, apellido FROM usuarios WHERE fk_entidad = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor') ORDER BY nombre ASC");
+    $stmt = $pdo->prepare("SELECT id, nombre, apellido FROM usuarios WHERE fk_entidad = ? AND estado = TRUE AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Profesor') ORDER BY nombre ASC");
     $stmt->execute([$entidad_id]);
     $profesores = $stmt->fetchAll();
     

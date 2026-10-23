@@ -16,6 +16,7 @@ CREATE TABLE dias (
 -- 3. Tabla de Entidades
 CREATE TABLE entidades (
     id SERIAL PRIMARY KEY,
+    cuit VARCHAR(11) UNIQUE CHECK (cuit ~ '^[0-9]{11}$'),
     nombre VARCHAR(150) NOT NULL,
     direccion VARCHAR(255) NOT NULL,
     horario_apertura TIME NOT NULL,
@@ -40,7 +41,8 @@ CREATE TABLE usuarios (
     telefono VARCHAR(50),
     fecha_nacimiento DATE,
     fk_entidad INT REFERENCES entidades(id) ON DELETE SET NULL,
-    fk_rol INT NOT NULL REFERENCES roles(id)
+    fk_rol INT NOT NULL REFERENCES roles(id),
+    estado BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- 5. Tabla de Menores (asociados a un Usuario Alumno mayor)
@@ -175,5 +177,6 @@ CREATE TABLE reservas (
     fecha_de_asistencia DATE NOT NULL,
     horario TIME NOT NULL,
     estado VARCHAR(20) DEFAULT 'reservado', -- 'reservado', 'cancelado'
+    token_compartir VARCHAR(32) NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', ''), -- Token secreto para compartir la reserva por link
     CONSTRAINT uq_reserva_cancha_fecha_hora UNIQUE (fk_espacio, fecha_de_asistencia, horario)
 );

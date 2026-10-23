@@ -1,15 +1,14 @@
 <?php
 // Helper centralizado de envío de emails — MultiPro
-// Utiliza PHPMailer con Gmail SMTP.
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-require_once __DIR__ . '/../vendor/autoload.php';
+// Utiliza la API HTTP de Resend (Railway bloquea SMTP).
 
 /**
- * Envía un email usando Gmail SMTP.
+ * Envía un email usando la API de Resend.
+ *
+ * Variables de entorno:
+ *   RESEND_API_KEY  API key de Resend (re_...)
+ *   MAIL_FROM       Remitente (ej: onboarding@resend.dev o noreply@tudominio.com)
+ *   MAIL_FROM_NAME  Nombre visible del remitente
  *
  * @param string $to_email    Destinatario
  * @param string $to_name     Nombre del destinatario
@@ -18,39 +17,44 @@ require_once __DIR__ . '/../vendor/autoload.php';
  * @return bool               True si se envió, false si falló
  */
 function send_email(string $to_email, string $to_name, string $subject, string $body_html): bool {
-    $smtp_user = getenv('MAIL_SMTP_USER') ?: '';
-    $smtp_pass = getenv('MAIL_SMTP_PASS') ?: '';
-    $from      = getenv('MAIL_FROM')      ?: $smtp_user;
+    $api_key   = getenv('RESEND_API_KEY') ?: '';
+    $from      = getenv('MAIL_FROM')      ?: 'onboarding@resend.dev';
     $from_name = getenv('MAIL_FROM_NAME') ?: 'MultiPro';
 
-    $mail = new PHPMailer(true);
-    try {
-        // Configuración SMTP
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $smtp_user;
-        $mail->Password   = $smtp_pass;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
-        $mail->CharSet    = 'UTF-8';
-
-        // Remitente y destinatario
-        $mail->setFrom($from, $from_name);
-        $mail->addAddress($to_email, $to_name);
-
-        // Contenido
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $body_html;
-        $mail->AltBody = strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body_html));
-
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        error_log('PHPMailer error: ' . $mail->ErrorInfo);
+    if ($api_key === '') {
+        error_log('Resend error: falta RESEND_API_KEY');
         return false;
     }
+
+    $payload = json_encode([
+        'from'    => "{$from_name} <{$from}>",
+        'to'      => [$to_email],
+        'subject' => $subject,
+        'html'    => $body_html,
+        'text'    => strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body_html)),
+    ]);
+
+    $ch = curl_init('https://api.resend.com/emails');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_HTTPHEADER     => [
+            'Authorization: Bearer ' . $api_key,
+            'Content-Type: application/json',
+        ],
+    ]);
+    $response = curl_exec($ch);
+    $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err      = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $status < 200 || $status >= 300) {
+        error_log("Resend error (HTTP {$status}): {$err} {$response}");
+        return false;
+    }
+    return true;
 }
 
 /**

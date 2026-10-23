@@ -18,7 +18,7 @@ try {
         FROM usuarios u
         JOIN roles r ON u.fk_rol = r.id
         LEFT JOIN entidades e ON u.fk_entidad = e.id
-        WHERE u.email = ?
+        WHERE u.email = ? AND u.estado = TRUE
         LIMIT 1
     ");
     $stmt->execute([$email]);

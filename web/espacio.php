@@ -220,7 +220,10 @@ require_once __DIR__ . '/includes/header.php';
                 
                 <?php 
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-                $share_url = "$protocol://$_SERVER[HTTP_HOST]" . dirname($_SERVER['PHP_SELF']) . "/ver_reserva.php?id=$reserva_id";
+                $stmt_tok = $pdo->prepare("SELECT token_compartir FROM reservas WHERE id = ?");
+                $stmt_tok->execute([$reserva_id]);
+                $share_token = $stmt_tok->fetchColumn();
+                $share_url = "$protocol://$_SERVER[HTTP_HOST]" . dirname($_SERVER['PHP_SELF']) . "/ver_reserva.php?t=" . urlencode($share_token);
                 ?>
                 <div class="input-group mb-3" style="max-width: 500px;">
                     <input type="text" class="form-control" value="<?= $share_url; ?>" id="shareLink" readonly>

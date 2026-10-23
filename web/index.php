@@ -2,16 +2,20 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
+require_once __DIR__ . '/includes/novedades.php';
+
 // Obtener las novedades activas desde la base de datos
 $novedades = [];
 try {
-    $stmt = $pdo->query("
+    expirar_novedades($pdo);
+    $stmt = $pdo->prepare("
         SELECT n.*, e.nombre as entidad_nombre
         FROM novedades n 
         LEFT JOIN entidades e ON n.fk_entidad = e.id
-        WHERE n.estado = TRUE 
+        WHERE n.estado = TRUE AND n.fecha_fin >= ?
         ORDER BY n.fecha_inicio DESC
     ");
+    $stmt->execute([hoy_ar()]);
     $novedades = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Si no conecta o hay error, la grilla se mostrará vacía o con datos mock

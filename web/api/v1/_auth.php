@@ -63,6 +63,7 @@ function apiUsuarioAutenticado(PDO $pdo, ?string $token = null): array
         LEFT JOIN entidades e ON u.fk_entidad = e.id
         WHERE s.token_hash = ?
           AND s.revocado_en IS NULL
+          AND u.estado = TRUE
           AND s.vence_en > CURRENT_TIMESTAMP
         LIMIT 1
     ");

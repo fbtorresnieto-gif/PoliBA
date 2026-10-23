@@ -77,6 +77,22 @@ function redirect_if_not_logged_in($allowed_roles = []) {
         header("Location: $login_url");
         exit;
     }
+
+    // Si el usuario fue desactivado mientras tenía la sesión abierta, cerrarla.
+    global $pdo;
+    try {
+        $stmt_estado = $pdo->prepare("SELECT estado FROM usuarios WHERE id = ?");
+        $stmt_estado->execute([$_SESSION['user_id']]);
+        $estado_actual = $stmt_estado->fetchColumn();
+        if ($estado_actual === false || !$estado_actual) {
+            session_unset();
+            session_destroy();
+            header("Location: $login_url?error=" . urlencode('Tu cuenta está desactivada. Contactate con el Gestor.'));
+            exit;
+        }
+    } catch (PDOException $e) {
+        // Si falla la consulta, no bloquear la navegación.
+    }
     
     if (!empty($allowed_roles)) {
         $user = get_logged_user();
@@ -109,6 +125,10 @@ function login($email, $password) {
         $user = $stmt->fetch();
         
         if ($user && password_verify($password, $user['contrasena'])) {
+            if (empty($user['estado'])) {
+                $GLOBALS['login_cuenta_inactiva'] = true;
+                return false;
+            }
             // Guardar datos mínimos en sesión
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_nombre'] = $user['nombre'];

@@ -72,6 +72,11 @@ try {
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
+    if ($user && empty($user['estado'])) {
+        header("Location: login.php?error=" . urlencode('Tu cuenta está desactivada. Contactate con el Gestor.'));
+        exit;
+    }
+
     if (!$user) {
         // Si el usuario no existe en la base de datos, guardar datos verificados de Google en sesión temporal y redirigir a registro.php para exigir DNI y datos requeridos
         $_SESSION['google_pending_user'] = [

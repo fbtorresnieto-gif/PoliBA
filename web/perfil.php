@@ -41,6 +41,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     }
 }
 
+// Valida que la fecha de nacimiento sea válida, no futura y corresponda a menos de 18 años
+function es_menor_de_edad($fecha) {
+    $nac = DateTime::createFromFormat('Y-m-d', $fecha);
+    if (!$nac || $nac->format('Y-m-d') !== $fecha) return false;
+    $hoy = new DateTime('today');
+    if ($nac > $hoy) return false;
+    return $nac->diff($hoy)->y < 18;
+}
+
+// Indica si un DNI ya existe en usuarios o en menores (de cualquier adulto).
+// $excluir_menor_id permite ignorar al propio menor al modificarlo.
+function dni_en_uso($pdo, $dni, $excluir_menor_id = 0) {
+    $stmt = $pdo->prepare("SELECT 1 FROM usuarios WHERE dni = ? UNION ALL SELECT 1 FROM menores WHERE dni = ? AND id <> ? LIMIT 1");
+    $stmt->execute([$dni, $dni, $excluir_menor_id]);
+    return (bool) $stmt->fetchColumn();
+}
+
 // 2. Procesar Asociar Menor
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'asociar_menor') {
     $nombre = trim($_POST['nombre']);
@@ -52,6 +69,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     
     if (empty($nombre) || empty($apellido) || empty($dni) || empty($fecha_nacimiento) || empty($relacion)) {
         $error_msg = 'Completa todos los campos obligatorios del menor.';
+    } elseif (!es_menor_de_edad($fecha_nacimiento)) {
+        $error_msg = 'La persona debe ser menor de 18 años para estar asociada como menor.';
+    } elseif (dni_en_uso($pdo, $dni)) {
+        $error_msg = 'El DNI ingresado ya está registrado para otro usuario o menor.';
     } else {
         try {
             $stmt = $pdo->prepare("
@@ -81,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     
     if (empty($nombre) || empty($apellido) || empty($dni) || empty($fecha_nacimiento) || empty($relacion)) {
         $error_msg = 'Completa todos los campos obligatorios del menor (Nombre, Apellido, DNI, Fecha de Nacimiento y Relación).';
+    } elseif (!es_menor_de_edad($fecha_nacimiento)) {
+        $error_msg = 'La persona debe ser menor de 18 años para estar asociada como menor.';
+    } elseif (dni_en_uso($pdo, $dni, $menor_id)) {
+        $error_msg = 'El DNI ingresado ya está registrado para otro usuario o menor.';
     } else {
         try {
             $stmt = $pdo->prepare("
@@ -116,49 +141,7 @@ if (isset($_GET['cancelar_reserva'])) {
     }
 }
 
-// 5. Procesar Cancelar/Reanudar Modulo
-if (isset($_GET['cambiar_estado_modulo']) && isset($_GET['inscripcion_id'])) {
-    $ins_id = intval($_GET['inscripcion_id']);
-    $nuevo_estado = $_GET['cambiar_estado_modulo'] == 'reanudar' ? 'activo' : 'cancelado';
-    
-    try {
-        // Si cancela a mitad de año, advertir sobre la regla de negocio
-        if ($nuevo_estado == 'cancelado') {
-            $current_month = intval(date('m'));
-            if ($current_month > 3 && $current_month < 12) {
-                // Durante el año, requiere profesor para dar de baja
-                // Para simplificar la demo, lo damos de baja pero mostramos mensaje explicativo
-                $stmt = $pdo->prepare("
-                    UPDATE inscripcion 
-                    SET estado = 'cancelado' 
-                    WHERE id = ? AND (fk_usuario = ? OR fk_menor IN (SELECT id FROM menores WHERE fk_usuario = ?))
-                ");
-                $stmt->execute([$ins_id, $user['id'], $user['id']]);
-                $success_msg = 'Inscripción dada de baja. Nota: Por ser transcurso del año lectivo, avisa a tu profesor.';
-            } else {
-                // Nuevo año
-                $stmt = $pdo->prepare("
-                    UPDATE inscripcion 
-                    SET estado = 'cancelado' 
-                    WHERE id = ? AND (fk_usuario = ? OR fk_menor IN (SELECT id FROM menores WHERE fk_usuario = ?))
-                ");
-                $stmt->execute([$ins_id, $user['id'], $user['id']]);
-                $success_msg = 'Inscripción cancelada con éxito.';
-            }
-        } else {
-            // Reanudar
-            $stmt = $pdo->prepare("
-                UPDATE inscripcion 
-                SET estado = 'activo' 
-                WHERE id = ? AND (fk_usuario = ? OR fk_menor IN (SELECT id FROM menores WHERE fk_usuario = ?))
-            ");
-            $stmt->execute([$ins_id, $user['id'], $user['id']]);
-            $success_msg = 'Inscripción reanudada con éxito.';
-        }
-    } catch (PDOException $e) {
-        $error_msg = 'Error al gestionar la inscripción.';
-    }
-}
+// 5. La baja/reanudación de módulos se gestionará desde el perfil de Profesor (pendiente).
 
 // Cargar Menores del Usuario
 $menores = [];
@@ -182,6 +165,29 @@ if (has_role('Alumno')) {
         ");
         $stmt->execute([$user['id']]);
         $reservas = $stmt->fetchAll();
+    } catch (PDOException $e) {}
+}
+
+// Cargar Modulos de los Menores a cargo (agrupados por menor)
+$modulos_menores = [];
+if (has_role('Alumno') && !empty($menores)) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT i.id as inscripcion_id, i.fk_menor, i.lista_espera, i.estado as inscripcion_estado,
+                   c.nombre as modulo_nombre, c.horario_inicio, c.horario_cierre,
+                   d.nombre as actividad_nombre, e.nombre as entidad_nombre
+            FROM inscripcion i
+            JOIN menores m ON i.fk_menor = m.id
+            JOIN modulos c ON i.fk_modulo = c.id
+            JOIN actividades d ON c.fk_actividad = d.id
+            JOIN entidades e ON c.fk_entidad = e.id
+            WHERE m.fk_usuario = ?
+            ORDER BY c.nombre ASC
+        ");
+        $stmt->execute([$user['id']]);
+        foreach ($stmt->fetchAll() as $row) {
+            $modulos_menores[$row['fk_menor']][] = $row;
+        }
     } catch (PDOException $e) {}
 }
 
@@ -303,7 +309,6 @@ require_once __DIR__ . '/includes/header.php';
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge <?= $status_badge; ?> text-uppercase"><?= htmlspecialchars($res['estado']); ?></span>
-                                        <small class="text-muted">ID #<?= $res['id']; ?></small>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['espacio_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['entidad_nombre']); ?></div>
@@ -312,7 +317,9 @@ require_once __DIR__ . '/includes/header.php';
                                     
                                     <div class="d-flex justify-content-between gap-1 mt-auto">
                                         <?php if (strtolower($res['estado']) == 'reservado'): ?>
-                                            <a href="ver_reserva.php?id=<?= $res['id']; ?>" class="btn btn-outline-dark btn-sm flex-grow-1">Compartir</a>
+                                            <button type="button" class="btn btn-outline-dark btn-sm flex-grow-1"
+                                                    data-share-url="ver_reserva.php?t=<?= urlencode($res['token_compartir']); ?>"
+                                                    onclick="compartirReserva(this)">Compartir</button>
                                             <a href="perfil.php?cancelar_reserva=<?= $res['id']; ?>" class="btn btn-danger btn-sm px-2" onclick="return confirm('¿Seguro quieres cancelar esta reserva?');">Cancelar</a>
                                         <?php endif; ?>
                                     </div>
@@ -349,25 +356,11 @@ require_once __DIR__ . '/includes/header.php';
                                         <span class="badge rounded-pill <?= $status_badge; ?>">
                                             <?= $modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
                                         </span>
-                                        <small class="text-muted">#<?= $modulo['inscripcion_id']; ?></small>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($modulo['modulo_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($modulo['actividad_nombre']); ?></div>
                                     <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($modulo['entidad_nombre']); ?></div>
                                     
-                                    <div class="d-grid mt-auto gap-2">
-                                        <?php if ($modulo['inscripcion_estado'] == 'activo'): ?>
-                                            <a href="perfil.php?cambiar_estado_modulo=cancelar&inscripcion_id=<?= $modulo['inscripcion_id']; ?>"
-                                               class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro quieres darte de baja de este módulo?');">
-                                                Darse de baja
-                                            </a>
-                                        <?php else: ?>
-                                            <a href="perfil.php?cambiar_estado_modulo=reanudar&inscripcion_id=<?= $modulo['inscripcion_id']; ?>"
-                                               class="btn btn-outline-success btn-sm">
-                                                Reanudar módulo
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -395,6 +388,47 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Sección 4: Módulos de Menores a Cargo -->
+<?php if (has_role('Alumno') && !empty($menores)): ?>
+<div class="container my-4" id="modulos-menores">
+    <h3 class="fw-bold mb-4 text-center text-dark">Módulos de Menores</h3>
+    <?php foreach ($menores as $menor):
+        $mods = $modulos_menores[$menor['id']] ?? [];
+    ?>
+        <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+            <i class="bi bi-person-heart me-2"></i><?= htmlspecialchars($menor['nombre'] . ' ' . $menor['apellido']); ?>
+            <small class="text-muted fw-normal">(<?= htmlspecialchars($menor['relacion']); ?>)</small>
+        </h5>
+        <?php if (empty($mods)): ?>
+            <div class="alert alert-info mb-4">Este menor no está inscripto en ningún módulo.</div>
+        <?php else: ?>
+            <div class="row g-4 mb-4">
+                <?php foreach ($mods as $m):
+                    $badge = $m['lista_espera'] ? 'badge-espera' : 'badge-activo';
+                    if ($m['inscripcion_estado'] == 'cancelado') $badge = 'badge-cancelado';
+                ?>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="poliba-card border-top border-5 border-info">
+                            <div class="poliba-card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge rounded-pill <?= $badge; ?>">
+                                        <?= $m['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($m['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($m['modulo_nombre']); ?></h5>
+                                <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($m['actividad_nombre']); ?></div>
+                                <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($m['horario_inicio'])); ?> - <?= date('H:i', strtotime($m['horario_cierre'])); ?></div>
+                                <div class="text-muted small"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($m['entidad_nombre']); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <!-- ================= MODALS DE PERFIL ================= -->
 
@@ -460,7 +494,7 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Fecha de Nacimiento *</label>
-                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required max="<?= date('Y-m-d'); ?>">
+                        <input type="date" name="fecha_nacimiento" class="form-control rounded-pill px-3" required min="<?= date('Y-m-d', strtotime('-18 years +1 day')); ?>" max="<?= date('Y-m-d'); ?>">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -543,7 +577,7 @@ require_once __DIR__ . '/includes/header.php';
                                                 </div>
                                                 <div class="col-md-4 mb-2">
                                                     <label class="form-label small fw-bold text-dark mb-1">Fecha de Nacimiento *</label>
-                                                    <input type="date" name="fecha_nacimiento" class="form-control form-control-sm rounded-pill px-3" required value="<?= htmlspecialchars($menor['fecha_nacimiento']); ?>" max="<?= date('Y-m-d'); ?>">
+                                                    <input type="date" name="fecha_nacimiento" class="form-control form-control-sm rounded-pill px-3" required value="<?= htmlspecialchars($menor['fecha_nacimiento']); ?>" min="<?= date('Y-m-d', strtotime('-18 years +1 day')); ?>" max="<?= date('Y-m-d'); ?>">
                                                 </div>
                                                 <div class="col-md-4 mb-2">
                                                     <label class="form-label small fw-bold text-dark mb-1">Dirección</label>
@@ -578,5 +612,18 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
+
+<script>
+function compartirReserva(btn) {
+    var url = new URL(btn.dataset.shareUrl, window.location.href).href;
+    if (navigator.share) {
+        navigator.share({ title: 'Reserva PoliBA', text: 'Te comparto mi reserva:', url: url }).catch(function () {});
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () { alert('¡Link copiado al portapapeles!'); });
+    } else {
+        prompt('Copiá este link:', url);
+    }
+}
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
