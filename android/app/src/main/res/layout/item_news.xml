@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:layout_marginBottom="22dp"
+    app:cardBackgroundColor="@color/multipro_surface" app:cardCornerRadius="24dp"
+    app:cardElevation="5dp" app:strokeWidth="0dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+        <ImageView android:id="@+id/imageView" android:layout_width="match_parent" android:layout_height="190dp"
+            android:contentDescription="@string/news_image_description" android:scaleType="centerCrop"
+            android:src="@drawable/card_image_placeholder" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="22dp">
+            <TextView android:id="@+id/titleText" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:ellipsize="end" android:maxLines="2" android:textColor="@color/multipro_dark"
+                android:textSize="22sp" android:textStyle="bold" />
+            <TextView android:id="@+id/entityText" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:textColor="@color/multipro_text_muted"
+                android:textSize="14sp" android:textStyle="bold" />
+            <TextView android:id="@+id/dateText" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="7dp" android:textColor="@color/multipro_text_muted" android:textSize="14sp" />
+            <TextView android:id="@+id/descriptionText" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:ellipsize="end" android:lineSpacingExtra="4dp"
+                android:maxLines="4" android:textColor="@color/multipro_text" android:textSize="16sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" android:text="@string/read_more"
+                android:textColor="@color/multipro_dark" android:textSize="15sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

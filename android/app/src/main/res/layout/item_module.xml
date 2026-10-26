@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:layout_marginBottom="14dp" android:clickable="true"
+    android:focusable="true" android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/multipro_surface" app:cardCornerRadius="22dp"
+    app:cardElevation="4dp" app:strokeWidth="0dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="22dp">
+        <TextView android:id="@+id/nameText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textColor="@color/multipro_dark"
+            android:textSize="20sp" android:textStyle="bold" />
+        <TextView android:id="@+id/activityText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="8dp"
+            android:textColor="@color/multipro_primary_dark" android:textSize="15sp" android:textStyle="bold" />
+        <TextView android:id="@+id/locationText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/multipro_text" android:textSize="15sp" />
+        <TextView android:id="@+id/scheduleText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/multipro_text" android:textSize="15sp" />
+        <TextView android:id="@+id/capacityText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/multipro_text_muted" android:textSize="14sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" android:text="@string/view_students"
+            android:textColor="@color/multipro_primary_dark" android:textStyle="bold" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

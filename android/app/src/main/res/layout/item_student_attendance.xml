@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:layout_marginBottom="14dp"
+    app:cardBackgroundColor="@color/multipro_surface" app:cardCornerRadius="22dp"
+    app:cardElevation="4dp" app:strokeWidth="0dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="22dp">
+        <TextView android:id="@+id/nameText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textColor="@color/multipro_dark"
+            android:textSize="18sp" android:textStyle="bold" />
+        <TextView android:id="@+id/detailText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="5dp"
+            android:textColor="@color/multipro_text_muted" android:textSize="14sp" />
+        <TextView android:id="@+id/currentStatusText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="10dp"
+            android:textColor="@color/multipro_primary_dark" android:textSize="15sp" android:textStyle="bold" />
+        <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/statusGroup"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" app:selectionRequired="false" app:singleSelection="true">
+            <com.google.android.material.button.MaterialButton android:id="@+id/presentButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/attendance_present"
+                android:textAllCaps="false" android:textSize="12sp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/absentButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/attendance_absent"
+                android:textAllCaps="false" android:textSize="12sp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/rainButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="0dp"
+                android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/attendance_rain"
+                android:textAllCaps="false" android:textSize="12sp" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

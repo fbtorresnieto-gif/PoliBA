@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="multipro_primary">#6BA3AF</color>
+    <color name="multipro_primary_dark">#5A8F9B</color>
+    <color name="multipro_dark">#2D4A52</color>
+    <color name="multipro_background">#F5F4F2</color>
+    <color name="multipro_surface">#FFFFFF</color>
+    <color name="multipro_text">#475569</color>
+    <color name="multipro_text_muted">#64748B</color>
+    <color name="multipro_error">#B3261E</color>
+    <color name="multipro_success">#287A4B</color>
+    <color name="multipro_success_background">#E7F5EC</color>
+    <color name="multipro_unavailable_background">#F1F5F9</color>
+    <color name="multipro_border">#CBD5E1</color>
+    <color name="white">#FFFFFF</color>
+    <color name="multipro_primary_soft">#DDECEF</color>
+    <color name="multipro_accent">#F28C28</color>
+    <color name="multipro_shadow">#18000000</color>
+</resources>

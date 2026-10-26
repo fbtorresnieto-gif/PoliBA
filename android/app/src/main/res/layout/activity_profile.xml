@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/multipro_background">
+    <androidx.core.widget.NestedScrollView android:id="@+id/contentScroll"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="24dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/backButton"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="@string/back" android:textAllCaps="false" />
+            <ImageView android:layout_width="150dp" android:layout_height="51dp"
+                android:layout_marginTop="14dp" android:adjustViewBounds="true"
+                android:contentDescription="@string/brand_logo_description" android:scaleType="fitCenter"
+                android:src="@drawable/multipro_logo" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:text="@string/profile_title"
+                android:textColor="@color/multipro_dark" android:textSize="30sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="@string/profile_subtitle"
+                android:textColor="@color/multipro_text" android:textSize="16sp" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="24dp"
+                app:cardBackgroundColor="@color/multipro_surface" app:cardCornerRadius="24dp"
+                app:cardElevation="5dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="22dp">
+                    <TextView android:text="@string/full_name_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/nameText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/dni_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/dniText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/email_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/emailText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/phone_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/phoneText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/address_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/addressText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/birth_date_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/birthDateText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/role_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/roleText" style="@style/ProfileValue" />
+                    <TextView android:text="@string/entity_label" style="@style/ProfileLabel" />
+                    <TextView android:id="@+id/entityText" style="@style/ProfileValueLast" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <LinearLayout android:id="@+id/stateContainer" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:gravity="center" android:orientation="vertical" android:padding="32dp">
+        <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/progressIndicator"
+            android:layout_width="48dp" android:layout_height="48dp" app:indicatorColor="@color/multipro_primary" />
+        <TextView android:id="@+id/stateText" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:gravity="center" android:text="@string/loading_data"
+            android:textColor="@color/multipro_text" android:textSize="16sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/retryButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:text="@string/retry" android:textAllCaps="false" android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,33 @@
+# Android Studio and IntelliJ IDEA
+.idea/
+*.iml
+
+# Gradle caches and generated output
+.gradle/
+build/
+**/build/
+
+# Local Android SDK configuration
+local.properties
+
+# Native build output
+.externalNativeBuild/
+.cxx/
+
+# Generated packages and captures
+*.apk
+*.aab
+captures/
+
+# Signing material: never commit private keys or credentials
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Environment and operating-system files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/multipro_background">
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent"
+        android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingStart="24dp" android:paddingTop="24dp"
+            android:paddingEnd="24dp" android:paddingBottom="40dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/backButton"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="@string/back" android:textAllCaps="false"
+                android:textColor="@color/multipro_dark" app:icon="@android:drawable/ic_media_previous"
+                app:iconTint="@color/multipro_dark" />
+            <ImageView android:layout_width="150dp" android:layout_height="51dp"
+                android:layout_marginTop="14dp" android:adjustViewBounds="true"
+                android:contentDescription="@string/brand_logo_description" android:src="@drawable/multipro_logo" />
+            <TextView android:id="@+id/registerTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:text="@string/register_title"
+                android:textColor="@color/multipro_dark" android:textSize="30sp" android:textStyle="bold" />
+            <TextView android:id="@+id/registerSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="@string/register_subtitle"
+                android:textColor="@color/multipro_text" android:textSize="16sp" />
+
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/firstNameLayout"
+                style="@style/RegisterField" android:layout_marginTop="28dp" android:hint="@string/first_name">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/firstNameInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="textPersonName|textCapWords" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/lastNameLayout"
+                style="@style/RegisterField" android:hint="@string/last_name">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/lastNameInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="textPersonName|textCapWords" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/dniLayout"
+                style="@style/RegisterField" android:hint="@string/dni">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/dniInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="number" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/emailLayout"
+                style="@style/RegisterField" android:hint="@string/email">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/emailInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:autofillHints="emailAddress" android:inputType="textEmailAddress" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/birthDateLayout"
+                style="@style/RegisterField" android:hint="@string/birth_date" app:endIconMode="custom"
+                app:endIconDrawable="@android:drawable/ic_menu_my_calendar">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/birthDateInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:clickable="true" android:cursorVisible="false" android:focusable="false"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/passwordLayout"
+                style="@style/RegisterField" android:hint="@string/password" app:endIconMode="password_toggle">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/passwordInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:autofillHints="newPassword" android:inputType="textPassword" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/confirmPasswordLayout"
+                style="@style/RegisterField" android:hint="@string/confirm_password" app:endIconMode="password_toggle">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/confirmPasswordInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:autofillHints="newPassword" android:inputType="textPassword" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout style="@style/RegisterField"
+                android:hint="@string/address_optional">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/addressInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="textPostalAddress|textCapSentences" android:maxLines="2" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout style="@style/RegisterField"
+                android:hint="@string/phone_optional">
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/phoneInput"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:inputType="phone" android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout android:id="@+id/entityLayout"
+                style="@style/RegisterField" android:hint="@string/entity_optional"
+                app:endIconMode="dropdown_menu">
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entityInput" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView android:id="@+id/errorText" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                android:accessibilityLiveRegion="polite" android:textColor="@color/multipro_error"
+                android:textSize="14sp" android:visibility="gone" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/registerButton"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:minHeight="54dp" android:text="@string/register"
+                android:textAllCaps="false" android:textSize="16sp" app:backgroundTint="@color/multipro_primary"
+                app:cornerRadius="27dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <LinearLayout android:id="@+id/loadingContainer" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:background="#B3F5F4F2" android:gravity="center"
+        android:orientation="vertical" android:visibility="gone">
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="48dp" android:layout_height="48dp" app:indicatorColor="@color/multipro_primary" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="@string/registering"
+            android:textColor="@color/multipro_dark" android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:background="@color/multipro_background">
+    <androidx.core.widget.NestedScrollView android:id="@+id/contentScroll"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="24dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/backButton"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="@string/back" android:textAllCaps="false" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="@string/attendance_title"
+                android:textColor="@color/multipro_dark" android:textSize="30sp" android:textStyle="bold" />
+            <TextView android:id="@+id/moduleText" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:textColor="@color/multipro_primary_dark" android:textSize="18sp" android:textStyle="bold" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/dateButton"
+                style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="18dp" android:minHeight="52dp"
+                android:textAllCaps="false" app:cornerRadius="26dp" app:strokeColor="@color/multipro_primary_dark" />
+            <TextView android:id="@+id/statusText" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:accessibilityLiveRegion="polite" android:textColor="@color/multipro_success"
+                android:textSize="14sp" android:visibility="gone" />
+            <LinearLayout android:id="@+id/listContainer" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="20dp" android:orientation="vertical" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <LinearLayout android:id="@+id/stateContainer" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:gravity="center" android:orientation="vertical" android:padding="32dp">
+        <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/progressIndicator"
+            android:layout_width="48dp" android:layout_height="48dp" app:indicatorColor="@color/multipro_primary" />
+        <TextView android:id="@+id/stateText" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="18dp" android:gravity="center"
+            android:text="@string/loading_data" android:textColor="@color/multipro_text" android:textSize="16sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/retryButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp"
+            android:text="@string/retry" android:textAllCaps="false" android:visibility="gone" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/savingContainer" android:layout_width="match_parent"
+        android:layout_height="match_parent" android:background="#99F5F4F2" android:gravity="center"
+        android:orientation="vertical" android:visibility="gone">
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="48dp" android:layout_height="48dp" app:indicatorColor="@color/multipro_primary" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="@string/saving_attendance"
+            android:textColor="@color/multipro_dark" android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>
