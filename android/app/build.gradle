@@ -7,6 +7,8 @@ def googleWebClientId = project.findProperty('MULTIPRO_GOOGLE_WEB_CLIENT_ID')
         ?: '915863016319-g522r49r3bfhpe3q71v4fbte24argtre.apps.googleusercontent.com'
 
 android {
+    // Keep normal debug testing as default; select local explicitly for isolated tests.
+    testBuildType project.findProperty('multiproTestBuildType') ?: 'debug'
     namespace 'com.multipro.mobile'
     compileSdk 36
 
@@ -23,6 +25,14 @@ android {
     }
 
     buildTypes {
+        local {
+            initWith debug
+            applicationIdSuffix '.local'
+            versionNameSuffix '-local'
+            matchingFallbacks = ['debug']
+            buildConfigField 'String', 'API_BASE_URL', '"http://127.0.0.1:8080/api/v1/"'
+            buildConfigField 'String', 'GOOGLE_WEB_CLIENT_ID', '""'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

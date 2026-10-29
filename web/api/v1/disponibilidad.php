@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/_cobro_espacio.php';
 apiAceptarMetodo('GET');
 $espacioId = apiParametroEntero('espacio_id');
 $fecha = apiParametroFecha('fecha');
@@ -8,7 +9,7 @@ $fecha = apiParametroFecha('fecha');
 try {
     $pdo = apiBaseDatos();
     $stmt = $pdo->prepare("
-        SELECT esp.id, e.horario_apertura, e.horario_cierre,
+        SELECT esp.id, esp.precio_hora_ars, esp.pago_presencial_habilitado, e.horario_apertura, e.horario_cierre,
                da.orden AS dia_apertura_orden, dc.orden AS dia_cierre_orden
         FROM espacios esp
         JOIN entidades e ON esp.fk_entidad = e.id
@@ -30,7 +31,7 @@ try {
 
     $stmt = $pdo->prepare("
         SELECT horario FROM reservas
-        WHERE fk_espacio = ? AND fecha_de_asistencia = ? AND estado = 'reservado'
+        WHERE fk_espacio = ? AND fecha_de_asistencia = ? AND estado IN ('reservado','pendiente_pago','pendiente_presencial')
     ");
     $stmt->execute([$espacioId, $fecha]);
     $reservados = array_flip($stmt->fetchAll(PDO::FETCH_COLUMN));
@@ -78,6 +79,7 @@ try {
     }
 
     apiResponder(['data' => [
+        ...apiCobroEspacio($espacio),
         'espacio_id' => $espacioId, 'fecha' => $fecha,
         'entidad_abierta' => $abierto, 'slots' => $slots,
     ]]);

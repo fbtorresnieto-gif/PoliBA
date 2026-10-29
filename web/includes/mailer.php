@@ -1,47 +1,74 @@
 <?php
 // Helper centralizado de envío de emails — MultiPro
-// Utiliza la API HTTP de Resend (Railway bloquea SMTP).
+// Utiliza la API HTTPS de Brevo. No usa SMTP ni expone credenciales al cliente.
 
 /**
- * Envía un email usando la API de Resend.
+ * Envía un email transaccional usando la API de Brevo.
  *
  * Variables de entorno:
- *   RESEND_API_KEY  API key de Resend (re_...)
- *   MAIL_FROM       Remitente (ej: onboarding@resend.dev o noreply@tudominio.com)
+ *   BREVO_API_KEY   API key privada de Brevo
+ *   MAIL_FROM       Remitente verificado en Brevo
  *   MAIL_FROM_NAME  Nombre visible del remitente
  *
  * @param string $to_email    Destinatario
  * @param string $to_name     Nombre del destinatario
  * @param string $subject     Asunto
  * @param string $body_html   Cuerpo HTML del mail
+ * @param string $idempotency_key Clave estable opcional para evitar duplicados en Brevo
  * @return bool               True si se envió, false si falló
  */
-function send_email(string $to_email, string $to_name, string $subject, string $body_html): bool {
-    $api_key   = getenv('RESEND_API_KEY') ?: '';
-    $from      = getenv('MAIL_FROM')      ?: 'onboarding@resend.dev';
+function send_email(string $to_email, string $to_name, string $subject, string $body_html, string $idempotency_key = ''): bool {
+    if (strtolower(trim((string) (getenv('MAIL_ENABLED') ?: 'false'))) !== 'true') {
+        return false;
+    }
+    $api_key   = trim((string) (getenv('BREVO_API_KEY') ?: ''));
+    $from      = trim((string) (getenv('MAIL_FROM') ?: ''));
     $from_name = getenv('MAIL_FROM_NAME') ?: 'MultiPro';
 
-    if ($api_key === '') {
-        error_log('Resend error: falta RESEND_API_KEY');
+    if ($api_key === '' || !filter_var($from, FILTER_VALIDATE_EMAIL)) {
+        error_log('Brevo no configurado: faltan BREVO_API_KEY o MAIL_FROM valido');
         return false;
     }
 
-    $payload = json_encode([
-        'from'    => "{$from_name} <{$from}>",
-        'to'      => [$to_email],
-        'subject' => $subject,
-        'html'    => $body_html,
-        'text'    => strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $body_html)),
-    ]);
+    if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
+        error_log('Brevo rechazo interno: destinatario invalido');
+        return false;
+    }
 
-    $ch = curl_init('https://api.resend.com/emails');
+    $message = [
+        'sender' => ['email' => $from, 'name' => $from_name],
+        'to' => [['email' => $to_email, 'name' => $to_name]],
+        'subject' => $subject,
+        'htmlContent' => $body_html,
+        'textContent' => html_entity_decode(
+            strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], "\n", $body_html)),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        ),
+        'tags' => ['multipro-transaccional'],
+    ];
+    if ($idempotency_key !== '' && preg_match('/^[A-Za-z0-9:._-]{1,255}$/', $idempotency_key)) {
+        $message['headers'] = ['IdempotencyKey' => $idempotency_key];
+    }
+    $payload = json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    if ($payload === false) {
+        error_log('Brevo error interno: no fue posible serializar el mensaje');
+        return false;
+    }
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
         CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_TIMEOUT        => 15,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_PROTOCOLS      => CURLPROTO_HTTPS,
         CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . $api_key,
+            'accept: application/json',
+            'api-key: ' . $api_key,
             'Content-Type: application/json',
         ],
     ]);
@@ -51,10 +78,15 @@ function send_email(string $to_email, string $to_name, string $subject, string $
     curl_close($ch);
 
     if ($response === false || $status < 200 || $status >= 300) {
-        error_log("Resend error (HTTP {$status}): {$err} {$response}");
+        // No registrar cuerpos externos: pueden contener datos del mensaje.
+        error_log("Brevo error de envio (HTTP {$status}, curl=" . ($err === '' ? 'ninguno' : 'presente') . ')');
         return false;
     }
     return true;
+}
+
+function email_habilitado(): bool {
+    return strtolower(trim((string) (getenv('MAIL_ENABLED') ?: 'false'))) === 'true';
 }
 
 /**
@@ -65,6 +97,8 @@ function send_email(string $to_email, string $to_name, string $subject, string $
  * @return string          HTML del email
  */
 function build_reset_email(string $nombre, string $link): string {
+    $nombre = htmlspecialchars($nombre, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $link = htmlspecialchars($link, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     return "
     <!DOCTYPE html>
     <html lang='es'>

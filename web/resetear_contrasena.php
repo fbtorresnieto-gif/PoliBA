@@ -3,6 +3,7 @@
 // Paso 2: El usuario hace clic en el link del email y establece su nueva contraseña.
 
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/RecuperacionContrasena.php';
 
 if (is_logged_in()) {
     header("Location: perfil.php");
@@ -14,6 +15,8 @@ $error_msg = '';
 $success   = false;
 $token_valido = false;
 $user_email   = '';
+$_SESSION['csrf_password_reset'] ??= bin2hex(random_bytes(32));
+$servicio = new RecuperacionContrasena($pdo, static fn (): bool => false);
 
 // --- Validar token ---
 if (empty($token)) {
@@ -21,19 +24,8 @@ if (empty($token)) {
 } else {
     global $pdo;
     try {
-        $stmt = $pdo->prepare("
-            SELECT * FROM password_resets
-            WHERE token = ?
-              AND usado = FALSE
-              AND created_at > NOW() - INTERVAL '1 hour'
-            LIMIT 1
-        ");
-        $stmt->execute([$token]);
-        $reset = $stmt->fetch();
-
-        if ($reset) {
+        if ($servicio->tokenValido($token)) {
             $token_valido = true;
-            $user_email   = $reset['email'];
         } else {
             $error_msg = 'El enlace expiró o ya fue utilizado. Solicitá uno nuevo.';
         }
@@ -47,23 +39,22 @@ if (empty($token)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cambiar_contrasena' && $token_valido) {
     $nueva     = $_POST['nueva_contrasena'] ?? '';
     $confirmar = $_POST['confirmar_contrasena'] ?? '';
+    $csrf = $_POST['csrf_password_reset'] ?? '';
 
-    if (strlen($nueva) < 8) {
+    if (!is_string($csrf) || !hash_equals($_SESSION['csrf_password_reset'], $csrf)) {
+        $error_msg = 'Recargá la página antes de continuar.';
+    } elseif (strlen($nueva) < 8) {
         $error_msg = 'La contraseña debe tener al menos 8 caracteres.';
     } elseif ($nueva !== $confirmar) {
         $error_msg = 'Las contraseñas no coinciden.';
     } else {
         try {
-            // Actualizar contraseña del usuario
-            $hash = password_hash($nueva, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare("UPDATE usuarios SET contrasena = ? WHERE email = ?");
-            $stmt->execute([$hash, $user_email]);
-
-            // Marcar token como usado
-            $pdo->prepare("UPDATE password_resets SET usado = TRUE WHERE token = ?")->execute([$token]);
-
-            $success = true;
-        } catch (PDOException $e) {
+            $success = $servicio->restablecer($token, $nueva, $confirmar);
+            if (!$success) {
+                $token_valido = false;
+                $error_msg = 'El enlace expiró o ya fue utilizado. Solicitá uno nuevo.';
+            }
+        } catch (Throwable $e) {
             $error_msg = 'Ocurrió un error al guardar la nueva contraseña. Intentá de nuevo.';
             error_log('Error al resetear contraseña: ' . $e->getMessage());
         }
@@ -134,6 +125,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <form action="resetear_contrasena.php?token=<?= htmlspecialchars($token) ?>" method="POST" class="text-start" id="form-nueva-contrasena">
                 <input type="hidden" name="action" value="cambiar_contrasena">
+                <input type="hidden" name="csrf_password_reset" value="<?= htmlspecialchars($_SESSION['csrf_password_reset']) ?>">
 
                 <!-- Nueva contraseña -->
                 <div class="mb-3">

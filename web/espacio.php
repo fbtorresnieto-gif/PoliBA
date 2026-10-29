@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
+require_once __DIR__ . '/includes/pagos/ServicioReservas.php';
 
 $espacio_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $espacio = null;
@@ -32,6 +34,7 @@ if (!$espacio) {
     header("Location: espacios.php");
     exit;
 }
+$espacio_es_gratuito = $espacio['precio_hora_ars'] === '0.00';
 
 // Fecha seleccionada (default: mañana)
 $selected_date = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d', strtotime('+1 day'));
@@ -73,7 +76,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT horario 
         FROM reservas 
-        WHERE fk_espacio = ? AND fecha_de_asistencia = ? AND estado = 'reservado'
+        WHERE fk_espacio = ? AND fecha_de_asistencia = ? AND estado IN ('reservado','pendiente_pago','pendiente_presencial')
     ");
     $stmt->execute([$espacio_id, $selected_date]);
     $reservas_existentes = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -98,73 +101,32 @@ try {
     // Log
 }
 
-// Procesar la solicitud de reserva (Solo Alumnos)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'reservar') {
+// Procesar reserva gratuita o presencial: monto y permisos se verifican en servidor.
+$_SESSION['csrf_reservas'] ??= bin2hex(random_bytes(32));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? null) === 'reservar') {
     redirect_if_not_logged_in(['Alumno']);
-    
     $user = get_logged_user();
-    $fecha = $_POST['fecha'];
-    $horario = $_POST['horario'];
-    
-    // 1. Validaciones básicas
-    if (empty($fecha) || empty($horario)) {
-        $error_msg = 'Por favor, seleccioná una fecha y un horario válidos.';
-    } elseif (strtotime($fecha) < strtotime(date('Y-m-d'))) {
-        $error_msg = 'No podés realizar reservas para fechas pasadas.';
-    } elseif (!$esta_abierto_hoy) {
-        $error_msg = 'La entidad se encuentra cerrada los días ' . $nombre_dia_actual . '.';
-    } elseif (!array_key_exists($horario, $slots)) {
-        $error_msg = 'El horario seleccionado está fuera del horario de atención de la entidad (' . date('H:i', strtotime($espacio['horario_apertura'])) . ' a ' . date('H:i', strtotime($espacio['horario_cierre'])) . ' hs).';
-    } elseif ($fecha === date('Y-m-d') && $horario <= date('H:i:s')) {
-        $error_msg = 'No podés reservar un horario que ya ha transcurrido hoy.';
-    } elseif (in_array($horario, $reservas_existentes)) {
-        $error_msg = 'El horario seleccionado ya se encuentra reservado por otro usuario.';
+    $token = $_POST['csrf_reservas'] ?? '';
+    if (!is_string($token) || !hash_equals($_SESSION['csrf_reservas'], $token)) {
+        $error_msg = 'La sesión del formulario venció. Recargá la página antes de reservar.';
     } else {
-        // 2. Validar que no colisione con ninguna modulo de actividad
-        $slot_start_sec = strtotime("1970-01-01 $horario");
-        $slot_end_sec = $slot_start_sec + 3600;
-        $modulo_collision = null;
-        
-        foreach ($modulos_dia as $cl) {
-            $cl_start_sec = strtotime("1970-01-01 " . $cl['horario_inicio']);
-            $cl_end_sec = strtotime("1970-01-01 " . $cl['horario_cierre']);
-            if ($slot_start_sec < $cl_end_sec && $slot_end_sec > $cl_start_sec) {
-                $modulo_collision = $cl;
-                break;
+        try {
+            foreach (['fecha','horario','precio_visto','modalidad_pago'] as $campo) {
+                if (!is_string($_POST[$campo] ?? null)) throw new RuntimeException('Completá la fecha, el turno y la modalidad de pago.');
             }
-        }
-        
-        if ($modulo_collision) {
-            $error_msg = 'El horario seleccionado no está disponible debido al módulo de la actividad "' . htmlspecialchars($modulo_collision['nombre']) . '" (' . date('H:i', strtotime($modulo_collision['horario_inicio'])) . ' a ' . date('H:i', strtotime($modulo_collision['horario_cierre'])) . ' hs).';
-        } else {
-            try {
-                if ($db_driver_used === 'postgresql') {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO reservas (fk_espacio, fk_usuario, fecha_de_asistencia, horario, estado)
-                        VALUES (?, ?, ?, ?, 'reservado')
-                        RETURNING id
-                    ");
-                    $stmt->execute([$espacio_id, $user['id'], $fecha, $horario]);
-                    $reserva_id = $stmt->fetchColumn();
-                } else {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO reservas (fk_espacio, fk_usuario, fecha_de_asistencia, horario, estado)
-                        VALUES (?, ?, ?, ?, 'reservado')
-                    ");
-                    $stmt->execute([$espacio_id, $user['id'], $fecha, $horario]);
-                    $reserva_id = $pdo->lastInsertId();
-                }
-                
-                if ($reserva_id) {
-                    $success_msg = '¡Reserva completada con éxito!';
-                    // Actualizar reservas existentes para la vista
-                    $reservas_existentes[] = $horario;
-                } else {
-                    $error_msg = 'Hubo un error al registrar la reserva. Por favor, intentá nuevamente.';
-                }
-            } catch (PDOException $e) {
-                $error_msg = 'Error al registrar la reserva en el sistema.';
-            }
+            $resultado = (new \MultiPro\Pagos\ServicioReservas($pdo))->crear(
+                $espacio_id, (int)$user['id'], $_POST['fecha'], $_POST['horario'], $_POST['precio_visto'], $_POST['modalidad_pago']);
+            notificacionesDespacharSilencioso($pdo);
+            $reserva_id = $resultado['id'];
+            $reserva_pendiente = $resultado['estado'] === 'pendiente_presencial';
+            $success_msg = $reserva_pendiente ? 'Reserva pendiente de pago presencial' : '¡Reserva completada con éxito!';
+            $selected_date = $resultado['fecha_de_asistencia'];
+            $nombre_dia_actual = $dias_semana_nombres[(int)date('N', strtotime($selected_date))];
+            $reservas_existentes[] = $resultado['horario'];
+        } catch (PDOException $e) {
+            $error_msg = $e->getCode() === '23505' ? 'Ese turno ya está ocupado o ya tenés una reserva en ese horario.' : 'No se pudo registrar la reserva. Intentá nuevamente.';
+        } catch (RuntimeException $e) {
+            $error_msg = $e->getMessage();
         }
     }
 }
@@ -198,6 +160,7 @@ require_once __DIR__ . '/includes/header.php';
                     </span>
                 </div>
                 <h2 class="fw-bold text-dark m-0"><?= htmlspecialchars($espacio['nombre']); ?></h2>
+                <p class="fw-bold mt-2 mb-0"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($espacio['precio_hora_ars'])); ?></p>
                 <p class="text-muted mt-2 mb-0"><?= htmlspecialchars($espacio['descripcion']); ?></p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -216,6 +179,11 @@ require_once __DIR__ . '/includes/header.php';
                 <h4 class="alert-heading fw-bold"><i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($success_msg); ?></h4>
                 <p class="mb-3">Tu turno ha sido registrado para el día <strong><?= $nombre_dia_actual; ?> <?= date('d/m/Y', strtotime($selected_date)); ?></strong> a las <strong><?= date('H:i', strtotime($_POST['horario'])); ?> hs</strong>.</p>
                 <hr>
+                <?php if (!empty($reserva_pendiente)): ?>
+                    <p class="fw-bold">Importe final: <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($resultado['importe_total_ars'])); ?></p>
+                    <p>Tu turno queda ocupado. Aboná presencialmente en la entidad para que su administrador registre el cobro.</p>
+                    <a href="perfil.php#mis-reservas" class="poliba-btn">Ver mi reserva</a>
+                <?php else: ?>
                 <p class="mb-2"><strong>¡Invitá a tus amigos!</strong> Compartí el link de reserva para coordinar el partido:</p>
                 
                 <?php 
@@ -233,6 +201,7 @@ require_once __DIR__ . '/includes/header.php';
                     <a href="perfil.php" class="poliba-btn px-4 py-2">Ir a Mi Perfil</a>
                     <a href="espacio.php?id=<?= $espacio_id; ?>" class="poliba-btn-dark px-4 py-2 ms-2">Hacer otra Reserva</a>
                 </div>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <!-- Formulario de Selección de Fecha -->
@@ -258,7 +227,9 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </form>
 
-            <?php if (!$esta_abierto_hoy): ?>
+            <?php if (!$espacio_es_gratuito && !$espacio['pago_presencial_habilitado']): ?>
+                <div class="alert alert-info" role="status">Este espacio no tiene un medio de pago disponible. El pago online todavía no está habilitado.</div>
+            <?php elseif (!$esta_abierto_hoy): ?>
                 <!-- Notificación de Entidad Cerrada -->
                 <div class="alert alert-warning d-flex align-items-center mb-4 p-4 rounded-4 shadow-sm" role="alert">
                     <i class="bi bi-exclamation-triangle-fill fs-1 me-3 text-warning"></i>
@@ -271,7 +242,23 @@ require_once __DIR__ . '/includes/header.php';
                 <!-- Formulario de Selección de Horarios -->
                 <form action="" method="POST">
                     <input type="hidden" name="action" value="reservar">
+                    <input type="hidden" name="csrf_reservas" value="<?= htmlspecialchars($_SESSION['csrf_reservas']); ?>">
                     <input type="hidden" name="fecha" value="<?= htmlspecialchars($selected_date); ?>">
+                    <input type="hidden" name="precio_visto" value="<?= htmlspecialchars($espacio['precio_hora_ars']); ?>">
+                    <?php if ($espacio_es_gratuito): ?>
+                        <input type="hidden" name="modalidad_pago" value="gratuito">
+                        <p class="fw-bold">Reserva gratuita · duración: 1 hora</p>
+                    <?php else: ?>
+                        <fieldset class="border rounded-4 p-3 mb-4">
+                            <legend class="float-none w-auto px-2 fs-6 fw-bold">Importe y modalidad</legend>
+                            <p class="fw-bold">Importe final por 1 hora: <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($espacio['precio_hora_ars'])); ?></p>
+                            <div class="form-check"><input class="form-check-input" type="radio" name="modalidad_pago" value="presencial" id="modalidadPresencial" required>
+                                <label class="form-check-label" for="modalidadPresencial">Pago presencial en la entidad</label></div>
+                            <div class="form-check mt-2"><input class="form-check-input" type="radio" id="modalidadOnline" disabled>
+                                <label class="form-check-label text-muted" for="modalidadOnline">Pago online · todavía no disponible</label></div>
+                            <p class="small text-muted mt-2 mb-0">El turno quedará ocupado y pendiente de pago presencial hasta que el administrador registre el cobro. No se cobra dinero desde esta página.</p>
+                        </fieldset>
+                    <?php endif; ?>
 
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold text-dark m-0">2. Seleccioná el Horario Disponible</h5>
@@ -369,7 +356,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div class="text-center pt-3 border-top">
                         <?php if (is_logged_in() && has_role('Alumno')): ?>
-                            <button type="submit" class="poliba-btn px-5 py-2 fw-bold text-uppercase" <?= $disponibles_count === 0 ? 'disabled' : ''; ?>>Confirmar Reserva de Espacio</button>
+                            <button type="submit" class="poliba-btn px-5 py-2 fw-bold text-uppercase" <?= $disponibles_count === 0 ? 'disabled' : ''; ?>><?= $espacio_es_gratuito ? 'Confirmar Reserva de Espacio' : 'Reservar y pagar presencialmente'; ?></button>
                         <?php elseif (!is_logged_in()): ?>
                             <a href="login.php" class="poliba-btn-dark px-5 py-2 fw-bold text-uppercase text-decoration-none">Iniciar sesión para Reservar</a>
                         <?php else: ?>

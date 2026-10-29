@@ -114,8 +114,9 @@ public class ReservationsActivity extends AppCompatActivity {
                     formatDate(reservation.getFecha()),
                     formatTime(reservation.getHorario())
             ));
-            item.statusText.setText(reservation.isActive()
-                    ? R.string.status_reserved : R.string.status_cancelled);
+            item.statusText.setText(PaymentUi.status(reservation));
+            item.amountText.setText(PaymentUi.total(this, reservation));
+            item.paymentText.setText(PaymentUi.payment(this, reservation));
             item.statusText.setTextColor(ContextCompat.getColor(
                     this,
                     reservation.isActive() ? R.color.multipro_success : R.color.multipro_text_muted

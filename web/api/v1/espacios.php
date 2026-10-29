@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/_cobro_espacio.php';
 apiAceptarMetodo('GET');
 $entidadId = apiParametroEntero('entidad_id');
 try {
     $pdo = apiBaseDatos();
     $stmt = $pdo->prepare("
-        SELECT esp.id, esp.nombre, esp.descripcion, esp.imagenurl, esp.techado,
+        SELECT esp.id, esp.nombre, esp.descripcion, esp.imagenurl, esp.techado, esp.precio_hora_ars, esp.pago_presencial_habilitado,
                esp.fk_entidad, e.nombre AS entidad_nombre
         FROM espacios esp
         JOIN entidades e ON esp.fk_entidad = e.id
@@ -15,6 +16,7 @@ try {
     ");
     $stmt->execute([$entidadId]);
     $data = array_map(static fn (array $fila): array => [
+        ...apiCobroEspacio($fila),
         'id' => (int) $fila['id'], 'nombre' => $fila['nombre'],
         'descripcion' => $fila['descripcion'], 'techado' => (bool) $fila['techado'],
         'entidad_id' => (int) $fila['fk_entidad'], 'entidad_nombre' => $fila['entidad_nombre'],

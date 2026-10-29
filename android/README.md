@@ -2,6 +2,48 @@
 
 Aplicación Android nativa de MultiPro.
 
+## Prueba local del MVP presencial (2026-10-27)
+
+Se agregó la variante **local**, instalada como **MultiPro Local** (`com.multipro.mobile.local`), con almacenamiento y sesión independientes. Las variantes debug/release conservan la URL de producción y su identificador anterior; no usarlas para probar este MVP contra Railway. No se desplegó la API nueva allí.
+
+La variante local muestra precio ARS por hora, confirmación gratuita/presencial con importe final, pago pendiente, cobro registrado, cancelación propia y devolución presencial pendiente/realizada. Online no se puede seleccionar. Ante información de precio incompleta o inválida bloquea la reserva en vez de suponer gratuidad. Conserva el importe de la API como texto decimal, sin convertir a float/double. La aceptación de precio y modalidad usa la misma respuesta de disponibilidad que mostró la confirmación; el servidor valida nuevamente precio y ocupación.
+
+La URL local está fijada en `http://127.0.0.1:8080/api/v1/`. Requiere un puente USB/emulador con el servidor PHP local ya operativo:
+
+```powershell
+# En esta carpeta android, con SDK instalado:
+$env:ANDROID_HOME = Join-Path $env:LOCALAPPDATA 'Android/Sdk'
+.\gradlew.bat --offline -PmultiproTestBuildType=local :app:testLocalUnitTest :app:assembleLocal
+$adb = Join-Path $env:ANDROID_HOME 'platform-tools/adb.exe'
+& $adb devices -l
+# Reemplazar DEVICE_SERIAL por el identificador de tu dispositivo/emulador:
+& $adb -s DEVICE_SERIAL reverse tcp:8080 tcp:8080
+& $adb -s DEVICE_SERIAL install -r app/build/outputs/apk/local/app-local.apk
+```
+
+APK: `app/build/outputs/apk/local/app-local.apk`. No requiere exponer PHP en la red Wi-Fi. El permiso HTTP se limita a 127.0.0.1 en recursos exclusivos de local, con el resto de destinos HTTP bloqueados. El cliente API local rechaza otros hosts/puertos y no sigue redirecciones. No altera la política HTTPS del manifest principal. Google Sign In está oculto/deshabilitado exclusivamente en local; para la prueba utilizar una cuenta **Alumno del staging**, con contraseña conocida por el usuario. No se copiaron contraseñas ni tokens a Android. Registrar cobros/devoluciones corresponde al administrador en la web local, no al alumno en el móvil.
+
+Entrega estable: `C:\MultiPro-Migration\MultiPro-Pagos-MVP\staging-local\android-apk\MultiPro-Local-1.3.0-presencial.apk`. SHA256: `12CCBED3091B0F64B5A793198126D8AD1E72A98FC2D4FC7734254BBF9CCB2276`. Compilación local/debug y 8 pruebas unitarias aprobadas. **La prueba de uso móvil queda pendiente por elección del usuario**: el emulador API 36 falló por System UI sin foco y luego no terminó el arranque. Las pruebas instrumentadas de abajo están preparadas, pero no aprobadas; el smoke test Android→PHP tampoco se ejecutó. No se instaló en un teléfono físico. El emulador y el daemon de compilación se cerraron.
+
+Pruebas de pantalla aisladas en emulador con servidor simulado dentro del dispositivo (no afectan staging):
+
+```powershell
+.\gradlew.bat --offline -PmultiproTestBuildType=local '-Pandroid.testInstrumentationRunnerArguments.class=com.multipro.mobile.PresentialScreensTest' :app:connectedLocalAndroidTest
+```
+
+No mantener `adb reverse tcp:8080` durante esas pruebas simuladas: el servidor de fixtures necesita ese puerto en el dispositivo. Después de cerrarlo, una prueba opcional de lectura contra el PHP real local:
+
+Si falta el componente oficial UTP en la caché, la primera ejecución de pruebas necesita omitir `--offline` para descargarlo desde los repositorios oficiales configurados.
+
+```powershell
+& $adb -s DEVICE_SERIAL reverse tcp:8080 tcp:8080
+.\gradlew.bat --offline -PmultiproTestBuildType=local '-Pandroid.testInstrumentationRunnerArguments.class=com.multipro.mobile.LocalApiSmokeTest' '-Pandroid.testInstrumentationRunnerArguments.localApiSmoke=true' :app:connectedLocalAndroidTest
+```
+
+El test de PHP consulta entidades sin autenticar ni crear reservas. Las pruebas de pantalla usan sesiones sintéticas, se limitan a la variante local y limpian su sesión al finalizar. No son una prueba de login/cobro real ni de un teléfono físico. Gradle genera pruebas solo para el tipo seleccionado: `multiproTestBuildType=local` opta por local sin cambiar el valor debug habitual.
+
+Referencias oficiales para la configuración utilizada: [redirección de puertos ADB](https://developer.android.com/develop/ui/views/layout/webapps/access-local-server), [configuración de seguridad de red](https://developer.android.com/privacy-and-security/security-config) y [tipo de compilación de pruebas](https://developer.android.com/build/gradle-tips).
+
 ## Configuración
 
 - Lenguaje: Java.

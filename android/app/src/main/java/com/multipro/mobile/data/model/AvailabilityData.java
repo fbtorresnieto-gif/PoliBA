@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public final class AvailabilityData {
+public final class AvailabilityData extends PaymentOptions {
     @SerializedName("espacio_id")
     private int spaceId;
 

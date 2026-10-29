@@ -2,7 +2,7 @@ package com.multipro.mobile.data.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public final class Space {
+public final class Space extends PaymentOptions {
     private int id;
     private String nombre;
     private String descripcion;
