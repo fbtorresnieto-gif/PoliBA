@@ -2,6 +2,7 @@
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/ServicioPromociones.php';
 
 // Validar que sea Profesor
 redirect_if_not_logged_in(['Profesor']);
@@ -9,53 +10,23 @@ redirect_if_not_logged_in(['Profesor']);
 $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
+$_SESSION['csrf_promocion'] ??= bin2hex(random_bytes(32));
 
 // Procesar promoción de modulo
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'promocionar') {
-    $inscripcion_id = intval($_POST['inscripcion_id']);
-    $nueva_modulo_id = intval($_POST['nueva_modulo_id']);
-    $alumno_nombre = $_POST['alumno_nombre'];
-    $alumno_email = $_POST['alumno_email'];
-    
+    $inscripcion_id = filter_var($_POST['inscripcion_id']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+    $nueva_modulo_id = filter_var($_POST['nueva_modulo_id']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
     try {
-        // Obtener límites de edad de la nueva modulo
-        $stmt = $pdo->prepare("
-            SELECT c.id, c.nombre, 
-                   COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
-                   COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
-            FROM modulos c
-            LEFT JOIN categoria cat ON c.fk_categoria = cat.id
-            LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-            WHERE c.id = ?
-        ");
-        $stmt->execute([$nueva_modulo_id]);
-        $target_modulo = $stmt->fetch();
-        
-        // Obtener fecha de nacimiento del alumno
-        $stmt_nac = $pdo->prepare("
-            SELECT COALESCE(u.fecha_nacimiento, m.fecha_nacimiento) as fecha_nacimiento
-            FROM inscripcion i
-            LEFT JOIN usuarios u ON i.fk_usuario = u.id
-            LEFT JOIN menores m ON i.fk_menor = m.id
-            WHERE i.id = ?
-        ");
-        $stmt_nac->execute([$inscripcion_id]);
-        $nac = $stmt_nac->fetchColumn();
-        
-        $age = date_diff(date_create($nac), date_create('today'))->y;
-        
-        if ($age < $target_modulo['edad_min'] || $age > $target_modulo['edad_max']) {
-            $error_msg = "No se puede promocionar a $alumno_nombre: su edad ($age años) no cumple con el rango permitido para {$target_modulo['nombre']} ({$target_modulo['edad_min']} a {$target_modulo['edad_max']} años).";
-        } else {
-            // Realizar promoción (cambiar modulo en la inscripción)
-            $stmt_prom = $pdo->prepare("UPDATE inscripcion SET fk_modulo = ?, lista_espera = FALSE WHERE id = ?");
-            if ($stmt_prom->execute([$nueva_modulo_id, $inscripcion_id])) {
-                $success_msg = "¡Promoción exitosa! $alumno_nombre promovido al módulo: {$target_modulo['nombre']}. " .
-                               "Se envió un correo de notificación a $alumno_email. Recuerda informarle telefónicamente.";
-            }
-        }
+        $csrf=$_POST['csrf_promocion']??'';
+        if(!is_string($csrf)||!hash_equals($_SESSION['csrf_promocion'],$csrf))throw new RuntimeException('Recargá la página antes de continuar.');
+        if(!$inscripcion_id||!$nueva_modulo_id)throw new RuntimeException('Seleccioná una inscripción y un módulo válidos.');
+        $resultado=(new ServicioPromociones($pdo))->promocionar($inscripcion_id,$nueva_modulo_id,(int)$user['id']);
+        notificacionesDespacharSilencioso($pdo);
+        $success_msg='¡Promoción exitosa! '.(string)$resultado['alumno_nombre'].' fue promovido al módulo '.(string)$resultado['modulo_nuevo'].'. La notificación quedó registrada para envío.';
     } catch (PDOException $e) {
         $error_msg = 'Error al procesar la promoción en la base de datos.';
+    } catch (RuntimeException $e) {
+        $error_msg = $e->getMessage();
     }
 }
 
@@ -170,9 +141,8 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?php else: ?>
                                     <form action="profesor_promocion.php" method="POST" class="d-flex gap-2">
                                         <input type="hidden" name="action" value="promocionar">
+                                        <input type="hidden" name="csrf_promocion" value="<?= htmlspecialchars($_SESSION['csrf_promocion']); ?>">
                                         <input type="hidden" name="inscripcion_id" value="<?= $al['inscripcion_id']; ?>">
-                                        <input type="hidden" name="alumno_nombre" value="<?= htmlspecialchars($al['display_nombre']); ?>">
-                                        <input type="hidden" name="alumno_email" value="<?= htmlspecialchars($al['display_email']); ?>">
                                         
                                         <select name="nueva_modulo_id" class="form-select form-select-sm rounded-pill px-3" required style="max-width:250px;">
                                             <option value="">-- Seleccionar Módulo --</option>

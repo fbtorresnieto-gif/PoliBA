@@ -23,6 +23,18 @@ public final class Reservation {
     private String fecha;
     private String horario;
     private String estado;
+    @SerializedName("importe_total_ars") private String totalArs;
+    @SerializedName("modalidad_pago") private String paymentMode;
+    @SerializedName("presencial_cobrado") private boolean presentialPaid;
+    @SerializedName("devolucion_presencial") private String presentialRefund;
+
+    public String getTotalArs() { return totalArs; }
+    public String getPaymentMode() { return paymentMode; }
+    public boolean isPresentialPaid() { return presentialPaid; }
+    public String getPresentialRefund() { return presentialRefund; }
+    public boolean canCancel() {
+        return ("reservado".equals(estado) || "pendiente_presencial".equals(estado)) && !"online".equals(paymentMode);
+    }
 
     public int getId() { return id; }
     public int getSpaceId() { return spaceId; }

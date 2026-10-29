@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
 
 $espacios = [];
 try {
@@ -50,6 +51,7 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="poliba-card-body">
                             <h5 class="poliba-card-title text-dark fw-bold"><?= htmlspecialchars($espacio['nombre']); ?></h5>
+                            <p class="fw-bold mb-2"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($espacio['precio_hora_ars'])); ?></p>
                             <p class="poliba-card-meta mb-2">
                                 <i class="bi bi-building me-1"></i> Entidad: <?= htmlspecialchars($espacio['entidad_nombre']); ?>
                             </p>

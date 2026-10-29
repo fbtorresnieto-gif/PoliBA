@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mp_price_unknown">Precio no informado. Actualizá la disponibilidad antes de reservar.</string>
+    <string name="mp_hour_price">%1$s por hora</string>
+    <string name="mp_total">Importe final por 1 hora: %1$s</string>
+    <string name="mp_no_mode">Este espacio no tiene una modalidad de reserva disponible.</string>
+    <string name="mp_free_mode">Reserva gratuita · 1 hora</string>
+    <string name="mp_presential_mode">Pago presencial en la entidad. El turno queda ocupado y pendiente de cobro.</string>
+    <string name="mp_online_blocked">Pago online todavía no disponible.</string>
+    <string name="mp_confirm_presential">Reservar y pagar presencialmente</string>
+    <string name="mp_confirm_body">%1$s\n%2$s · %3$s hs\n\nImporte final: %4$s\n%5$s</string>
+    <string name="mp_pending_title">Reserva pendiente de pago presencial</string>
+    <string name="mp_pending_body">Reserva #%1$d · %2$s. Aboná en la entidad; su administrador registrará el cobro.</string>
+    <string name="mp_pending">Pago presencial pendiente</string>
+    <string name="mp_online_pending">Pago online pendiente</string>
+    <string name="mp_expired">Vencido</string>
+    <string name="mp_unknown_status">Estado no informado</string>
+    <string name="mp_paid">Cobro presencial registrado</string>
+    <string name="mp_unpaid_cancelled">Sin cobro presencial registrado</string>
+    <string name="mp_refund_pending">Devolución total pendiente de realizar por la entidad.</string>
+    <string name="mp_refund_done">Devolución total registrada por la entidad.</string>
+    <string name="mp_refund_policy">Si cancelás con 24 horas o más, corresponde devolución total. Con menos de 24 horas no se genera devolución.</string>
+</resources>

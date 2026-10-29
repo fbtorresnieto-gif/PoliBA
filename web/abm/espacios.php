@@ -2,6 +2,7 @@
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/pagos/ConfiguracionEspacio.php';
 
 // Validar que sea Administrador
 redirect_if_not_logged_in(['Administrador']);
@@ -15,6 +16,26 @@ if (!$entidad_id) {
 
 $error_msg = '';
 $success_msg = '';
+$_SESSION['csrf_espacios'] ??= bin2hex(random_bytes(32));
+$cobro = null;
+$error_cobro = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_recibido = $_POST['csrf_espacios'] ?? '';
+    if (!is_string($csrf_recibido) || !hash_equals($_SESSION['csrf_espacios'], $csrf_recibido)) {
+        $error_cobro = 'La sesión del formulario venció. Recargá la página e intentá nuevamente.';
+    } elseif (!is_string($_POST['action'] ?? null) || !in_array($_POST['action'], ['crear','editar'], true)) {
+        $error_cobro = 'La acción solicitada no es válida.';
+    } elseif ($_POST['action'] === 'editar' && (!is_string($_POST['id'] ?? null) ||
+        filter_var($_POST['id'], FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]) === false)) {
+        $error_cobro = 'El espacio seleccionado no es válido.';
+    } else {
+        try {
+            $cobro = \MultiPro\Pagos\ConfiguracionEspacio::leer($_POST);
+        } catch (InvalidArgumentException $e) {
+            $error_cobro = $e->getMessage();
+        }
+    }
+}
 
 if (!function_exists('normalizar_espacio')) {
     function normalizar_espacio($texto) {
@@ -34,12 +55,14 @@ if (!function_exists('normalizar_espacio')) {
 
 // Procesar creación o modificación de espacios
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
-    $nombre = trim($_POST['nombre']);
-    $descripcion = trim($_POST['descripcion']);
-    $imagenURL = trim($_POST['imagenURL']);
+    $nombre = is_string($_POST['nombre'] ?? null) ? trim($_POST['nombre']) : '';
+    $descripcion = is_string($_POST['descripcion'] ?? null) ? trim($_POST['descripcion']) : '';
+    $imagenURL = is_string($_POST['imagenURL'] ?? null) ? trim($_POST['imagenURL']) : '';
     $techado = isset($_POST['techado']) ? 1 : 0;
     
-    if (empty($nombre)) {
+    if ($error_cobro !== '') {
+        $error_msg = $error_cobro;
+    } elseif (empty($nombre)) {
         $error_msg = 'El nombre del espacio es obligatorio.';
     } elseif (mb_strlen($nombre) < 2) {
         $error_msg = 'El nombre del espacio debe tener al menos 2 caracteres.';
@@ -108,10 +131,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 if ($_POST['action'] == 'crear') {
                     try {
                         $stmt = $pdo->prepare("
-                            INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad, estado)
-                            VALUES (?, ?, ?, ?, ?, TRUE)
+                            INSERT INTO espacios (nombre, descripcion, imagenURL, techado, fk_entidad, estado,
+                                precio_hora_ars, cobro_online_habilitado, pago_presencial_habilitado)
+                            VALUES (?, ?, ?, ?, ?, TRUE, ?, FALSE, ?)
                         ");
-                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $entidad_id]);
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $entidad_id,
+                            $cobro['precio_hora_ars'], $cobro['pago_presencial_habilitado'] ? 'true' : 'false']);
                         $success_msg = 'Espacio creado con éxito.';
                     } catch (PDOException $e) {
                         $error_msg = 'Error al crear el espacio.';
@@ -121,11 +146,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     try {
                         $stmt = $pdo->prepare("
                             UPDATE espacios
-                            SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ? 
+                            SET nombre = ?, descripcion = ?, imagenURL = ?, techado = ?,
+                                precio_hora_ars = ?, cobro_online_habilitado = FALSE, pago_presencial_habilitado = ?
                             WHERE id = ? AND fk_entidad = ?
                         ");
-                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $id, $entidad_id]);
-                        $success_msg = 'Espacio modificado con éxito.';
+                        $stmt->execute([$nombre, $descripcion, $imagenURL, $techado, $cobro['precio_hora_ars'],
+                            $cobro['pago_presencial_habilitado'] ? 'true' : 'false', $id, $entidad_id]);
+                        if ($stmt->rowCount() === 1) {
+                            $success_msg = 'Espacio modificado con éxito.';
+                        } else {
+                            $error_msg = 'El espacio no está disponible para esta entidad.';
+                        }
                     } catch (PDOException $e) {
                         $error_msg = 'Error al modificar el espacio.';
                     }
@@ -172,6 +203,19 @@ try {
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
+
+function formulario_espacio(array $base, string $accion): array {
+    global $error_msg;
+    if ($error_msg === '' || ($_POST['action'] ?? null) !== $accion ||
+        ($accion === 'editar' && (string)($base['id'] ?? '') !== ($_POST['id'] ?? null))) return $base;
+    foreach (['nombre','descripcion','imagenURL','precio_hora_ars'] as $campo) {
+        $base[$campo] = is_string($_POST[$campo] ?? null) ? $_POST[$campo] : '';
+    }
+    $base['imagenurl'] = $base['imagenURL'];
+    $base['techado'] = isset($_POST['techado']);
+    $base['pago_presencial_habilitado'] = ($_POST['pago_presencial_habilitado'] ?? null) === '1';
+    return $base;
+}
 ?>
 
 <div class="container my-4">
@@ -186,6 +230,8 @@ require_once __DIR__ . '/../includes/header.php';
     <?php if (!empty($error_msg)): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error_msg); ?></div>
     <?php endif; ?>
+
+    <div class="alert alert-info" role="status">Con precio mayor a $0, habilitá pago presencial para permitir reservas con pago pendiente en la entidad. El pago online todavía no está disponible.</div>
     <?php if (!empty($success_msg)): ?>
         <div class="alert alert-success"><?= htmlspecialchars($success_msg); ?></div>
     <?php endif; ?>
@@ -197,6 +243,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <th>Nombre</th>
                     <th>Descripción</th>
                     <th>Tipo</th>
+                    <th>Precio por hora</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -204,7 +251,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($espacios)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
+                        <td colspan="6" class="text-center text-muted">No hay espacios registrados para esta entidad.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($espacios as $espacio): ?>
@@ -215,6 +262,13 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span class="badge rounded-pill <?= $espacio['techado'] ? 'bg-dark' : 'bg-secondary'; ?>">
                                     <?= $espacio['techado'] ? 'Techado' : 'Descubierto'; ?>
                                 </span>
+                            </td>
+                            <td>
+                                <span class="fw-bold"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($espacio['precio_hora_ars'])); ?></span>
+                                <?php if ($espacio['precio_hora_ars'] !== '0.00'): ?>
+                                    <small class="d-block text-muted"><?= $espacio['pago_presencial_habilitado'] ? 'Presencial configurado' : 'Sin medio de pago configurado'; ?></small>
+                                    <small class="d-block text-muted"><?= $espacio['pago_presencial_habilitado'] ? 'Reserva con pago pendiente en la entidad' : 'Reservas no disponibles sin medio de pago'; ?></small>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span class="badge rounded-pill <?= $espacio['estado'] ? 'bg-success' : 'bg-danger'; ?>">
@@ -238,33 +292,37 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Modales para editar espacios (fuera de la tabla para Bootstrap 5) -->
-<?php foreach ($espacios as $espacio): ?>
-    <div class="modal fade" id="editEspacioModal<?= $espacio['id']; ?>" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+<?php foreach ($espacios as $espacio): $formEspacio = formulario_espacio($espacio, 'editar');
+    $reintento = $error_msg !== '' && ($_POST['action'] ?? null) === 'editar' && ($_POST['id'] ?? null) === (string)$espacio['id']; ?>
+    <div class="modal fade" id="editEspacioModal<?= $espacio['id']; ?>" tabindex="-1" aria-hidden="true" <?= $reintento ? 'data-reabrir' : ''; ?>>
+        <div class="modal-dialog modal-dialog-scrollable">
             <form action="espacios.php" method="POST" class="modal-content border-0 shadow">
                 <input type="hidden" name="action" value="editar">
+                <input type="hidden" name="csrf_espacios" value="<?= htmlspecialchars($_SESSION['csrf_espacios']); ?>">
                 <input type="hidden" name="id" value="<?= $espacio['id']; ?>">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold">Editar Espacio: <?= htmlspecialchars($espacio['nombre']); ?></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
+                    <?php if ($reintento): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($error_msg); ?></div><?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre del Espacio *</label>
-                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($espacio['nombre']); ?>">
+                        <input type="text" name="nombre" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($formEspacio['nombre']); ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Imagen URL</label>
-                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg" value="<?= htmlspecialchars($espacio['imagenurl'] ?? $espacio['imagenURL'] ?? ''); ?>">
+                        <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg" value="<?= htmlspecialchars($formEspacio['imagenurl'] ?? $formEspacio['imagenURL'] ?? ''); ?>">
                     </div>
                     <div class="mb-3 form-check form-switch ms-1">
-                        <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $espacio['id']; ?>" <?= $espacio['techado'] ? 'checked' : ''; ?>>
+                        <input class="form-check-input" type="checkbox" name="techado" id="editTechado<?= $espacio['id']; ?>" <?= $formEspacio['techado'] ? 'checked' : ''; ?>>
                         <label class="form-check-label fw-bold" for="editTechado<?= $espacio['id']; ?>">Espacio Techado</label>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Descripción / Ubicación</label>
-                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($espacio['descripcion'] ?? ''); ?></textarea>
+                        <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;"><?= htmlspecialchars($formEspacio['descripcion'] ?? ''); ?></textarea>
                     </div>
+                    <?php $cobroEspacio = $formEspacio; $sufijoCobro = 'Editar' . $espacio['id']; require __DIR__ . '/../includes/pagos/campos_espacio.php'; ?>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
@@ -276,31 +334,35 @@ require_once __DIR__ . '/../includes/header.php';
 <?php endforeach; ?>
 
 <!-- Modal para crear un espacio -->
-<div class="modal fade" id="crearEspacioModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<?php $formCrear = formulario_espacio([], 'crear'); $reintentoCrear = $error_msg !== '' && ($_POST['action'] ?? null) === 'crear'; ?>
+<div class="modal fade" id="crearEspacioModal" tabindex="-1" aria-hidden="true" <?= $reintentoCrear ? 'data-reabrir' : ''; ?>>
+    <div class="modal-dialog modal-dialog-scrollable">
         <form action="espacios.php" method="POST" class="modal-content border-0 shadow">
             <input type="hidden" name="action" value="crear">
+            <input type="hidden" name="csrf_espacios" value="<?= htmlspecialchars($_SESSION['csrf_espacios']); ?>">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Espacio</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
+                <?php if ($reintentoCrear): ?><div class="alert alert-danger" role="alert"><?= htmlspecialchars($error_msg); ?></div><?php endif; ?>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nombre del Espacio *</label>
-                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Espacio Techado / Pista 2">
+                    <input type="text" name="nombre" class="form-control rounded-pill px-3" required placeholder="Espacio Techado / Pista 2" value="<?= htmlspecialchars($formCrear['nombre'] ?? ''); ?>">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Imagen URL</label>
-                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg">
+                    <input type="url" name="imagenURL" class="form-control rounded-pill px-3" placeholder="https://ejemplo.com/espacio.jpg" value="<?= htmlspecialchars($formCrear['imagenURL'] ?? ''); ?>">
                 </div>
                 <div class="mb-3 form-check form-switch ms-1">
-                    <input class="form-check-input" type="checkbox" name="techado" id="crearTechado">
+                    <input class="form-check-input" type="checkbox" name="techado" id="crearTechado" <?= !empty($formCrear['techado']) ? 'checked' : ''; ?>>
                     <label class="form-check-label fw-bold" for="crearTechado">Espacio Techado</label>
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Descripción / Ubicación</label>
-                    <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Detalles de superficie, iluminación, etc..."></textarea>
+                    <textarea name="descripcion" class="form-control px-3" rows="3" style="border-radius:15px;" placeholder="Detalles de superficie, iluminación, etc..."><?= htmlspecialchars($formCrear['descripcion'] ?? ''); ?></textarea>
                 </div>
+                <?php $cobroEspacio = $formCrear; $sufijoCobro = 'Crear'; require __DIR__ . '/../includes/pagos/campos_espacio.php'; ?>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
@@ -310,4 +372,21 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-configuracion-cobro]').forEach(grupo => {
+        const precio = grupo.querySelector('[name="precio_hora_ars"]');
+        const presencial = grupo.querySelector('[data-pago-presencial]');
+        const actualizar = () => {
+            const valor = precio.value.trim();
+            presencial.disabled = !/^[0-9]{1,10}([.,][0-9]{1,2})?$/.test(valor) || /^0+([.,]0{1,2})?$/.test(valor);
+            if (presencial.disabled) presencial.checked = false;
+        };
+        precio.addEventListener('input', actualizar);
+        actualizar();
+    });
+    const reabrir = document.querySelector('[data-reabrir]');
+    if (reabrir && window.bootstrap) new bootstrap.Modal(reabrir).show();
+});
+</script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

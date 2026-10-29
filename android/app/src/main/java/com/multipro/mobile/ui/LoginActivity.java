@@ -55,6 +55,8 @@ public class LoginActivity extends AppCompatActivity {
         binding.loginButton.setOnClickListener(view -> submitLogin());
         credentialManager = CredentialManager.create(this);
         binding.googleLoginButton.setOnClickListener(view -> startGoogleSignIn());
+        binding.googleLoginButton.setEnabled(!BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank());
+        if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) binding.googleLoginButton.setVisibility(View.GONE);
         binding.registerButton.setOnClickListener(view ->
                 startActivity(new Intent(this, RegisterActivity.class)));
         binding.passwordInput.setOnEditorActionListener((view, actionId, event) -> {
@@ -67,6 +69,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void startGoogleSignIn() {
+        if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank()) return;
         clearErrors();
         setLoading(true, true);
         googleCancellationSignal = new CancellationSignal();
@@ -253,7 +256,7 @@ public class LoginActivity extends AppCompatActivity {
     private void setLoading(boolean loading, boolean google) {
         binding.progressIndicator.setVisibility(loading ? View.VISIBLE : View.GONE);
         binding.loginButton.setEnabled(!loading);
-        binding.googleLoginButton.setEnabled(!loading);
+        binding.googleLoginButton.setEnabled(!loading && !BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank());
         binding.registerButton.setEnabled(!loading);
         binding.emailInput.setEnabled(!loading);
         binding.passwordInput.setEnabled(!loading);

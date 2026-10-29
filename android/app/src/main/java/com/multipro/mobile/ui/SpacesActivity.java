@@ -88,6 +88,7 @@ public class SpacesActivity extends AppCompatActivity {
             item.nameText.setText(value(space.getNombre()));
             ImageLoader.load(item.imageView, space.getImageUrl());
             item.descriptionText.setText(value(space.getDescripcion()));
+            item.priceText.setText(PaymentUi.price(this, space));
             item.coveredText.setText(space.isTechado()
                     ? R.string.covered_space : R.string.uncovered_space);
             item.getRoot().setOnClickListener(view -> {

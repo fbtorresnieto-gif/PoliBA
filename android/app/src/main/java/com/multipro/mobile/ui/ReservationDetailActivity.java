@@ -41,6 +41,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
     private Call<ReservationCancelResponse> cancellationRequest;
     private int reservationId;
     private boolean cancelling;
+    private Reservation displayedReservation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,28 +102,34 @@ public class ReservationDetailActivity extends AppCompatActivity {
     }
 
     private void renderReservation(Reservation reservation) {
+        displayedReservation = reservation;
         binding.numberText.setText(getString(R.string.reservation_number, reservation.getId()));
         binding.spaceText.setText(value(reservation.getSpaceName()));
         binding.entityText.setText(value(reservation.getEntityName()));
         binding.addressText.setText(value(reservation.getEntityAddress()));
         binding.dateText.setText(formatDate(reservation.getFecha()));
         binding.timeText.setText(getString(R.string.hour_value, formatTime(reservation.getHorario())));
-        binding.statusText.setText(reservation.isActive()
-                ? R.string.status_reserved : R.string.status_cancelled);
+        binding.statusText.setText(PaymentUi.status(reservation));
+        binding.amountText.setText(PaymentUi.total(this, reservation));
+        binding.paymentText.setText(PaymentUi.payment(this, reservation));
         binding.statusText.setTextColor(ContextCompat.getColor(
                 this,
                 reservation.isActive() ? R.color.multipro_success : R.color.multipro_text_muted
         ));
-        binding.cancelButton.setVisibility(reservation.isActive() ? View.VISIBLE : View.GONE);
+        binding.cancelButton.setVisibility(reservation.canCancel() ? View.VISIBLE : View.GONE);
         binding.stateContainer.setVisibility(View.GONE);
         binding.contentScroll.setVisibility(View.VISIBLE);
     }
 
     private void confirmCancellation() {
-        if (cancelling) return;
+        if (cancelling || displayedReservation == null || !displayedReservation.canCancel()) return;
+        String message = getString(R.string.confirm_cancellation_message, reservationId);
+        if ("presencial".equals(displayedReservation.getPaymentMode()) && displayedReservation.isPresentialPaid()) {
+            message += "\n\n" + getString(R.string.mp_refund_policy);
+        }
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.confirm_cancellation_title)
-                .setMessage(getString(R.string.confirm_cancellation_message, reservationId))
+                .setMessage(message)
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.confirm, (dialog, which) -> cancelReservation())
                 .show();
@@ -155,7 +162,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
                 if (response.isSuccessful() && data != null) {
                     new MaterialAlertDialogBuilder(ReservationDetailActivity.this)
                             .setTitle(R.string.reservation_cancelled_title)
-                            .setMessage(R.string.reservation_cancelled_message)
+                            .setMessage(data.isRefundPending() ? R.string.mp_refund_pending : R.string.reservation_cancelled_message)
                             .setPositiveButton(R.string.accept,
                                     (dialog, which) -> loadReservation())
                             .setOnCancelListener(dialog -> loadReservation())
@@ -239,6 +246,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (detailRequest != null) detailRequest.cancel();
+        if (cancellationRequest != null) cancellationRequest.cancel();
         binding = null;
         super.onDestroy();
     }

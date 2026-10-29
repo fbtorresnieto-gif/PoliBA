@@ -15,6 +15,7 @@ import com.multipro.mobile.data.local.SessionManager;
 import com.multipro.mobile.data.model.AvailabilityData;
 import com.multipro.mobile.data.model.AvailabilityResponse;
 import com.multipro.mobile.data.model.AvailabilitySlot;
+import com.multipro.mobile.data.model.ArsMoney;
 import com.multipro.mobile.data.model.ReservationCreateData;
 import com.multipro.mobile.data.model.ReservationCreateRequest;
 import com.multipro.mobile.data.model.ReservationCreateResponse;
@@ -107,7 +108,7 @@ public class AvailabilityActivity extends AppCompatActivity {
             @Override
             public void onResponse(@NonNull Call<AvailabilityResponse> call,
                                    @NonNull Response<AvailabilityResponse> response) {
-                if (binding == null) return;
+                if (binding == null || call.isCanceled() || call != request) return;
                 AvailabilityData data = response.body() == null ? null : response.body().getData();
                 if (!response.isSuccessful() || data == null) {
                     showError(ApiErrorParser.message(response, getString(R.string.unexpected_error)));
@@ -126,6 +127,8 @@ public class AvailabilityActivity extends AppCompatActivity {
     }
 
     private void renderAvailability(AvailabilityData data) {
+        binding.priceText.setText(PaymentUi.price(this, data) + "\n" + PaymentUi.mode(this, data)
+                + "\n" + getString(R.string.mp_online_blocked));
         List<AvailabilitySlot> slots = data.getSlots() == null
                 ? Collections.emptyList() : data.getSlots();
         binding.listContainer.removeAllViews();
@@ -138,53 +141,56 @@ public class AvailabilityActivity extends AppCompatActivity {
         binding.stateContainer.setVisibility(View.GONE);
         binding.contentScroll.setVisibility(View.VISIBLE);
         for (AvailabilitySlot slot : slots) {
+            boolean bookable = slot.isDisponible() && data.getBookingMode() != null;
             ItemAvailabilitySlotBinding item = ItemAvailabilitySlotBinding.inflate(
                     getLayoutInflater(), binding.listContainer, false);
             item.timeText.setText(getString(R.string.hour_value, formatTime(slot.getHorario())));
-            item.statusText.setText(slot.isDisponible() ? R.string.available : R.string.unavailable);
+            item.statusText.setText(bookable ? R.string.available : R.string.unavailable);
             item.statusText.setTextColor(ContextCompat.getColor(
                     this,
-                    slot.isDisponible() ? R.color.multipro_success : R.color.multipro_error
+                    bookable ? R.color.multipro_success : R.color.multipro_error
             ));
             item.getRoot().setCardBackgroundColor(ContextCompat.getColor(
                     this,
-                    slot.isDisponible()
+                    bookable
                             ? R.color.multipro_success_background
                             : R.color.multipro_unavailable_background
             ));
 
-            String reason = unavailableReason(slot);
+            String reason = data.getBookingMode() == null ? PaymentUi.mode(this, data) : unavailableReason(slot);
             item.reasonText.setText(reason);
             item.reasonText.setVisibility(reason.isBlank() ? View.GONE : View.VISIBLE);
-            item.actionText.setVisibility(slot.isDisponible() ? View.VISIBLE : View.GONE);
-            item.getRoot().setClickable(slot.isDisponible());
-            item.getRoot().setFocusable(slot.isDisponible());
-            if (slot.isDisponible()) {
-                item.getRoot().setOnClickListener(view -> confirmReservation(slot));
+            item.actionText.setVisibility(bookable ? View.VISIBLE : View.GONE);
+            item.getRoot().setClickable(bookable);
+            item.getRoot().setFocusable(bookable);
+            if (bookable) {
+                item.getRoot().setOnClickListener(view -> confirmReservation(slot, data));
             }
             binding.listContainer.addView(item.getRoot());
         }
     }
 
-    private void confirmReservation(AvailabilitySlot slot) {
-        if (bookingInProgress) return;
-        String displayDate = selectedDate.format(DISPLAY_DATE);
+    private void confirmReservation(AvailabilitySlot slot, AvailabilityData options) {
+        if (bookingInProgress || options.getBookingMode() == null) return;
+        String displayDate = LocalDate.parse(options.getFecha()).format(DISPLAY_DATE);
         String displayTime = formatTime(slot.getHorario());
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.confirm_reservation_title)
                 .setMessage(getString(
-                        R.string.confirm_reservation_message,
+                        R.string.mp_confirm_body,
                         value(spaceName),
                         displayDate,
-                        displayTime
+                        displayTime,
+                        ArsMoney.format(options.getHourlyPrice()),
+                        PaymentUi.mode(this, options)
                 ))
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.confirm,
-                        (dialog, which) -> createReservation(slot.getHorario()))
+                .setPositiveButton("presencial".equals(options.getBookingMode()) ? R.string.mp_confirm_presential : R.string.confirm,
+                        (dialog, which) -> createReservation(slot.getHorario(), options.getFecha(), options.getBookingMode(), options.getHourlyPrice()))
                 .show();
     }
 
-    private void createReservation(String time) {
+    private void createReservation(String time, String date, String mode, String price) {
         String authorization = sessionManager.authorizationHeader();
         if (authorization == null) {
             openLogin();
@@ -196,8 +202,10 @@ public class AvailabilityActivity extends AppCompatActivity {
                 authorization,
                 new ReservationCreateRequest(
                         spaceId,
-                        selectedDate.format(API_DATE),
-                        time
+                        date,
+                        time,
+                        mode,
+                        price
                 )
         );
         reservationRequest.enqueue(new Callback<>() {
@@ -216,8 +224,10 @@ public class AvailabilityActivity extends AppCompatActivity {
                         ? null : response.body().getData();
                 if (response.isSuccessful() && data != null) {
                     new MaterialAlertDialogBuilder(AvailabilityActivity.this)
-                            .setTitle(R.string.reservation_created_title)
-                            .setMessage(getString(R.string.reservation_created_message, data.getId()))
+                            .setTitle("pendiente_presencial".equals(data.getEstado()) ? R.string.mp_pending_title : R.string.reservation_created_title)
+                            .setMessage("pendiente_presencial".equals(data.getEstado())
+                                    ? getString(R.string.mp_pending_body, data.getId(), ArsMoney.format(data.getTotalArs()))
+                                    : getString(R.string.reservation_created_message, data.getId()))
                             .setPositiveButton(R.string.accept,
                                     (dialog, which) -> loadAvailability())
                             .setOnCancelListener(dialog -> loadAvailability())
@@ -280,6 +290,7 @@ public class AvailabilityActivity extends AppCompatActivity {
     }
 
     private void showLoading() {
+        binding.priceText.setText("");
         binding.contentScroll.setVisibility(View.GONE);
         binding.stateContainer.setVisibility(View.VISIBLE);
         binding.progressIndicator.setVisibility(View.VISIBLE);
@@ -315,6 +326,7 @@ public class AvailabilityActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (request != null) request.cancel();
+        if (reservationRequest != null) reservationRequest.cancel();
         binding = null;
         super.onDestroy();
     }

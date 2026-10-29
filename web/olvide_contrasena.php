@@ -4,6 +4,7 @@
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
+require_once __DIR__ . '/includes/RecuperacionContrasena.php';
 
 // Si ya está logueado, no tiene sentido estar acá
 if (is_logged_in()) {
@@ -13,48 +14,26 @@ if (is_logged_in()) {
 
 $success_msg = '';
 $error_msg   = '';
+$_SESSION['csrf_password_reset'] ??= bin2hex(random_bytes(32));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'solicitar_reset') {
     $email = trim($_POST['email'] ?? '');
+    $csrf = $_POST['csrf_password_reset'] ?? '';
 
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!is_string($csrf) || !hash_equals($_SESSION['csrf_password_reset'], $csrf)) {
+        $error_msg = 'Recargá la página antes de solicitar otro enlace.';
+    } elseif (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error_msg = 'Por favor ingresá un email válido.';
     } else {
         global $pdo;
-
-        // Verificar si el email existe en la BD
-        $stmt = $pdo->prepare("SELECT id, nombre FROM usuarios WHERE email = ? AND estado = TRUE LIMIT 1");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
-
         // Siempre mostramos el mismo mensaje para no revelar si el email existe o no (seguridad)
         $success_msg = 'Si ese email está registrado en MultiPro, vas a recibir un enlace para restablecer tu contraseña en los próximos minutos.';
-
-        if ($user) {
-            // Invalidar tokens anteriores del mismo email
-            $pdo->prepare("UPDATE password_resets SET usado = TRUE WHERE email = ? AND usado = FALSE")->execute([$email]);
-
-            // Generar token seguro de 64 caracteres hexadecimales
-            $token = bin2hex(random_bytes(32));
-
-            // Guardar en la BD
-            $stmt = $pdo->prepare("INSERT INTO password_resets (email, token, created_at, usado) VALUES (?, ?, NOW(), FALSE)");
-            $stmt->execute([$email, $token]);
-
-            // Construir link de reseteo (str_replace corrige barras invertidas en Windows)
-            $protocol  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host      = $_SERVER['HTTP_HOST'];
-            $path      = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
-            $base_url  = rtrim($protocol . '://' . $host . $path, '/');
-            $reset_link = $base_url . '/resetear_contrasena.php?token=' . $token;
-
-            // Armar y enviar el email
-            $html = build_reset_email(htmlspecialchars($user['nombre']), $reset_link);
-            $sent = send_email($email, $user['nombre'], 'Restablecé tu contraseña — MultiPro', $html);
-
-            if (!$sent) {
-                error_log("Error al enviar email de reseteo a: $email");
-            }
+        try {
+            $servicio = new RecuperacionContrasena($pdo, 'send_email');
+            $servicio->solicitar($email);
+        } catch (Throwable $e) {
+            // No exponer existencia de cuenta ni detalles del proveedor.
+            error_log('Recuperacion de contrasena no disponible: ' . $e->getMessage());
         }
     }
 }
@@ -102,6 +81,7 @@ require_once __DIR__ . '/includes/header.php';
                 <!-- Formulario -->
                 <form action="olvide_contrasena.php" method="POST" class="text-start">
                     <input type="hidden" name="action" value="solicitar_reset">
+                    <input type="hidden" name="csrf_password_reset" value="<?= htmlspecialchars($_SESSION['csrf_password_reset']) ?>">
 
                     <div class="mb-4">
                         <input

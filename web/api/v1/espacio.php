@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/_cobro_espacio.php';
 apiAceptarMetodo('GET');
 $espacioId = apiParametroEntero('id');
 try {
     $pdo = apiBaseDatos();
     $stmt = $pdo->prepare("
-        SELECT esp.id, esp.nombre, esp.descripcion, esp.imagenurl, esp.techado,
+        SELECT esp.id, esp.nombre, esp.descripcion, esp.imagenurl, esp.techado, esp.precio_hora_ars, esp.pago_presencial_habilitado,
                esp.fk_entidad, e.nombre AS entidad_nombre, e.direccion AS entidad_direccion,
                e.horario_apertura, e.horario_cierre,
                da.nombre AS dia_apertura, dc.nombre AS dia_cierre
@@ -20,6 +21,7 @@ try {
     $fila = $stmt->fetch();
     if (!$fila) apiResponder(['error' => 'Espacio no encontrado.'], 404);
     apiResponder(['data' => [
+        ...apiCobroEspacio($fila),
         'id' => (int) $fila['id'], 'nombre' => $fila['nombre'],
         'descripcion' => $fila['descripcion'], 'techado' => (bool) $fila['techado'],
         'entidad_id' => (int) $fila['fk_entidad'], 'entidad_nombre' => $fila['entidad_nombre'],

@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/pagos/ServicioReservas.php';
+require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
 
 // Validar que esté logueado
 redirect_if_not_logged_in();
@@ -8,6 +10,7 @@ redirect_if_not_logged_in();
 $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
+$_SESSION['csrf_reservas'] ??= bin2hex(random_bytes(32));
 
 // 1. Procesar Cambios de Perfil (Modificar Perfil)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'modificar_perfil') {
@@ -125,19 +128,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
 }
 
 // 4. Procesar Cancelar Reserva
-if (isset($_GET['cancelar_reserva'])) {
-    $res_id = intval($_GET['cancelar_reserva']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? null) === 'cancelar_reserva') {
     try {
-        $stmt = $pdo->prepare("
-            UPDATE reservas 
-            SET estado = 'cancelado' 
-            WHERE id = ? AND fk_usuario = ?
-        ");
-        if ($stmt->execute([$res_id, $user['id']])) {
-            $success_msg = 'Reserva cancelada con éxito.';
-        }
+        $token=$_POST['csrf_reservas']??'';
+        if (!is_string($token)||!hash_equals($_SESSION['csrf_reservas'],$token)) throw new RuntimeException('Recargá la página antes de cancelar.');
+        $res_id=filter_var($_POST['reserva_id']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+        if (!$res_id) throw new RuntimeException('Seleccioná una reserva válida.');
+        (new \MultiPro\Pagos\ServicioReservas($pdo))->cancelarTitular($res_id,(int)$user['id']);
+        notificacionesDespacharSilencioso($pdo);
+        $success_msg = 'Reserva cancelada. Si corresponde una devolución presencial, queda pendiente de realizar por la entidad.';
     } catch (PDOException $e) {
         $error_msg = 'Error al cancelar la reserva.';
+    } catch (RuntimeException $e) {
+        $error_msg = $e->getMessage();
     }
 }
 
@@ -156,11 +159,14 @@ $reservas = [];
 if (has_role('Alumno')) {
     try {
         $stmt = $pdo->prepare("
-            SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre
+            SELECT r.*, esp.nombre as espacio_nombre, e.nombre as entidad_nombre,
+                EXISTS(SELECT 1 FROM reserva_movimientos_presenciales m WHERE m.fk_reserva=r.id AND m.tipo='cobro') AS presencial_cobrado,
+                EXISTS(SELECT 1 FROM reserva_movimientos_presenciales m WHERE m.fk_reserva=r.id AND m.tipo='devolucion_solicitada') AS devolucion_pendiente,
+                EXISTS(SELECT 1 FROM reserva_movimientos_presenciales m WHERE m.fk_reserva=r.id AND m.tipo='devolucion') AS devolucion_realizada
             FROM reservas r
             JOIN espacios esp ON r.fk_espacio = esp.id
             JOIN entidades e ON esp.fk_entidad = e.id
-            WHERE r.fk_usuario = ?
+            WHERE r.fk_usuario = ? AND r.estado <> 'vencido'
             ORDER BY r.fecha_de_asistencia DESC, r.horario DESC
         ");
         $stmt->execute([$user['id']]);
@@ -303,24 +309,41 @@ require_once __DIR__ . '/includes/header.php';
                     <?php foreach ($reservas as $res): 
                         $status_badge = 'bg-success';
                         if (strtolower($res['estado']) == 'cancelado') $status_badge = 'bg-danger';
+                        if (str_starts_with($res['estado'], 'pendiente')) $status_badge = 'bg-warning text-dark';
                     ?>
                         <div class="col-md-6 col-lg-3">
                             <div class="poliba-card border-top border-5 border-success">
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge <?= $status_badge; ?> text-uppercase"><?= htmlspecialchars($res['estado']); ?></span>
+                                        <span class="badge <?= $status_badge; ?>"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::estadoReserva($res['estado'])); ?></span>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['espacio_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['entidad_nombre']); ?></div>
                                     <div class="text-dark small"><i class="bi bi-calendar-event me-2"></i><?= date('d/m/Y', strtotime($res['fecha_de_asistencia'])); ?></div>
                                     <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($res['horario'])); ?> hs</div>
+                                    <p class="small fw-bold">Importe final por 1 hora: <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($res['importe_total_ars'])); ?></p>
+                                    <?php if ($res['modalidad_pago']==='presencial'): ?>
+                                        <p class="small"><?= $res['presencial_cobrado'] ? 'Cobro presencial registrado' : ($res['estado']==='cancelado' ? 'Sin cobro registrado' : 'Pago presencial pendiente'); ?></p>
+                                        <?php if ($res['estado']==='reservado' && $res['presencial_cobrado']): ?>
+                                            <p class="small text-muted">Si cancelás con 24 horas o más, corresponde devolución total. Con menos de 24 horas no se genera devolución.</p>
+                                        <?php endif; ?>
+                                        <?php if ($res['devolucion_realizada']): ?><p class="small">Devolución total registrada por la entidad.</p>
+                                        <?php elseif ($res['devolucion_pendiente']): ?><p class="small text-warning-emphasis">Devolución total pendiente de realizar por la entidad.</p><?php endif; ?>
+                                    <?php endif; ?>
                                     
                                     <div class="d-flex justify-content-between gap-1 mt-auto">
                                         <?php if (strtolower($res['estado']) == 'reservado'): ?>
                                             <button type="button" class="btn btn-outline-dark btn-sm flex-grow-1"
                                                     data-share-url="ver_reserva.php?t=<?= urlencode($res['token_compartir']); ?>"
                                                     onclick="compartirReserva(this)">Compartir</button>
-                                            <a href="perfil.php?cancelar_reserva=<?= $res['id']; ?>" class="btn btn-danger btn-sm px-2" onclick="return confirm('¿Seguro quieres cancelar esta reserva?');">Cancelar</a>
+                                        <?php endif; ?>
+                                        <?php if (in_array($res['estado'],['reservado','pendiente_presencial'],true) && $res['modalidad_pago']!=='online'): ?>
+                                            <form action="perfil.php#mis-reservas" method="POST" onsubmit="return confirm('¿Querés cancelar esta reserva?');">
+                                                <input type="hidden" name="action" value="cancelar_reserva">
+                                                <input type="hidden" name="reserva_id" value="<?= $res['id']; ?>">
+                                                <input type="hidden" name="csrf_reservas" value="<?= htmlspecialchars($_SESSION['csrf_reservas']); ?>">
+                                                <button class="btn btn-danger btn-sm" type="submit">Cancelar</button>
+                                            </form>
                                         <?php endif; ?>
                                     </div>
                                 </div>

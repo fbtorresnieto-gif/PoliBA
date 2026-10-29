@@ -70,6 +70,7 @@ public class SpaceDetailActivity extends AppCompatActivity {
         binding.coveredText.setText(space.isTechado()
                 ? R.string.covered_space : R.string.uncovered_space);
         binding.descriptionText.setText(value(space.getDescripcion()));
+        binding.priceText.setText(PaymentUi.price(this, space) + "\n" + PaymentUi.mode(this, space));
         binding.entityText.setText(value(space.getEntidadNombre()));
         binding.addressText.setText(value(space.getEntidadDireccion()));
         binding.daysText.setText(getString(

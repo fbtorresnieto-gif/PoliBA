@@ -1,22 +1,18 @@
 <?php
 declare(strict_types=1);
-
-require_once __DIR__ . '/../_auth.php';
+require_once __DIR__.'/_datos.php';
 apiAceptarMetodo('POST');
-$datos = apiLeerJson();
-$reservaId = isset($datos['reserva_id']) ? (int) $datos['reserva_id'] : 0;
-if ($reservaId < 1) apiResponder(['error' => 'reserva_id es obligatorio y debe ser un entero positivo.'], 422);
+$id=reservaApiEntero(apiLeerJson(),'reserva_id');
 try {
-    [$pdo, $usuario] = apiContextoAutenticado('Alumno');
-    $stmt = $pdo->prepare("
-        UPDATE reservas
-        SET estado = 'cancelado'
-        WHERE id = ? AND fk_usuario = ? AND estado = 'reservado'
-        RETURNING id
-    ");
-    $stmt->execute([$reservaId, $usuario['id']]);
-    if (!$stmt->fetchColumn()) apiResponder(['error' => 'Reserva activa no encontrada.'], 404);
-    apiResponder(['data' => ['id' => $reservaId, 'estado' => 'cancelado']]);
-} catch (Throwable $error) {
-    apiErrorInterno($error, 'Error al cancelar una reserva propia en la API');
+    [$pdo,$usuario]=apiContextoAutenticado('Alumno');
+    reservaApiPropia($pdo,$id,(int)$usuario['id']);
+    (new \MultiPro\Pagos\ServicioReservas($pdo))->cancelarTitular($id,(int)$usuario['id']);
+    notificacionesDespacharSilencioso($pdo);
+    apiResponder(['data'=>reservaApiPropia($pdo,$id,(int)$usuario['id'])]);
+} catch(PDOException $e) {
+    error_log('MultiPro API cancelar reserva: fallo de base de datos');apiResponder(['error'=>'No se pudo cancelar la reserva.'],500);
+} catch(RuntimeException $e) {
+    apiResponder(['error'=>$e->getMessage()],409);
+} catch(Throwable $e) {
+    error_log('MultiPro API cancelar reserva: fallo interno');apiResponder(['error'=>'No se pudo cancelar la reserva.'],500);
 }

@@ -32,7 +32,16 @@ public final class ApiClient {
                             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .followRedirects(!"local".equals(BuildConfig.BUILD_TYPE))
+                            .followSslRedirects(!"local".equals(BuildConfig.BUILD_TYPE))
                             .addInterceptor(logging)
+                            .addInterceptor(chain -> {
+                                if ("local".equals(BuildConfig.BUILD_TYPE) &&
+                                        (!"127.0.0.1".equals(chain.request().url().host()) || chain.request().url().port() != 8080)) {
+                                    throw new java.io.IOException("La variante local solo permite la API local.");
+                                }
+                                return chain.proceed(chain.request());
+                            })
                             .build();
 
                     service = new Retrofit.Builder()

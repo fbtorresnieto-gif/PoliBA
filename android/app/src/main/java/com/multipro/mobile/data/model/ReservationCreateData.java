@@ -11,6 +11,8 @@ public final class ReservationCreateData {
     private String fecha;
     private String horario;
     private String estado;
+    @SerializedName("importe_total_ars") private String totalArs;
+    public String getTotalArs() { return totalArs; }
 
     public int getId() { return id; }
     public int getSpaceId() { return spaceId; }
