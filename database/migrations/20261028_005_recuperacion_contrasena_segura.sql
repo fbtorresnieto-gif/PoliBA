@@ -43,4 +43,31 @@ CREATE INDEX idx_password_resets_expiracion
     ON password_resets(expires_at)
     WHERE usado_en IS NULL;
 
+-- La solicitud web se registra antes de consultar usuarios o contactar al
+-- proveedor. El worker resuelve la cuenta en segundo plano para que la
+-- latencia HTTP no revele si el email existe.
+CREATE TABLE password_reset_solicitudes (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email_normalizado VARCHAR(254) NOT NULL,
+    email_hash CHAR(64) NOT NULL CHECK (email_hash ~ '^[0-9a-f]{64}$'),
+    estado VARCHAR(15) NOT NULL DEFAULT 'pendiente'
+        CHECK (estado IN ('pendiente','procesando','procesada','error','omitida')),
+    intentos SMALLINT NOT NULL DEFAULT 0 CHECK (intentos BETWEEN 0 AND 5),
+    proximo_intento_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    bloqueo_hasta TIMESTAMPTZ,
+    codigo_error VARCHAR(40) CHECK (codigo_error ~ '^[A-Z0-9_]+$'),
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actualizado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    procesado_en TIMESTAMPTZ,
+    CHECK (estado <> 'procesando' OR bloqueo_hasta IS NOT NULL),
+    CHECK (estado <> 'procesada' OR procesado_en IS NOT NULL)
+);
+
+CREATE UNIQUE INDEX uq_password_reset_solicitud_pendiente
+    ON password_reset_solicitudes(email_hash)
+    WHERE estado IN ('pendiente','procesando','error');
+CREATE INDEX idx_password_reset_solicitudes_trabajo
+    ON password_reset_solicitudes(estado,proximo_intento_en,bloqueo_hasta,creado_en)
+    WHERE estado IN ('pendiente','procesando','error');
+
 COMMIT;

@@ -14,20 +14,74 @@ final class RecuperacionContrasena
         $this->enviar = $enviar;
     }
 
-    public function solicitar(string $email, string $baseUrl): void
+    public function solicitar(string $email): void
     {
         $email = mb_strtolower(trim($email), 'UTF-8');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('Ingresá un email válido.');
         }
 
+        $stmt = $this->pdo->prepare("INSERT INTO password_reset_solicitudes(email_normalizado,email_hash)
+            VALUES(?,?) ON CONFLICT(email_hash) WHERE estado IN ('pendiente','procesando','error') DO NOTHING");
+        $stmt->execute([$email, hash('sha256', $email)]);
+    }
+
+    public function despacharSolicitudes(string $baseUrl, int $maximo = 10): int
+    {
+        $procesadas = 0;
+        for ($i = 0; $i < $maximo; $i++) {
+            $this->pdo->beginTransaction();
+            try {
+                $stmt = $this->pdo->query("SELECT * FROM password_reset_solicitudes
+                    WHERE estado IN ('pendiente','error','procesando')
+                      AND proximo_intento_en<=CURRENT_TIMESTAMP AND intentos<5
+                      AND (estado<>'procesando' OR bloqueo_hasta<CURRENT_TIMESTAMP)
+                    ORDER BY creado_en,id FOR UPDATE SKIP LOCKED LIMIT 1");
+                $solicitud = $stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$solicitud) {
+                    $this->pdo->commit();
+                    break;
+                }
+                $this->pdo->prepare("UPDATE password_reset_solicitudes SET estado='procesando',intentos=intentos+1,
+                    bloqueo_hasta=CURRENT_TIMESTAMP+INTERVAL '60 seconds',codigo_error=NULL,actualizado_en=clock_timestamp()
+                    WHERE id=?")->execute([$solicitud['id']]);
+                $this->pdo->commit();
+            } catch (Throwable $e) {
+                if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+                throw $e;
+            }
+
+            try {
+                $resultado = $this->procesarSolicitud((string) $solicitud['email_normalizado'], $baseUrl);
+            } catch (Throwable $e) {
+                $resultado = 'error';
+            }
+
+            if ($resultado === 'error') {
+                $this->pdo->prepare("UPDATE password_reset_solicitudes SET
+                    estado=CASE WHEN intentos>=5 THEN 'omitida' ELSE 'error' END,
+                    proximo_intento_en=CURRENT_TIMESTAMP+INTERVAL '5 minutes',bloqueo_hasta=NULL,
+                    codigo_error=CASE WHEN intentos>=5 THEN 'REINTENTOS_AGOTADOS' ELSE 'ENVIO_NO_ACEPTADO' END,
+                    actualizado_en=clock_timestamp() WHERE id=? AND estado='procesando'")
+                    ->execute([$solicitud['id']]);
+            } else {
+                $this->pdo->prepare("UPDATE password_reset_solicitudes SET estado=?,procesado_en=clock_timestamp(),
+                    bloqueo_hasta=NULL,codigo_error=NULL,actualizado_en=clock_timestamp()
+                    WHERE id=? AND estado='procesando'")->execute([$resultado, $solicitud['id']]);
+                $procesadas++;
+            }
+        }
+        return $procesadas;
+    }
+
+    private function procesarSolicitud(string $email, string $baseUrl): string
+    {
+
         $stmt = $this->pdo->prepare('SELECT id,nombre,email FROM usuarios WHERE lower(email)=? AND estado=TRUE LIMIT 1');
         $stmt->execute([$email]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$usuario) {
-            // Mantener una operación criptográfica para reducir diferencias observables.
-            hash('sha256', random_bytes(32));
-            return;
+            return 'omitida';
         }
 
         $usuarioId = (int) $usuario['id'];
@@ -40,7 +94,7 @@ final class RecuperacionContrasena
             $limite->execute([$usuarioId]);
             if ((int) $limite->fetchColumn() >= 5) {
                 $this->pdo->commit();
-                return;
+                return 'omitida';
             }
 
             $this->pdo->prepare('UPDATE password_resets SET usado_en=COALESCE(usado_en,CURRENT_TIMESTAMP) WHERE fk_usuario=? AND usado_en IS NULL')
@@ -64,9 +118,11 @@ final class RecuperacionContrasena
         if ($aceptado) {
             $this->pdo->prepare('UPDATE password_resets SET enviado_en=CURRENT_TIMESTAMP WHERE id=? AND usado_en IS NULL')
                 ->execute([$solicitudId]);
+            return 'procesada';
         } else {
             $this->pdo->prepare('UPDATE password_resets SET usado_en=CURRENT_TIMESTAMP WHERE id=? AND usado_en IS NULL')
                 ->execute([$solicitudId]);
+            return 'error';
         }
     }
 

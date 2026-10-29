@@ -8,10 +8,10 @@ Validado localmente:
 
 - migraciones `001–007`, precheck y postcheck sobre una base temporal;
 - reservas gratuitas y presenciales, cobro, cancelación y devolución total;
-- recuperación de contraseña y correos transaccionales por Brevo;
+- recuperación de contraseña desacoplada del tiempo de Brevo y correos transaccionales;
 - confirmación gratuita y recordatorios idempotentes 24 horas antes;
 - concurrencia, permisos acotados y rollbacks que protegen historial;
-- 211 archivos PHP sin errores de sintaxis, manifiesto de 48 archivos y `git diff --check` aprobados.
+- 211 archivos PHP sin errores de sintaxis en la validación integral original; control focal actual de 71 archivos de aplicación sin fallos, manifiesto de 51 archivos y `git diff --check` aprobados.
 
 La inspección de Railway en modo de solo lectura se completó el 2026-10-28. Antes de publicar todavía es obligatorio generar un respaldo productivo verificable y obtener autorizaciones separadas para commit/push, cambios en Railway y despliegue. Composer CLI no estaba disponible en la PC de preparación; el build activo de Railway confirmó la instalación desde `web/composer.lock`.
 
@@ -74,7 +74,7 @@ Este procedimiento publica el MVP de reservas gratuitas, pagos presenciales, rec
 - Cancelaciones y devoluciones presenciales según las reglas aprobadas.
 - API para que un cliente móvil consulte precios, reserve y cancele.
 - Estructuras de datos para una integración online futura, todavía inactivas.
-- Recuperación con token de un solo uso almacenado exclusivamente como SHA-256.
+- Recuperación encolada antes de consultar la cuenta; token de un solo uso almacenado exclusivamente como SHA-256.
 - Transporte transaccional por la API HTTPS de Brevo, inactivo sin configuración privada.
 - Cola idempotente y auditable para promociones, reservas presenciales, cobros, cancelaciones y devoluciones.
 - Confirmación por email de reservas gratuitas y recordatorio único 24 horas antes para toda reserva confirmada.
@@ -158,7 +158,7 @@ database/migrations/20261028_006_notificaciones_email.sql
 database/migrations/20261028_007_recordatorios_reservas.sql
 ```
 
-No ejecutar los archivos de `database/migrations/local` ni los de `database/migrations/tests` en Railway. `005` invalida y depura solicitudes de recuperación anteriores porque contenían tokens en texto claro; el precheck debe confirmar y registrar cuántas estaban activas. `006` crea la auditoría inmutable de promociones y la cola idempotente de correo; comienza sin historial. `007` vincula recordatorios con reservas para revalidar estado y horario antes de enviarlos.
+No ejecutar los archivos de `database/migrations/local` ni los de `database/migrations/tests` en Railway. `005` invalida y depura solicitudes de recuperación anteriores porque contenían tokens en texto claro, y crea una cola que registra la solicitud web antes de consultar usuarios o contactar a Brevo; el precheck debe confirmar y registrar cuántas estaban activas. `006` crea la auditoría inmutable de promociones y la cola idempotente de correo; comienza sin historial. `007` vincula recordatorios con reservas para revalidar estado y horario antes de enviarlos.
 
 La base se migra antes que la aplicación porque los campos nuevos tienen valores predeterminados compatibles con las reservas gratuitas existentes. Si una migración falla, su transacción se revierte; detener la publicación y diagnosticar antes de reintentar.
 
@@ -188,7 +188,7 @@ Debe finalizar con `POSTCHECK MULTIPRO OK`. Comparar los conteos de reservas y e
 - Desplegar el commit candidato en el servicio web existente, sin cambiar variables ni dominios en la misma operación.
 - Confirmar que Composer instala desde `web/composer.lock` y que el servicio inicia con PHP `>=8.2` y `pdo_pgsql`.
 - No publicar `android/app/build/outputs`, la APK local, `.env`, respaldos ni archivos privados.
-- Configurar, con autorización separada, un cron que ejecute `php web/cli/procesar_notificaciones.php` cada 15 minutos. Sin ese cron los recordatorios quedan programados pero no se despachan automáticamente.
+- Configurar, con autorización separada, un cron que ejecute `php web/cli/procesar_notificaciones.php` cada 15 minutos. Sin ese cron los recordatorios y las solicitudes de recuperación quedan en cola y no se despachan automáticamente.
 
 ### 7. Smoke test productivo
 
@@ -200,7 +200,7 @@ Realizar primero lecturas y luego un único recorrido controlado con cuentas de 
 4. Configurar temporalmente un espacio de prueba con precio y pago presencial.
 5. Reserva presencial, registro administrativo del cobro, cancelación y devolución pendiente/realizada.
 6. Confirmar que pago online no aparece habilitado.
-7. Sin activar Brevo todavía: comprobar que recuperación responde de forma genérica y no genera un token utilizable cuando el transporte no está configurado.
+7. Sin activar Brevo todavía: comprobar que recuperación responde de forma genérica, deja la solicitud en cola y no genera un token utilizable mientras el transporte no está configurado.
 8. Cuando el correo sea autorizado: enviar una única recuperación controlada, abrir el enlace, cambiar la contraseña, comprobar uso único y revisar entrega en Brevo.
 9. Con una cuenta de prueba, recorrer cada evento transaccional y verificar una sola fila por evento en `notificaciones_email`; no borrar auditoría para repetirlo.
 

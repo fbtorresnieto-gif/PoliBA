@@ -15,6 +15,7 @@ BEGIN
         ('pago_reembolsos'),
         ('reserva_movimientos_presenciales'),
         ('password_resets'),
+        ('password_reset_solicitudes'),
         ('inscripcion_promociones'),
         ('notificaciones_email')
     ) AS requeridas(nombre)
@@ -94,6 +95,9 @@ SELECT count(*) AS movimientos_presenciales FROM reserva_movimientos_presenciale
 SELECT count(*) AS recuperaciones_nuevas,
        count(*) FILTER (WHERE usado_en IS NULL AND enviado_en IS NOT NULL AND expires_at>CURRENT_TIMESTAMP) AS recuperaciones_activas
 FROM password_resets;
+SELECT count(*) AS solicitudes_recuperacion_encoladas,
+       count(*) FILTER (WHERE estado IN ('pendiente','error')) AS solicitudes_recuperacion_pendientes
+FROM password_reset_solicitudes;
 SELECT count(*) AS promociones_registradas FROM inscripcion_promociones;
 SELECT count(*) AS notificaciones_total,
        count(*) FILTER (WHERE estado='pendiente') AS notificaciones_pendientes,

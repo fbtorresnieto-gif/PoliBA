@@ -7,6 +7,10 @@ function Sql([string]$base,[string]$sql){
     if($LASTEXITCODE -ne 0){throw 'Fallo preparacion de base temporal'}
 }
 function Archivo([string]$ruta){Sql $temporal (Get-Content -LiteralPath (Join-Path $repo $ruta) -Raw)}
+function ArchivoRol([string]$ruta){
+    Get-Content -LiteralPath (Join-Path $repo $ruta) -Raw | docker exec -i multipro-postgres-staging sh -c ('psql -X -U "$POSTGRES_USER" -d '+$temporal+' -v ON_ERROR_STOP=1 -v app_role=multipro_app_local')
+    if($LASTEXITCODE -ne 0){throw 'Fallo validacion de permisos productivos'}
+}
 $creada=$false
 try{
     Sql postgres "CREATE DATABASE $temporal TEMPLATE multipro_base_20261026;"
@@ -35,6 +39,7 @@ try{
     Sql $temporal ('BEGIN;'+[Environment]::NewLine+(Get-Content -LiteralPath (Join-Path $repo 'database/migrations/local/20261026_003_permisos_servicio.sql') -Raw)+[Environment]::NewLine+'COMMIT;')
     Sql $temporal ('BEGIN;'+[Environment]::NewLine+(Get-Content -LiteralPath (Join-Path $repo 'database/migrations/local/20261026_004_permisos_presencial.sql') -Raw)+[Environment]::NewLine+'COMMIT;')
     Sql $temporal ('BEGIN;'+[Environment]::NewLine+(Get-Content -LiteralPath (Join-Path $repo 'database/migrations/local/20261028_006_permisos_notificaciones.sql') -Raw)+[Environment]::NewLine+'COMMIT;')
+    ArchivoRol 'database/deployment/20261028_permissions_production.sql'
     # Solo memoria del proceso; nunca argumentos, logs o archivos de credenciales nuevos.
     foreach($linea in Get-Content -LiteralPath (Join-Path $infra '.env')){
         if($linea -match '^POSTGRES_ADMIN_USER=(.*)$'){$env:MULTIPRO_TEST_USER=$Matches[1].Trim().Trim('"').Trim("'")}

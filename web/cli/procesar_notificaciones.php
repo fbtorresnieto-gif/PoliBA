@@ -3,6 +3,7 @@ declare(strict_types=1);
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
 require_once dirname(__DIR__).'/includes/db.php';
 require_once dirname(__DIR__).'/includes/NotificacionesEmail.php';
+require_once dirname(__DIR__).'/includes/RecuperacionContrasena.php';
 
 $sql="SELECT r.id,r.fk_usuario,r.fecha_de_asistencia,to_char(r.horario,'HH24:MI') hora,
     ((r.fecha_de_asistencia+r.horario) AT TIME ZONE 'America/Argentina/Buenos_Aires')-INTERVAL '24 hours' programada,
@@ -15,4 +16,8 @@ foreach($pdo->query($sql,PDO::FETCH_ASSOC) as $r){
         'espacio'=>$r['espacio'],'entidad'=>$r['entidad']],(int)$r['id'],(string)$r['programada'],true);
 }
 notificacionesDespacharSilencioso($pdo,100);
+$baseUrl=recuperacionBaseUrl();
+if(email_habilitado() && $baseUrl!==null){
+    (new RecuperacionContrasena($pdo,'send_email'))->despacharSolicitudes($baseUrl,100);
+}
 echo "MULTIPRO_NOTIFICACIONES_OK\n";

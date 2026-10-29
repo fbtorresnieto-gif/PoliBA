@@ -329,6 +329,8 @@ Las seis notificaciones transaccionales están implementadas y verificadas en st
 - Primera prueba detectó que PostgreSQL 18 no reconoce el metacomando `\\error`; los cuatro scripts productivos parametrizados fueron corregidos para abortar con `\\echo` y `\\quit 3`. La base era temporal y se eliminó sin afectar Railway.
 - Repetición integral aprobada desde el dump productivo: preflight, `001–007`, rol `multipro_web_test`, permisos legacy/MVP, `ROLECHECK MULTIPRO OK`, `POSTCHECK MULTIPRO OK` y conexión real del login web con lectura de las 10 reservas. Cero pagos online, cero conexiones de proveedor y contenedor temporal eliminado.
 - Antes de PRD quedan: autorizar commit/push, crear el rol web real y configurar sus variables privadas, cron y correo con autorización, migrar `001–007`, cambiar la aplicación al rol web y ejecutar smoke test. Mercado Pago, identidad de dominio propio y APK productiva permanecen pendientes explícitos.
+- Revisión del PR detectó que la recuperación síncrona permitía inferir cuentas por la latencia de Brevo. Se corrigió sin esperas artificiales: `005` crea `password_reset_solicitudes`, la página encola por hash normalizado sin consultar usuarios ni contactar al proveedor, y el CLI programado resuelve y envía después. No se persisten tokens crudos; desconocidos se omiten, fallos reintentan cada cinco minutos y el límite continúa en cinco enlaces por cuenta y hora.
+- Pruebas aisladas y regresión integral aprobadas sobre bases temporales eliminadas: `PRUEBAS_RECUPERACION_BREVO_LOCAL_OK`, `PRUEBAS_CORREO_LOCAL_OK`, `POSTCHECK MULTIPRO OK`, reservas gratuitas/presenciales, API, concurrencia y notificaciones. Railway y producción permanecen sin cambios.
 
 ### Alcance original de 002 (referencia)
 

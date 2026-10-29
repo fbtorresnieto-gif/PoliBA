@@ -67,7 +67,7 @@ BEGIN
         RAISE EXCEPTION 'Permisos incompatibles sobre pago_conexiones';
     END IF;
 
-    FOREACH objeto IN ARRAY ARRAY['pago_transacciones','pago_webhook_eventos','pago_reembolsos','notificaciones_email'] LOOP
+    FOREACH objeto IN ARRAY ARRAY['pago_transacciones','pago_webhook_eventos','pago_reembolsos','notificaciones_email','password_reset_solicitudes'] LOOP
         FOREACH privilegio IN ARRAY ARRAY['SELECT','INSERT','UPDATE'] LOOP
             IF NOT has_table_privilege(current_user,objeto,privilegio) THEN
                 RAISE EXCEPTION 'Falta % sobre %', privilegio, objeto;

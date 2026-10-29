@@ -21,6 +21,7 @@ asegurar((bool) $usuario, 'Falta usuario activo de prueba');
 $usuarioId = (int) $usuario['id'];
 $hashAnterior = (string) $usuario['contrasena'];
 $pdo->prepare('DELETE FROM password_resets WHERE fk_usuario=?')->execute([$usuarioId]);
+$pdo->exec('DELETE FROM password_reset_solicitudes');
 
 $mensajes = [];
 $enviar = static function (string $email, string $nombre, string $asunto, string $html) use (&$mensajes): bool {
@@ -29,7 +30,11 @@ $enviar = static function (string $email, string $nombre, string $asunto, string
 };
 $servicio = new RecuperacionContrasena($pdo, $enviar);
 
-$servicio->solicitar((string) $usuario['email'], 'http://127.0.0.1:8080');
+$servicio->solicitar((string) $usuario['email']);
+asegurar(count($mensajes) === 0, 'La solicitud web contacto al proveedor antes de responder');
+asegurar((int) $pdo->query("SELECT count(*) FROM password_reset_solicitudes WHERE estado='pendiente'")->fetchColumn() === 1,
+    'La solicitud no quedo en cola');
+$servicio->despacharSolicitudes('http://127.0.0.1:8080');
 asegurar(count($mensajes) === 1, 'No se intento un unico correo');
 asegurar(str_contains($mensajes[0]['asunto'], 'MultiPro'), 'Asunto sin nombre de producto');
 preg_match('/token=([0-9a-f]{64})/', $mensajes[0]['html'], $coincidencia);
@@ -43,24 +48,31 @@ asegurar($reset['token_hash'] === hash('sha256', $token1), 'No se guardo exclusi
 asegurar($reset['token_hash'] !== $token1, 'Token crudo persistido');
 asegurar($reset['enviado_en'] !== null && $reset['usado_en'] === null, 'Estado de envio incorrecto');
 
-$servicio->solicitar((string) $usuario['email'], 'http://127.0.0.1:8080');
+$servicio->solicitar((string) $usuario['email']);
+$servicio->despacharSolicitudes('http://127.0.0.1:8080');
 preg_match('/token=([0-9a-f]{64})/', $mensajes[1]['html'], $coincidencia2);
 $token2 = $coincidencia2[1] ?? '';
 asegurar(!$servicio->tokenValido($token1), 'Solicitud nueva no invalido token anterior');
 asegurar($servicio->tokenValido($token2), 'Segundo token no quedo activo');
 
 $fallido = new RecuperacionContrasena($pdo, static fn (): bool => false);
-$fallido->solicitar((string) $usuario['email'], 'http://127.0.0.1:8080');
+$fallido->solicitar((string) $usuario['email']);
+$fallido->despacharSolicitudes('http://127.0.0.1:8080');
 asegurar(!$servicio->tokenValido($token2), 'Fallo de envio dejo token anterior activo');
 asegurar((int) $pdo->query('SELECT count(*) FROM password_resets WHERE usado_en IS NULL')->fetchColumn() === 0, 'Fallo de envio dejo token utilizable');
 
 $antesDesconocido = (int) $pdo->query('SELECT count(*) FROM password_resets')->fetchColumn();
-$servicio->solicitar('cuenta-inexistente@example.invalid', 'http://127.0.0.1:8080');
+$servicio->solicitar('cuenta-inexistente@example.invalid');
+asegurar(count($mensajes) === 2, 'Cuenta inexistente contacto al proveedor durante la solicitud web');
+$servicio->despacharSolicitudes('http://127.0.0.1:8080');
 asegurar((int) $pdo->query('SELECT count(*) FROM password_resets')->fetchColumn() === $antesDesconocido, 'Cuenta inexistente genero token');
 
 // Limpiar la ventana de tasa en esta base aislada y crear un token final.
 $pdo->prepare("UPDATE password_resets SET created_at=created_at-INTERVAL '2 hours'")->execute();
-$servicio->solicitar((string) $usuario['email'], 'http://127.0.0.1:8080');
+$pdo->prepare("UPDATE password_reset_solicitudes SET proximo_intento_en=CURRENT_TIMESTAMP-INTERVAL '1 minute' WHERE email_hash=? AND estado='error'")
+    ->execute([hash('sha256', mb_strtolower((string) $usuario['email'], 'UTF-8'))]);
+$servicio->solicitar((string) $usuario['email']);
+$servicio->despacharSolicitudes('http://127.0.0.1:8080');
 $ultimo = end($mensajes);
 preg_match('/token=([0-9a-f]{64})/', $ultimo['html'], $coincidencia3);
 $tokenFinal = $coincidencia3[1] ?? '';
@@ -82,8 +94,12 @@ asegurar(str_contains($htmlSeguro, '&lt;script&gt;'), 'Nombre escapado ausente')
 
 // Cinco solicitudes en una hora como maximo; la sexta no llama al proveedor.
 $pdo->prepare('DELETE FROM password_resets WHERE fk_usuario=?')->execute([$usuarioId]);
+$pdo->exec('DELETE FROM password_reset_solicitudes');
 $mensajes = [];
-for ($i = 0; $i < 6; $i++) $servicio->solicitar((string) $usuario['email'], 'http://127.0.0.1:8080');
+for ($i = 0; $i < 6; $i++) {
+    $servicio->solicitar((string) $usuario['email']);
+    $servicio->despacharSolicitudes('http://127.0.0.1:8080');
+}
 asegurar(count($mensajes) === 5, 'Limite horario por cuenta incorrecto');
 asegurar((int) $pdo->query('SELECT count(*) FROM password_resets WHERE fk_usuario=' . $usuarioId)->fetchColumn() === 5, 'Limite creo filas adicionales');
 

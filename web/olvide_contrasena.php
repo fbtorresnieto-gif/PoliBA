@@ -29,10 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Siempre mostramos el mismo mensaje para no revelar si el email existe o no (seguridad)
         $success_msg = 'Si ese email está registrado en MultiPro, vas a recibir un enlace para restablecer tu contraseña en los próximos minutos.';
         try {
-            $baseUrl = recuperacionBaseUrl();
-            if ($baseUrl === null) throw new RuntimeException('APP_URL no configurada.');
             $servicio = new RecuperacionContrasena($pdo, 'send_email');
-            $servicio->solicitar($email, $baseUrl);
+            $servicio->solicitar($email);
         } catch (Throwable $e) {
             // No exponer existencia de cuenta ni detalles del proveedor.
             error_log('Recuperacion de contrasena no disponible: ' . $e->getMessage());

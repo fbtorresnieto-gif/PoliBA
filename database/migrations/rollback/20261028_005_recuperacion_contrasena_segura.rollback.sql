@@ -1,6 +1,14 @@
 -- Rollback protegido: solo es posible antes de crear solicitudes con el modelo nuevo.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM password_reset_solicitudes) THEN
+        RAISE EXCEPTION 'Rollback 005 rechazado: existen solicitudes en la cola segura';
+    END IF;
+END
+$$;
+DROP TABLE password_reset_solicitudes;
 LOCK TABLE password_resets IN ACCESS EXCLUSIVE MODE;
 
 DO $$

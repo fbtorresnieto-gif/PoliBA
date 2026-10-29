@@ -31,7 +31,7 @@ try {
     try { Archivo 'database/migrations/rollback/20261028_005_recuperacion_contrasena_segura.rollback.sql' } catch { $protegido = $true }
     if (-not $protegido) { throw 'Rollback 005 no protegio solicitudes nuevas' }
 
-    Sql $temporal 'DELETE FROM password_resets;'
+    Sql $temporal 'DELETE FROM password_resets; DELETE FROM password_reset_solicitudes;'
     Archivo 'database/migrations/rollback/20261028_005_recuperacion_contrasena_segura.rollback.sql'
     Archivo 'database/migrations/20261028_005_recuperacion_contrasena_segura.sql'
     'PRUEBAS_CORREO_LOCAL_OK'
