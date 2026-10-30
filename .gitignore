@@ -15,3 +15,6 @@ Thumbs.db
 
 # Base de datos SQLite local de prueba
 database/poliba.db
+
+# Copias de revision del documento de tesis (se conservan localmente)
+/diagramas/render_modelo_tesis/

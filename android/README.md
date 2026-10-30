@@ -117,3 +117,20 @@ app/build/outputs/apk/debug/app-debug.apk
 ```
 
 La APK `debug` es para pruebas internas. La publicación final requerirá una APK o AAB `release` firmada.
+
+## APK release para distribución directa
+
+MultiPro se distribuye mediante una APK release firmada y un enlace público de GitHub Releases. La clave y sus contraseñas se conservan fuera de Git. Para compilar se requieren estas variables privadas en la sesión del proceso:
+
+- `MULTIPRO_RELEASE_STORE_FILE`
+- `MULTIPRO_RELEASE_STORE_PASSWORD`
+- `MULTIPRO_RELEASE_KEY_ALIAS`
+- `MULTIPRO_RELEASE_KEY_PASSWORD`
+
+La compilación release falla de forma explícita si falta alguna variable, evitando publicar una APK sin firma. El artefacto se genera con:
+
+```powershell
+.\gradlew.bat --offline :app:testDebugUnitTest :app:assembleRelease
+```
+
+Salida esperada: `app/build/outputs/apk/release/app-release.apk`. Antes de distribuir, verificar la firma, instalarla en un teléfono físico y publicar la APK junto con su SHA-256. Todas las actualizaciones deben conservar `com.multipro.mobile`, la misma clave de firma y un `versionCode` superior.

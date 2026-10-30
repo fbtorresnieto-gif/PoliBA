@@ -6,6 +6,13 @@ def googleWebClientId = project.findProperty('MULTIPRO_GOOGLE_WEB_CLIENT_ID')
         ?: System.getenv('MULTIPRO_GOOGLE_WEB_CLIENT_ID')
         ?: '915863016319-g522r49r3bfhpe3q71v4fbte24argtre.apps.googleusercontent.com'
 
+def releaseStoreFile = System.getenv('MULTIPRO_RELEASE_STORE_FILE')
+def releaseStorePassword = System.getenv('MULTIPRO_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('MULTIPRO_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('MULTIPRO_RELEASE_KEY_PASSWORD')
+def releaseSigningConfigured = [releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword]
+        .every { it != null && !it.trim().isEmpty() }
+
 android {
     // Keep normal debug testing as default; select local explicitly for isolated tests.
     testBuildType project.findProperty('multiproTestBuildType') ?: 'debug'
@@ -16,12 +23,23 @@ android {
         applicationId 'com.multipro.mobile'
         minSdk 26
         targetSdk 36
-        versionCode 13
-        versionName '1.3.0'
+        versionCode 14
+        versionName '1.3.1'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         buildConfigField 'String', 'API_BASE_URL', '"https://multipro-production.up.railway.app/api/v1/"'
         buildConfigField 'String', 'GOOGLE_WEB_CLIENT_ID', '"' + googleWebClientId + '"'
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -36,6 +54,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
@@ -47,6 +68,15 @@ android {
     buildFeatures {
         viewBinding true
         buildConfig true
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    def requestsReleaseArtifact = graph.allTasks.any {
+        it.name == 'assembleRelease' || it.name == 'bundleRelease'
+    }
+    if (requestsReleaseArtifact && !releaseSigningConfigured) {
+        throw new GradleException('Faltan las variables privadas MULTIPRO_RELEASE_* para firmar la version release.')
     }
 }
 
