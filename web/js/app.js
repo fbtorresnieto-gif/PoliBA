@@ -119,3 +119,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Desplegables de selección múltiple del catálogo público.
+(() => {
+    const filtros = Array.from(document.querySelectorAll('.catalogo-filtro'));
+    const normalizar = texto => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+    filtros.forEach(filtro => {
+        const summary = filtro.querySelector('summary');
+        const valor = filtro.querySelector('.catalogo-filtro-valor');
+        const etiqueta = filtro.querySelector('.catalogo-filtro-etiqueta').textContent;
+        filtro.addEventListener('toggle', () => {
+            if (filtro.open) filtros.forEach(otro => { if (otro !== filtro) otro.open = false; });
+        });
+        filtro.addEventListener('change', () => {
+            const elegidas = Array.from(filtro.querySelectorAll('input[type="checkbox"]:checked'));
+            valor.textContent = elegidas.length === 1 ? elegidas[0].labels[0].textContent.trim() : (elegidas.length ? `${elegidas.length} seleccionadas` : filtro.dataset.vacio);
+            summary.setAttribute('aria-label', `${etiqueta}: ${valor.textContent}`);
+        });
+        filtro.querySelector('.catalogo-filtro-buscar').addEventListener('input', evento => {
+            const texto = normalizar(evento.target.value.trim());
+            let visibles = 0;
+            filtro.querySelectorAll('.catalogo-filtro-opcion').forEach(opcion => {
+                opcion.hidden = !normalizar(opcion.textContent).includes(texto);
+                if (!opcion.hidden) visibles++;
+            });
+            filtro.querySelector('.catalogo-filtro-sin-coincidencias').hidden = visibles !== 0 || !texto;
+        });
+        filtro.addEventListener('keydown', evento => {
+            if (evento.key === 'Escape') { filtro.open = false; summary.focus(); }
+        });
+        filtro.querySelector('.catalogo-filtro-listo').addEventListener('click', () => {
+            filtro.open = false; summary.focus();
+        });
+    });
+    document.addEventListener('click', evento => filtros.forEach(filtro => {
+        if (!filtro.contains(evento.target)) filtro.open = false;
+    }));
+})();

@@ -325,7 +325,7 @@ require_once __DIR__ . '/includes/header.php';
                                     <?php if ($res['modalidad_pago']==='presencial'): ?>
                                         <p class="small"><?= $res['presencial_cobrado'] ? 'Cobro presencial registrado' : ($res['estado']==='cancelado' ? 'Sin cobro registrado' : 'Pago presencial pendiente'); ?></p>
                                         <?php if ($res['estado']==='reservado' && $res['presencial_cobrado']): ?>
-                                            <p class="small text-muted">Si cancelás con 24 horas o más, corresponde devolución total. Con menos de 24 horas no se genera devolución.</p>
+                                            <p class="small text-muted">Si cancelás con 5 horas o más, corresponde devolución total. Con menos de 5 horas no se genera devolución.</p>
                                         <?php endif; ?>
                                         <?php if ($res['devolucion_realizada']): ?><p class="small">Devolución total registrada por la entidad.</p>
                                         <?php elseif ($res['devolucion_pendiente']): ?><p class="small text-warning-emphasis">Devolución total pendiente de realizar por la entidad.</p><?php endif; ?>
@@ -377,7 +377,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge rounded-pill <?= $status_badge; ?>">
-                                            <?= $modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
+                                            <?= $modulo['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA')); ?>
                                         </span>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($modulo['modulo_nombre']); ?></h5>
@@ -436,7 +436,7 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="poliba-card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="badge rounded-pill <?= $badge; ?>">
-                                        <?= $m['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($m['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'); ?>
+                                        <?= $m['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($m['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($m['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA')); ?>
                                     </span>
                                 </div>
                                 <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($m['modulo_nombre']); ?></h5>

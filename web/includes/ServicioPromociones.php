@@ -10,18 +10,19 @@ final class ServicioPromociones
     {
         $this->pdo->beginTransaction();
         try{
+            $this->pdo->exec("SELECT pg_advisory_xact_lock(76730009)");
             $stmt=$this->pdo->prepare("SELECT i.*,m.fk_usuario_profesor,m.fk_actividad,m.fk_entidad,m.nombre modulo_anterior,
                 COALESCE(u.id,tutor.id) destinatario_id,COALESCE(u.nombre,men.nombre) alumno_nombre,
                 COALESCE(u.fecha_nacimiento,men.fecha_nacimiento) fecha_nacimiento
                 FROM inscripcion i JOIN modulos m ON m.id=i.fk_modulo
                 LEFT JOIN usuarios u ON u.id=i.fk_usuario LEFT JOIN menores men ON men.id=i.fk_menor
-                LEFT JOIN usuarios tutor ON tutor.id=men.fk_usuario WHERE i.id=? AND i.estado='activo' FOR UPDATE OF i");
+                LEFT JOIN usuarios tutor ON tutor.id=men.fk_usuario WHERE i.id=? AND i.estado='activo' AND multipro_modulo_disponible(m.id) FOR UPDATE OF i");
             $stmt->execute([$inscripcionId]);$i=$stmt->fetch(PDO::FETCH_ASSOC);
             if(!$i || (int)$i['fk_usuario_profesor']!==$actorId)throw new RuntimeException('La inscripción no está disponible para este profesor.');
             $stmt=$this->pdo->prepare("SELECT m.id,m.nombre,COALESCE(s.edad_minima,c.edad_minima,0) edad_min,
                 COALESCE(s.edad_maxima,c.edad_maxima,99) edad_max FROM modulos m
                 LEFT JOIN categoria c ON c.id=m.fk_categoria LEFT JOIN subcategorias s ON s.id=m.fk_subcategoria
-                WHERE m.id=? AND m.estado AND m.fk_actividad=? AND m.fk_entidad=? FOR SHARE OF m");
+                WHERE m.id=? AND multipro_modulo_disponible(m.id) AND m.fk_actividad=? AND m.fk_entidad=? FOR SHARE OF m");
             $stmt->execute([$nuevoModuloId,$i['fk_actividad'],$i['fk_entidad']]);$nuevo=$stmt->fetch(PDO::FETCH_ASSOC);
             if(!$nuevo || $nuevoModuloId===(int)$i['fk_modulo'])throw new RuntimeException('El módulo de destino no está disponible.');
             $edad=(new DateTimeImmutable((string)$i['fecha_nacimiento']))->diff(new DateTimeImmutable('today'))->y;

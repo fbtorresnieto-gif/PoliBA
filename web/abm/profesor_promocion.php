@@ -75,7 +75,7 @@ try {
             FROM modulos c
             LEFT JOIN categoria cat ON c.fk_categoria = cat.id
             LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-            WHERE c.fk_actividad = ? AND c.fk_entidad = ? AND c.id != ? AND c.estado = TRUE
+            WHERE c.fk_actividad = ? AND c.fk_entidad = ? AND c.id != ? AND multipro_modulo_disponible(c.id)
         ");
         $stmt_cls->execute([$al['fk_actividad'], $al['fk_entidad'], $al['fk_modulo']]);
         $modulos_alternativas = $stmt_cls->fetchAll();

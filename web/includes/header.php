@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/auth.php';
 $logged_user = get_logged_user();
+$catalogoUrl = static function(string $ruta) use (&$filtroEntidades): string {
+    $url = isset($filtroEntidades) && $filtroEntidades instanceof FiltroEntidades ? $filtroEntidades->url($ruta) : $ruta;
+    return htmlspecialchars($url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+};
 
 // Autodetectar base_path si no fue seteado previamente
 if (!isset($base_path)) {
@@ -37,7 +41,7 @@ if (!isset($base_path)) {
     <!-- Header Navigation Bar -->
     <nav class="navbar navbar-expand-lg poliba-header navbar-light sticky-top shadow-sm">
         <div class="container-fluid px-md-5">
-            <a class="navbar-brand poliba-logo" href="<?= $base_path; ?>index.php">Multi<span>Pro</span></a>
+            <a class="navbar-brand poliba-logo" href="<?= $catalogoUrl($base_path.'index.php'); ?>">Multi<span>Pro</span></a>
             
             <div class="d-flex align-items-center">
                 <?php if (is_logged_in()): ?>
@@ -55,16 +59,16 @@ if (!isset($base_path)) {
             <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>index.php">HOME</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="<?= $catalogoUrl($base_path.'index.php'); ?>">HOME</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'entidades.php' || basename($_SERVER['PHP_SELF']) == 'entidad.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>entidades.php">Entidades</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'actividades.php' || basename($_SERVER['PHP_SELF']) == 'actividad.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>actividades.php">Actividades</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'actividades.php' || basename($_SERVER['PHP_SELF']) == 'actividad.php' ? 'active' : ''; ?>" href="<?= $catalogoUrl($base_path.'actividades.php'); ?>">Actividades</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'espacios.php' || basename($_SERVER['PHP_SELF']) == 'espacio.php' ? 'active' : ''; ?>" href="<?= $base_path; ?>espacios.php">Espacios</a>
+                        <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'espacios.php' || basename($_SERVER['PHP_SELF']) == 'espacio.php' ? 'active' : ''; ?>" href="<?= $catalogoUrl($base_path.'espacios.php'); ?>">Espacios</a>
                     </li>
                     
                     <?php if (is_logged_in()): ?>
@@ -89,6 +93,11 @@ if (!isset($base_path)) {
             </div>
         </div>
     </nav>
+    <?php $e_operacion=$GLOBALS['admin_entidad_estado']??null; if($e_operacion && !$e_operacion['estado']): ?>
+        <div class="container mt-3"><div class="alert alert-warning" role="status">
+            <?= empty($e_operacion['cierre_administrativo_en'])?'La entidad está inactiva públicamente. Podés consultar el historial y resolver cobros y devoluciones pendientes desde Reservas.':'La administración de la entidad está cerrada. El historial sigue disponible para consulta.'; ?>
+        </div></div>
+    <?php endif; ?>
 
     <!-- Sidebar Panel Navigation overlay (Slides from Right) -->
     <?php if (is_logged_in()): 

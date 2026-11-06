@@ -233,7 +233,7 @@ final class ServicioPagos
             if ($r['estado'] === 'cancelado') return;
             if (!in_array($r['estado'],['reservado','pendiente_pago','pendiente_presencial'],true)) throw new RuntimeException('RESERVA_NO_CANCELABLE');
             $anticipada = $this->q("SELECT ((fecha_de_asistencia+horario) AT TIME ZONE 'America/Argentina/Buenos_Aires')
-                >= clock_timestamp()+interval '24 hours' FROM reservas WHERE id=?", [$reservaId])->fetchColumn();
+                >= clock_timestamp()+interval '5 hours' FROM reservas WHERE id=?", [$reservaId])->fetchColumn();
             $this->q("UPDATE reservas SET estado='cancelado',cancelado_en=clock_timestamp(),cancelacion_origen='usuario',
                 motivo_cancelacion='Cancelacion solicitada por titular',cancelado_por_usuario=?,actualizado_en=clock_timestamp()
                 WHERE id=?", [$usuarioId,$reservaId]);

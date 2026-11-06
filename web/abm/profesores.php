@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         $error_msg = 'El DNI debe contener únicamente números.';
     } elseif (!empty($telefono) && !ctype_digit($telefono)) {
         $error_msg = 'El teléfono debe contener únicamente números.';
-    } elseif (strlen($contrasena) < 6) {
-        $error_msg = 'La contraseña debe tener al menos 6 caracteres.';
+    } elseif (strlen($contrasena) < 8) {
+        $error_msg = 'La contraseña debe tener al menos 8 caracteres.';
     } else {
         try {
             // Obtener el ID del rol Profesor
@@ -200,7 +200,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Contraseña de Acceso *</label>
-                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="8" placeholder="Mínimo 8 caracteres">
                 </div>
             </div>
             <div class="modal-footer bg-light">

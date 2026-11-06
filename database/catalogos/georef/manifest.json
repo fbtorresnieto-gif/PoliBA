@@ -1,0 +1,19 @@
+{
+  "fuente": "API Georef Argentina",
+  "documentacion": "https://www.argentina.gob.ar/georef/descarga-de-la-base-completa",
+  "descargado_en": "2026-10-30T21:35:43.013502+00:00",
+  "recursos": {
+    "provincias": {
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/provincias.json",
+      "cantidad": 24,
+      "sha256_respuesta": "1da5632e8e2e3ba642e53e13159c3696126c4c6e2b8055f71a5aee01b8a9a444",
+      "sha256_archivo": "3f843e3999850ab66bdf3e166e95d4f8fd40d8bf62dd48272c7cc791853f92c5"
+    },
+    "localidades": {
+      "url": "https://apis.datos.gob.ar/georef/api/v2.0/localidades.json",
+      "cantidad": 4028,
+      "sha256_respuesta": "1513bfeacbcffe535faa552a23e0af39935c97fc2a5dd7767a4a92621f105a74",
+      "sha256_archivo": "bf8995c7d89f2af1b9c3c58c280e0b430e367130f8d1a9a8b0943ed1af93cd06"
+    }
+  }
+}

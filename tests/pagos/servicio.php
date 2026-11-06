@@ -103,7 +103,7 @@ try {
     $snapshot($intento,'pago-1');$s->procesarEvento($evento('repeticion-original','pago-1'));
     igual((int)q($admin,'SELECT count(*) FROM pago_reembolsos')->fetchColumn(),1,'ORIGINAL_NO_DEVUELTO_POR_DUPLICADO');
     $s->cancelarUsuario($r,$usuario);$s->cancelarUsuario($r,$usuario);
-    igual((int)q($admin,'SELECT count(*) FROM pago_reembolsos')->fetchColumn(),2,'CANCELACION_24H_UNICA');
+    igual((int)q($admin,'SELECT count(*) FROM pago_reembolsos')->fetchColumn(),2,'CANCELACION_5H_UNICA');
     $r2=$reserva(false,'2099-03-02');$i2=$s->iniciarIntento($r2,$usuario,clave(3));
     q($admin,"UPDATE reservas SET creado_en=clock_timestamp()-interval '20 minutes',pago_vence_en=clock_timestamp()-interval '5 minutes' WHERE id=?",[$r2]);
     igual($s->vencerRetenciones(),1,'VENCER');igual($s->vencerRetenciones(),0,'VENCER_IDEMPOTENTE');
@@ -146,13 +146,13 @@ try {
     $s->cancelarUsuario($gratis,$usuario);
     igual((int)q($admin,'SELECT count(*) FROM pago_transacciones WHERE fk_reserva=?',[$gratis])->fetchColumn(),0,'GRATUITA_SIN_PAGO');
     igual(q($admin,'SELECT cancelacion_origen FROM reservas WHERE id=?',[$gratis])->fetchColumn(),'usuario','AUDITORIA_GRATUITA');
-    // Cancelar un cobro ya confirmado a menos de 24 horas no genera devolucion.
+    // Cancelar un cobro ya confirmado a menos de 5 horas no genera devolucion.
     $cerca=q($admin,"SELECT (clock_timestamp() AT TIME ZONE 'America/Argentina/Buenos_Aires'+interval '2 hours')::date AS fecha,
         to_char(date_trunc('hour',clock_timestamp() AT TIME ZONE 'America/Argentina/Buenos_Aires'+interval '2 hours'),'HH24:MI') AS hora")->fetch();
     $r5=$reserva(false,$cerca['fecha'],$cerca['hora']);$i5=$s->iniciarIntento($r5,$usuario,clave(6));
     $snapshot($i5,'cerca');$s->procesarEvento($evento('cerca-inicial','cerca'));$s->cancelarUsuario($r5,$usuario);
     $s->procesarEvento($evento('cerca-repetido','cerca'));
-    igual((int)q($admin,'SELECT count(*) FROM pago_reembolsos WHERE fk_pago=?',[$i5['id']])->fetchColumn(),0,'MENOS_24H_SIN_REEMBOLSO');
+    igual((int)q($admin,'SELECT count(*) FROM pago_reembolsos WHERE fk_pago=?',[$i5['id']])->fetchColumn(),0,'MENOS_5H_SIN_REEMBOLSO');
     // Restriccion estructural: el cobro confirmador no se puede borrar del historial.
     rechaza(fn()=>q($admin,'UPDATE pago_transacciones SET confirmo_reserva=false WHERE id=?',[$i5['id']]),'CONFIRMADOR_INMUTABLE');
     // El historico anterior a los fixtures no debe variar.

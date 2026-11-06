@@ -155,7 +155,7 @@
     <string name="registering">Creando cuenta…</string>
     <string name="required_field">Este campo es obligatorio.</string>
     <string name="required_birth_date">Seleccioná tu fecha de nacimiento.</string>
-    <string name="password_minimum">La contraseña debe tener al menos 6 caracteres.</string>
+    <string name="password_minimum">La contraseña debe tener al menos 8 caracteres.</string>
     <string name="password_mismatch">Las contraseñas no coinciden.</string>
     <string name="adult_required">Debés tener al menos 18 años para registrarte.</string>
     <string name="registration_success_title">Cuenta creada</string>

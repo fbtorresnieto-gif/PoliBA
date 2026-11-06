@@ -9,7 +9,7 @@ try {
     [$pdo, $usuario] = apiContextoAutenticado('Profesor');
     $stmt = $pdo->prepare("
         SELECT id, nombre FROM modulos
-        WHERE id = ? AND fk_usuario_profesor = ? AND estado = TRUE
+        WHERE id = ? AND fk_usuario_profesor = ? AND multipro_modulo_disponible(id)
     ");
     $stmt->execute([$moduloId, $usuario['id']]);
     $modulo = $stmt->fetch();

@@ -20,7 +20,7 @@ final class ServicioReservas
     private function tx(callable $f): mixed {
         if($this->db->inTransaction())throw new RuntimeException('Operación no disponible dentro de otra transacción.');
         $this->db->beginTransaction();
-        try {$this->q("SET LOCAL lock_timeout='5s'");$v=$f();$this->db->commit();return $v;}
+        try {$this->q("SET LOCAL lock_timeout='5s'");$this->q("SELECT pg_advisory_xact_lock(76730009)");$v=$f();$this->db->commit();return $v;}
         catch(Throwable $e){if($this->db->inTransaction())$this->db->rollBack();throw $e;}
     }
     private function alumno(int $id): void {
@@ -31,8 +31,9 @@ final class ServicioReservas
         $r=$this->q('SELECT * FROM reservas WHERE id=? FOR UPDATE',[$id])->fetch(PDO::FETCH_ASSOC);
         if(!$r)throw new RuntimeException('Reserva no disponible.');return $r;
     }
-    private function admin(array $r,int $actor): int {
+    private function admin(array $r,int $actor,bool $permitirGestor=false): int {
         $e=$this->q('SELECT fk_entidad FROM espacios WHERE id=? FOR SHARE',[$r['fk_espacio']])->fetchColumn();
+        if($permitirGestor && $this->q("SELECT 1 FROM usuarios u JOIN roles ro ON ro.id=u.fk_rol WHERE u.id=? AND u.estado AND lower(ro.nombre)='gestor'",[$actor])->fetchColumn())return (int)$e;
         if(!$this->q("SELECT 1 FROM usuarios u JOIN roles ro ON ro.id=u.fk_rol WHERE u.id=? AND u.estado AND u.fk_entidad=? AND lower(ro.nombre)='administrador'",[$actor,$e])->fetchColumn())
             throw new RuntimeException('No tenés permiso para administrar esta reserva.');
         return (int)$e;
@@ -127,10 +128,14 @@ final class ServicioReservas
         $motivo=trim($motivo);if($motivo===''||mb_strlen($motivo)>500)throw new RuntimeException('Indicá un motivo de cancelación de hasta 500 caracteres.');
         $this->cancelar($reserva,$actor,true,$motivo);
     }
-    private function cancelar(int $reserva,int $actor,bool $admin,string $motivo): void {
-        $this->tx(function()use($reserva,$actor,$admin,$motivo){
+    public function cancelarPorBaja(int $reserva,int $actor,string $motivo): void {
+        if(!$this->db->inTransaction())throw new RuntimeException('La baja requiere una transacción de cascada.');
+        $this->cancelar($reserva,$actor,true,$motivo,true);
+    }
+    private function cancelar(int $reserva,int $actor,bool $admin,string $motivo,bool $cascada=false): void {
+        $operacion=function()use($reserva,$actor,$admin,$motivo,$cascada){
             $r=$this->reserva($reserva);
-            if($admin)$entidad=$this->admin($r,$actor);
+            if($admin)$entidad=$this->admin($r,$actor,$cascada);
             else{
                 $this->alumno($actor);
                 if((int)$r['fk_usuario']!==$actor)throw new RuntimeException('Reserva no disponible.');
@@ -141,7 +146,7 @@ final class ServicioReservas
             if(!in_array($r['estado'],['reservado','pendiente_presencial'],true))throw new RuntimeException('La reserva no se puede cancelar.');
             $this->q("UPDATE reservas SET estado='cancelado',cancelado_en=clock_timestamp(),cancelacion_origen=?,
                 cancelado_por_usuario=?,motivo_cancelacion=?,actualizado_en=clock_timestamp() WHERE id=?",[$admin?'administrador':'usuario',$actor,$motivo,$reserva]);
-            $devolver=$this->q("SELECT ((fecha_de_asistencia+horario) AT TIME ZONE 'America/Argentina/Buenos_Aires')>=cancelado_en+interval '24 hours' FROM reservas WHERE id=?",[$reserva])->fetchColumn();
+            $devolver=$this->q("SELECT ((fecha_de_asistencia+horario) AT TIME ZONE 'America/Argentina/Buenos_Aires')>=cancelado_en+interval '5 hours' FROM reservas WHERE id=?",[$reserva])->fetchColumn();
             $devolucionPendiente=false;
             if(($admin||$devolver)&&$r['modalidad_pago']==='presencial'&&$this->q("SELECT 1 FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='cobro'",[$reserva])->fetchColumn()){
                 $this->movimiento($r,$entidad,'devolucion_solicitada',$actor);
@@ -149,7 +154,8 @@ final class ServicioReservas
             }
             $this->encolarReserva($r,'reserva_cancelada','cancelada');
             if($devolucionPendiente)$this->encolarReserva($r,'devolucion_pendiente','devolucion_pendiente');
-        });
+        };
+        if($cascada)$operacion();else $this->tx($operacion);
     }
     public function registrarDevolucion(int $reserva,int $actor): void {
         $this->tx(function()use($reserva,$actor){

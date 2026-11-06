@@ -114,7 +114,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void openDatePicker() {
         LocalDate initial = selectedBirthDate == null ? LocalDate.now().minusYears(18) : selectedBirthDate;
-        DatePickerDialog dialog = new DatePickerDialog(this, (picker, year, month, day) -> {
+        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, (picker, year, month, day) -> {
             selectedBirthDate = LocalDate.of(year, month + 1, day);
             binding.birthDateInput.setText(selectedBirthDate.format(DISPLAY_DATE));
             binding.birthDateLayout.setError(null);
@@ -143,7 +143,7 @@ public class RegisterActivity extends AppCompatActivity {
         else if (Period.between(selectedBirthDate, LocalDate.now()).getYears() < 18) {
             binding.birthDateLayout.setError(getString(R.string.adult_required)); valid = false;
         }
-        if (!isGoogleRegistration() && password.length() < 6) { binding.passwordLayout.setError(getString(R.string.password_minimum)); valid = false; }
+        if (!isGoogleRegistration() && password.length() < 8) { binding.passwordLayout.setError(getString(R.string.password_minimum)); valid = false; }
         if (!isGoogleRegistration() && !password.equals(confirmation)) { binding.confirmPasswordLayout.setError(getString(R.string.password_mismatch)); valid = false; }
         if (!valid) return;
 

@@ -9,6 +9,8 @@ redirect_if_not_logged_in(['Alumno']);
 $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
+$_SESSION['csrf_inscripcion'] ??= bin2hex(random_bytes(32));
+if ($_SERVER['REQUEST_METHOD']==='POST' && (!is_string($_POST['csrf_inscripcion']??null) || !hash_equals($_SESSION['csrf_inscripcion'],$_POST['csrf_inscripcion']))) {http_response_code(403);exit('Recargá el formulario de inscripción.');}
 
 $pre_modulo_id = isset($_GET['modulo_id']) ? intval($_GET['modulo_id']) : 0;
 
@@ -24,7 +26,7 @@ try {
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-        WHERE c.estado = TRUE AND e.estado = TRUE
+        WHERE multipro_modulo_disponible(c.id) AND e.estado = TRUE
         ORDER BY e.nombre, d.nombre, c.nombre ASC
     ");
     $modulos = $stmt->fetchAll();
@@ -94,11 +96,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                 $error_msg = "Error de Inscripción: $persona_nombre tiene $age años. Este módulo está permitido únicamente para edades entre $edad_min y $edad_max años.";
             } else {
                 try {
+                    $pdo->beginTransaction();$pdo->exec('SELECT pg_advisory_xact_lock(76730009)');
+                    $vigente=$pdo->prepare('SELECT cupo_maximo FROM modulos WHERE id=? AND multipro_modulo_disponible(id) FOR SHARE');
+                    $vigente->execute([$modulo_id]);$cupo_vigente=$vigente->fetchColumn();
+                    if($cupo_vigente===false)throw new RuntimeException('El módulo ya no está disponible.');
                     // Verificar si ya está inscripto en esta modulo
                     $stmt_chk = $pdo->prepare("
                         SELECT COUNT(*) 
                         FROM inscripcion 
-                        WHERE fk_modulo = ? AND (fk_usuario = ? OR fk_menor = ?) AND estado = 'activo'
+                        WHERE fk_modulo = ? AND (fk_usuario = ? OR fk_menor = ?) AND estado IN ('activo','suspendido')
                     ");
                     $stmt_chk->execute([$modulo_id, $fk_usuario, $fk_menor]);
                     $duplicado = $stmt_chk->fetchColumn();
@@ -115,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                         $stmt_cnt->execute([$modulo_id]);
                         $activos = $stmt_cnt->fetchColumn();
                         
-                        $lista_espera = $activos >= $modulo_sel['cupo_maximo'] ? 1 : 0;
+                        $lista_espera = $activos >= (int)$cupo_vigente ? 1 : 0;
                         
                         // Insertar inscripción
                         $stmt_ins = $pdo->prepare("
@@ -131,7 +137,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                             $success_msg = "¡Inscripción completada con éxito! $persona_nombre se ha incorporado al módulo activo.";
                         }
                     }
-                } catch (PDOException $e) {
+                    $pdo->commit();
+                } catch (Throwable $e) {
+                    if($pdo->inTransaction())$pdo->rollBack();
                     $error_msg = 'Error al procesar la inscripción en la base de datos: ' . $e->getMessage();
                 }
             }
@@ -166,6 +174,7 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <form action="alumno_inscripcion.php" method="POST">
                     <input type="hidden" name="action" value="inscribirse">
+                    <input type="hidden" name="csrf_inscripcion" value="<?= htmlspecialchars($_SESSION['csrf_inscripcion']); ?>">
                     
                     <!-- 1. Seleccionar persona a inscribir (Basado en Sitemap elegir cuenta) -->
                     <div class="mb-4">

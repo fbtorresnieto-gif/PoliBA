@@ -53,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         $error_msg = 'Por favor, completa todos los campos obligatorios (*).';
     } elseif ($contrasena !== $confirmar_contrasena) {
         $error_msg = 'Las contraseñas no coinciden.';
-    } elseif (strlen($contrasena) < 6) {
-        $error_msg = 'La contraseña debe tener al menos 6 caracteres.';
+    } elseif (strlen($contrasena) < 8) {
+        $error_msg = 'La contraseña debe tener al menos 8 caracteres.';
     } else {
         // Validar edad mínima (18 años)
         $diff = date_diff(date_create($fecha_nacimiento), date_create('today'));
@@ -174,11 +174,11 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold text-dark">Contraseña <?= $google_pending ? '<small class="text-muted fw-normal">(Opcional para Google)</small>' : '*'; ?></label>
-                            <input type="password" name="contrasena" class="form-control rounded-pill px-3" <?= $google_pending ? '' : 'required'; ?>>
+                            <input type="password" name="contrasena" class="form-control rounded-pill px-3" minlength="8" <?= $google_pending ? '' : 'required'; ?>>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold text-dark">Confirmar Contraseña <?= $google_pending ? '<small class="text-muted fw-normal">(Opcional para Google)</small>' : '*'; ?></label>
-                            <input type="password" name="confirmar_contrasena" class="form-control rounded-pill px-3" <?= $google_pending ? '' : 'required'; ?>>
+                            <input type="password" name="confirmar_contrasena" class="form-control rounded-pill px-3" minlength="8" <?= $google_pending ? '' : 'required'; ?>>
                         </div>
                     </div>
                     

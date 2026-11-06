@@ -18,3 +18,14 @@ database/poliba.db
 
 # Copias de revision del documento de tesis (se conservan localmente)
 /diagramas/render_modelo_tesis/
+
+# Dependencias y artefactos auxiliares de generación de RNF; conservar visibles los XLSX finales
+/outputs/rnf-*/node_modules/
+/outputs/rnf-*/*.inspect.ndjson
+/outputs/rnf-*/*.png
+/outputs/rnf-*/*.json
+/outputs/rnf-*/*.js
+/outputs/rnf-*/*.mjs
+
+# Documento reemplazado por la versión funcional vigente
+/documentacion/Notificaciones_y_Cron_MultiPro_v1.0.docx

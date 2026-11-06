@@ -5,6 +5,10 @@
         <item name="colorPrimaryContainer">@color/multipro_primary_dark</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSurface">@color/multipro_surface</item>
+        <item name="colorOnSurface">@color/multipro_dark</item>
+        <item name="colorOnSurfaceVariant">@color/multipro_text</item>
+        <item name="android:textColor">@color/multipro_dark</item>
+        <item name="android:textColorHint">@color/multipro_text</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:statusBarColor">@color/multipro_dark</item>
@@ -28,7 +32,31 @@
     <style name="ProfileValueLast" parent="ProfileValue">
         <item name="android:layout_marginBottom">8dp</item>
     </style>
-    <style name="RegisterField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+    <style name="MultiProInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="hintTextColor">@color/multipro_text</item>
+        <item name="boxStrokeColor">@color/multipro_primary_dark</item>
+        <item name="boxBackgroundColor">@color/multipro_surface</item>
+        <item name="endIconTint">@color/multipro_dark</item>
+        <item name="errorTextColor">@color/multipro_error</item>
+    </style>
+    <style name="MultiProInputText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/multipro_dark</item>
+        <item name="android:textColorHint">@color/multipro_text</item>
+        <item name="android:textCursorDrawable">@drawable/multipro_text_cursor</item>
+    </style>
+    <style name="MultiProDatePickerDialog" parent="android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">@color/multipro_primary_dark</item>
+        <item name="android:windowBackground">@color/multipro_surface</item>
+        <item name="android:textColorPrimary">@color/multipro_dark</item>
+        <item name="android:textColorSecondary">@color/multipro_text</item>
+        <item name="android:datePickerStyle">@style/MultiProDatePicker</item>
+    </style>
+    <style name="MultiProDatePicker" parent="android:style/Widget.Material.DatePicker">
+        <item name="android:headerBackground">@color/multipro_dark</item>
+        <item name="android:calendarTextColor">@color/multipro_dark</item>
+        <item name="android:dayOfWeekBackground">@color/multipro_surface</item>
+    </style>
+    <style name="RegisterField" parent="MultiProInputLayout">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">14dp</item>
