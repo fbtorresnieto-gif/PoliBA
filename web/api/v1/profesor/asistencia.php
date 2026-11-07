@@ -15,6 +15,8 @@ $erroresFecha = DateTimeImmutable::getLastErrors();
 if ($fechaObjeto === false || ($erroresFecha !== false && ($erroresFecha['warning_count'] > 0 || $erroresFecha['error_count'] > 0)) || $fechaObjeto->format('Y-m-d') !== $fecha) {
     apiResponder(['error' => 'La fecha debe tener formato YYYY-MM-DD.'], 422);
 }
+$hoy = new DateTimeImmutable('today', new DateTimeZone('America/Argentina/Buenos_Aires'));
+if ($fechaObjeto > $hoy) apiResponder(['error' => 'No se puede registrar asistencia en una fecha futura.'], 422);
 
 try {
     [$pdo, $usuario] = apiContextoAutenticado('Profesor');
@@ -24,19 +26,20 @@ try {
         JOIN modulos m ON i.fk_modulo = m.id
         WHERE i.id = ? AND i.fk_modulo = ?
           AND i.estado = 'activo' AND i.lista_espera = FALSE
-          AND m.fk_usuario_profesor = ? AND m.estado = TRUE
+          AND m.fk_usuario_profesor = ? AND multipro_modulo_disponible(m.id)
     ");
     $stmt->execute([$inscripcionId, $moduloId, $usuario['id']]);
     if (!$stmt->fetchColumn()) apiResponder(['error' => 'Inscripción o módulo no encontrado.'], 404);
 
     $stmt = $pdo->prepare("
-        INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha, registrado_por)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT (fk_inscripcion, fecha)
-        DO UPDATE SET asistencia = EXCLUDED.asistencia, fk_modulo = EXCLUDED.fk_modulo
+        DO UPDATE SET asistencia = EXCLUDED.asistencia, fk_modulo = EXCLUDED.fk_modulo,
+                      registrado_por = EXCLUDED.registrado_por, actualizado_en = clock_timestamp()
         RETURNING id
     ");
-    $stmt->execute([$inscripcionId, $moduloId, $estado, $fecha]);
+    $stmt->execute([$inscripcionId, $moduloId, $estado, $fecha, $usuario['id']]);
     apiResponder(['data' => [
         'id' => (int) $stmt->fetchColumn(), 'modulo_id' => $moduloId,
         'inscripcion_id' => $inscripcionId, 'fecha' => $fecha, 'estado' => $estado,

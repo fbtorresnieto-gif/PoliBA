@@ -41,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $contrasena = trim($_POST['contrasena']);
             if (empty($contrasena)) {
                 $error_msg = 'La contraseña es obligatoria para nuevos administradores.';
-            } elseif (strlen($contrasena) < 6) {
-                $error_msg = 'La contraseña debe tener al menos 6 caracteres.';
+            } elseif (strlen($contrasena) < 8) {
+                $error_msg = 'La contraseña debe tener al menos 8 caracteres.';
             } else {
                 try {
                     $stmt = $pdo->query("SELECT id FROM roles WHERE nombre = 'Administrador' LIMIT 1");
@@ -66,22 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 }
 
 // Procesar Baja / Alta lógica (cambia el estado, no borra de la DB)
-if (isset($_GET['cambiar_estado_admin'])) {
-    $id = intval($_GET['cambiar_estado_admin']);
-    $activar = (($_GET['estado'] ?? '') === '0'); // si estaba inactivo (0), se activa
-    try {
-        $stmt = $pdo->prepare("
-            UPDATE usuarios SET estado = ?
-            WHERE id = ? AND fk_rol = (SELECT id FROM roles WHERE nombre = 'Administrador')
-        ");
-        $stmt->bindValue(1, $activar, PDO::PARAM_BOOL);
-        $stmt->bindValue(2, $id, PDO::PARAM_INT);
-        $stmt->execute();
-        $success_msg = $activar ? 'Administrador activado con éxito.' : 'Administrador desactivado con éxito.';
-    } catch (PDOException $e) {
-        $error_msg = 'Error al cambiar el estado del administrador.';
-    }
-}
+$estadoTipo='administrador';
+require __DIR__.'/../includes/estado_accion.php';
 
 // Cargar Administradores
 $administradores = [];
@@ -98,6 +84,7 @@ try {
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
+require __DIR__.'/../includes/estado_vista_previa.php';
 ?>
 
 <div class="container my-4">
@@ -150,11 +137,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 </span>
                             </td>
                             <td>
-                                <a href="administradores.php?cambiar_estado_admin=<?= $adm['id']; ?>&estado=<?= $adm['estado'] ? '1' : '0'; ?>"
-                                   class="btn btn-sm <?= $adm['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('<?= $adm['estado'] ? '¿Seguro deseas desactivar a este administrador? No podrá iniciar sesión hasta que lo reactives.' : '¿Seguro deseas reactivar a este administrador?'; ?>');">
-                                    <?= $adm['estado'] ? 'Desactivar' : 'Activar'; ?>
-                                </a>
+                                <?php $estadoRegistro=$adm; require __DIR__.'/../includes/estado_formulario.php'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -219,7 +202,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-bold">Contraseña *</label>
-                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="contrasena" class="form-control rounded-pill px-3" required minlength="8" placeholder="Mínimo 8 caracteres">
                 </div>
             </div>
             <div class="modal-footer bg-light">

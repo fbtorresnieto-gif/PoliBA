@@ -130,41 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 }
 
 // Procesar Alta/Baja Lógica con Cascada
-if (isset($_GET['toggle_estado'])) {
-    $id = intval($_GET['toggle_estado']);
-    $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
-    try {
-        if ($nuevo_estado == 'FALSE') {
-            // Desactivar actividad y en cascada todos sus módulos
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare("UPDATE actividades SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
-            $stmt->execute([$id, $entidad_id]);
-
-            $stmt_c = $pdo->prepare("UPDATE modulos SET estado = FALSE WHERE fk_actividad = ? AND fk_entidad = ?");
-            $stmt_c->execute([$id, $entidad_id]);
-
-            $pdo->commit();
-            $success_msg = 'Actividad desactivada. Los módulos asociados fueron desactivados automáticamente.';
-        } else {
-            // Verificar si la entidad está activa
-            $stmt_entidad = $pdo->prepare("SELECT estado, nombre FROM entidades WHERE id = ?");
-            $stmt_entidad->execute([$entidad_id]);
-            $entidad_row = $stmt_entidad->fetch();
-            if (!$entidad_row || !$entidad_row['estado']) {
-                $error_msg = 'No se puede activar la actividad porque la entidad a la que pertenece se encuentra desactivada.';
-            } else {
-                $stmt = $pdo->prepare("UPDATE actividades SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
-                $stmt->execute([$id, $entidad_id]);
-                $success_msg = 'Actividad activada con éxito.';
-            }
-        }
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        $error_msg = 'Error al actualizar el estado de la actividad.';
-    }
-}
+$estadoTipo='actividad';
+require __DIR__.'/../includes/estado_accion.php';
 
 // Cargar actividades de la entidad
 $actividades = [];
@@ -175,6 +142,7 @@ try {
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
+require __DIR__.'/../includes/estado_vista_previa.php';
 ?>
 
 <div class="container my-4">
@@ -220,11 +188,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editActividadModal<?= $act['id']; ?>">Editar</button>
-                                <a href="actividades.php?toggle_estado=<?= $act['id']; ?>&estado=<?= $act['estado'] ? '1' : '0'; ?>"
-                                   class="btn btn-sm <?= $act['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de esta actividad? Si la desactivas, todos sus módulos asociados se desactivarán automáticamente.');">
-                                    <?= $act['estado'] ? 'Desactivar' : 'Activar'; ?>
-                                </a>
+                                <?php $estadoRegistro=$act; require __DIR__.'/../includes/estado_formulario.php'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

@@ -21,7 +21,7 @@ if ($nombre === '' || $apellido === '' || $dni === '' || $email === '' || $contr
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) apiResponder(['error' => 'El email no es válido.'], 422);
 if ($contrasena !== $confirmacion) apiResponder(['error' => 'Las contraseñas no coinciden.'], 422);
-if (strlen($contrasena) < 6) apiResponder(['error' => 'La contraseña debe tener al menos 6 caracteres.'], 422);
+if (strlen($contrasena) < 8) apiResponder(['error' => 'La contraseña debe tener al menos 8 caracteres.'], 422);
 $nacimiento = DateTimeImmutable::createFromFormat('!Y-m-d', $fechaNacimiento);
 $erroresFecha = DateTimeImmutable::getLastErrors();
 if ($nacimiento === false || ($erroresFecha !== false && ($erroresFecha['warning_count'] > 0 || $erroresFecha['error_count'] > 0)) || $nacimiento->format('Y-m-d') !== $fechaNacimiento) {

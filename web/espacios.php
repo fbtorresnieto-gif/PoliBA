@@ -2,19 +2,26 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
+require_once __DIR__ . '/includes/FiltroEntidades.php';
+$filtroEntidades = new FiltroEntidades([], $_GET);
+$errorListado = false;
 
 $espacios = [];
 try {
-    $stmt = $pdo->query("
+    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET);
+    [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('esp.fk_entidad');
+    $stmt = $pdo->prepare("
         SELECT esp.*, e.nombre as entidad_nombre
         FROM espacios esp
         JOIN entidades e ON esp.fk_entidad = e.id
         WHERE esp.estado = TRUE AND e.estado = TRUE
+          $filtroSql
         ORDER BY e.nombre ASC, esp.nombre ASC
     ");
+    $stmt->execute($filtroParametros);
     $espacios = $stmt->fetchAll();
 } catch (PDOException $e) {
-    // Si falla, el listado estará vacío
+    $errorListado = true;
 }
 
 require_once __DIR__ . '/includes/header.php';
@@ -23,11 +30,14 @@ require_once __DIR__ . '/includes/header.php';
 <div class="container my-4">
     <h2 class="section-title text-dark">Nuestros Espacios</h2>
     <p class="text-center text-muted mb-5">Reservá turnos de juego en las distintas entidades de la Ciudad.</p>
+    <?php $filtroCantidad = count($espacios); require __DIR__.'/includes/filtro_entidades_formulario.php'; ?>
+    <?php if ($errorListado): ?><div class="alert alert-danger" role="alert">No pudimos cargar los espacios. Intentá nuevamente en unos minutos.</div><?php endif; ?>
     
-    <?php if (empty($espacios)): ?>
+    <?php if ($errorListado): ?>
+    <?php elseif (empty($espacios)): ?>
         <div class="text-center py-5">
             <i class="bi bi-grid-3x3-gap text-muted fs-1 mb-3"></i>
-            <p class="text-muted">No hay espacios registrados en el sistema actualmente.</p>
+            <p class="text-muted"><?= $filtroEntidades->todas ? 'No hay espacios registrados en el sistema actualmente.' : 'No hay espacios para las entidades seleccionadas.'; ?></p>
         </div>
     <?php else: ?>
         <div class="row g-4">

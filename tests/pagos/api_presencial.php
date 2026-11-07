@@ -10,6 +10,12 @@ $api=function(string $metodo,string $ruta,?array $datos=null,?string $bearer=nul
     preg_match('/ ([0-9]{3}) /',$http_response_header[0]??'',$m);
     return [(int)($m[1]??0),json_decode($body?:'{}',true)];
 };
+$sufijo=(string)random_int(10000000,99999999);
+$registro=['nombre'=>'Prueba','apellido'=>'Clave','dni'=>$sufijo,'email'=>'clave-'.$sufijo.'@example.invalid',
+    'contrasena'=>'1234567','confirmar_contrasena'=>'1234567','fecha_nacimiento'=>'1990-01-01','entidad_id'=>null];
+[$st]=$api('POST','auth/registro.php',$registro,'');igual($st,422,'API_RECHAZA_CLAVE_7');
+$registro['contrasena']=$registro['confirmar_contrasena']='12345678';
+[$st]=$api('POST','auth/registro.php',$registro,'');igual($st,201,'API_ACEPTA_CLAVE_8');
 [$st,$datosEsp]=$api('GET','espacio.php?id='.$configId);igual($st,200,'API_PRECIO_ESPACIO');
 igual($datosEsp['data']['precio_hora_ars'],'2700.99','API_PRECIO_TEXTO');igual($datosEsp['data']['modalidades_disponibles'],['presencial'],'API_MODALIDADES');
 igual($datosEsp['data']['cobro_online_habilitado'],false,'API_ONLINE_DESACTIVADO');

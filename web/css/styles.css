@@ -478,3 +478,33 @@ body {
 .sidebar-backdrop.show {
     display: block;
 }
+
+/* Filtros compartidos de Home, Actividades y Espacios. */
+.catalogo-filtros { padding: 20px; border: 1px solid #e2e7e9; border-radius: 16px; background: #f8fafb; }
+.catalogo-filtros-fila { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); gap: 16px; align-items: center; }
+.catalogo-filtros-titulo { font-size: 1.05rem; font-weight: 700; color: #263d43; padding-right: 8px; white-space: nowrap; }
+.catalogo-filtros-titulo i { margin-right: 5px; }
+.catalogo-filtro { position: relative; min-width: 0; }
+.catalogo-filtro summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 66px; padding: 10px 15px; border: 1px solid #d6dfe2; border-radius: 10px; background: #fff; cursor: pointer; list-style: none; }
+.catalogo-filtro summary::-webkit-details-marker { display: none; }
+.catalogo-filtro summary:hover { border-color: #6fa5ae; }
+.catalogo-filtro summary:focus-visible { outline: 3px solid #6fa5ae; outline-offset: 3px; }
+.catalogo-filtro[open] summary { border-color: #6fa5ae; box-shadow: 0 0 0 3px rgb(111 165 174 / 12%); }
+.catalogo-filtro-texto { display: flex; flex-direction: column; min-width: 0; }
+.catalogo-filtro-etiqueta { color: #61747a; font-size: .78rem; line-height: 1.4; }
+.catalogo-filtro-valor { color: #233a40; font-size: .95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalogo-filtro-flecha { width: 8px; height: 8px; border-right: 2px solid #60777d; border-bottom: 2px solid #60777d; transform: rotate(45deg); flex-shrink: 0; margin: -4px 2px 0 0; }
+.catalogo-filtro[open] .catalogo-filtro-flecha { transform: rotate(225deg); margin-top: 4px; }
+.catalogo-filtro-menu { position: absolute; z-index: 1030; top: calc(100% + 8px); left: 0; width: 100%; min-width: 220px; padding: 14px; border: 1px solid #dce5e8; border-radius: 12px; background: #fff; box-shadow: 0 12px 32px rgb(24 47 55 / 14%); }
+.catalogo-filtro-opciones { max-height: 240px; overflow-y: auto; margin: 10px 0 0; }
+.catalogo-filtro-opcion { padding-top: 7px; padding-bottom: 7px; padding-right: 4px; margin: 0; }
+.catalogo-filtro-opcion .form-check-label { cursor: pointer; overflow-wrap: anywhere; }
+.catalogo-filtros-acciones { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 18px; margin-top: 14px; }
+.catalogo-filtros-acciones [role="status"] { margin-right: auto; }
+@media (max-width: 767.98px) {
+    .catalogo-filtros { padding: 16px; }
+    .catalogo-filtros-fila { grid-template-columns: 1fr; gap: 10px; }
+    .catalogo-filtros-titulo { margin-bottom: 2px; }
+    .catalogo-filtro-menu { min-width: 0; }
+    .catalogo-filtros-acciones { gap: 12px; }
+}

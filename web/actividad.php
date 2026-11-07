@@ -31,7 +31,7 @@ if ($actividad_id > 0) {
                 LEFT JOIN categoria cat ON c.fk_categoria = cat.id
                 LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
                 LEFT JOIN espacios esp ON c.fk_espacio = esp.id
-                WHERE c.fk_actividad = ? AND c.estado = TRUE
+                WHERE c.fk_actividad = ? AND multipro_modulo_disponible(c.id)
                 ORDER BY c.nombre ASC
             ");
             $stmt->execute([$actividad_id]);

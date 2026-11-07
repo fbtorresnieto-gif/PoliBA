@@ -14,7 +14,7 @@ try {
         JOIN actividades a ON c.fk_actividad = a.id
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN espacios esp ON c.fk_espacio = esp.id
-        WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
+        WHERE c.fk_usuario_profesor = ? AND multipro_modulo_disponible(c.id)
         ORDER BY c.nombre ASC
     ");
     $stmt->execute([$usuario['id']]);

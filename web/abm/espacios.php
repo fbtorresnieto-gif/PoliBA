@@ -19,7 +19,7 @@ $success_msg = '';
 $_SESSION['csrf_espacios'] ??= bin2hex(random_bytes(32));
 $cobro = null;
 $error_cobro = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['estado_accion'])) {
     $csrf_recibido = $_POST['csrf_espacios'] ?? '';
     if (!is_string($csrf_recibido) || !hash_equals($_SESSION['csrf_espacios'], $csrf_recibido)) {
         $error_cobro = 'La sesión del formulario venció. Recargá la página e intentá nuevamente.';
@@ -167,32 +167,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 }
 
 // Procesar Alta/Baja Lógica
-if (isset($_GET['toggle_estado'])) {
-    $id = intval($_GET['toggle_estado']);
-    $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
-    try {
-        if ($nuevo_estado == 'TRUE') {
-            // Verificar que la entidad esté activa
-            $stmt_entidad = $pdo->prepare("SELECT estado, nombre FROM entidades WHERE id = ?");
-            $stmt_entidad->execute([$entidad_id]);
-            $entidad_row = $stmt_entidad->fetch();
-            if (!$entidad_row || !$entidad_row['estado']) {
-                $error_msg = 'No se puede activar el espacio porque la entidad se encuentra desactivada.';
-            } else {
-                $stmt = $pdo->prepare("UPDATE espacios SET estado = TRUE WHERE id = ? AND fk_entidad = ?");
-                $stmt->execute([$id, $entidad_id]);
-                $success_msg = 'Espacio activado con éxito.';
-            }
-        } else {
-            // Desactivar espacio
-            $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE id = ? AND fk_entidad = ?");
-            $stmt->execute([$id, $entidad_id]);
-            $success_msg = 'Espacio desactivado con éxito.';
-        }
-    } catch (PDOException $e) {
-        $error_msg = 'Error al actualizar el estado.';
-    }
-}
+$estadoTipo='espacio';
+require __DIR__.'/../includes/estado_accion.php';
 
 // Cargar espacios de la entidad
 $espacios = [];
@@ -203,6 +179,7 @@ try {
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
+require __DIR__.'/../includes/estado_vista_previa.php';
 
 function formulario_espacio(array $base, string $accion): array {
     global $error_msg;
@@ -277,11 +254,7 @@ function formulario_espacio(array $base, string $accion): array {
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editEspacioModal<?= $espacio['id']; ?>">Editar</button>
-                                <a href="espacios.php?toggle_estado=<?= $espacio['id']; ?>&estado=<?= $espacio['estado'] ? '1' : '0'; ?>"
-                                   class="btn btn-sm <?= $espacio['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de este espacio?');">
-                                    <?= $espacio['estado'] ? 'Desactivar' : 'Activar'; ?>
-                                </a>
+                                <?php $estadoRegistro=$espacio; require __DIR__.'/../includes/estado_formulario.php'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

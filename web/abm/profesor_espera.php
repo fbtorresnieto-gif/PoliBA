@@ -17,7 +17,7 @@ if (isset($_GET['activar_inscripcion'])) {
     
     // Validar que la modulo pertenezca a este profesor
     try {
-        $stmt = $pdo->prepare("SELECT cupo_maximo FROM modulos WHERE id = ? AND fk_usuario_profesor = ?");
+        $stmt = $pdo->prepare("SELECT cupo_maximo FROM modulos WHERE id = ? AND fk_usuario_profesor = ? AND multipro_modulo_disponible(id)");
         $stmt->execute([$cl_id, $user['id']]);
         $modulo_info = $stmt->fetch();
         
@@ -28,8 +28,8 @@ if (isset($_GET['activar_inscripcion'])) {
             $inscriptos = $stmt_cnt->fetchColumn();
             
             if ($inscriptos < $modulo_info['cupo_maximo']) {
-                $stmt_act = $pdo->prepare("UPDATE inscripcion SET lista_espera = FALSE WHERE id = ?");
-                if ($stmt_act->execute([$ins_id])) {
+                $stmt_act = $pdo->prepare("UPDATE inscripcion SET lista_espera = FALSE WHERE id = ? AND fk_modulo = ? AND estado = 'activo'");
+                if ($stmt_act->execute([$ins_id,$cl_id])) {
                     $success_msg = 'Alumno incorporado al módulo con éxito. Recuerda contactarlo por teléfono para avisarle.';
                 }
             } else {
@@ -57,7 +57,7 @@ try {
         LEFT JOIN usuarios u ON i.fk_usuario = u.id
         LEFT JOIN menores m ON i.fk_menor = m.id
         LEFT JOIN usuarios tutor ON m.fk_usuario = tutor.id
-        WHERE c.fk_usuario_profesor = ? AND i.lista_espera = TRUE AND i.estado = 'activo'
+        WHERE c.fk_usuario_profesor = ? AND i.lista_espera = TRUE AND i.estado = 'activo' AND multipro_modulo_disponible(c.id)
         ORDER BY i.fecha ASC
     ");
     $stmt->execute([$user['id']]);

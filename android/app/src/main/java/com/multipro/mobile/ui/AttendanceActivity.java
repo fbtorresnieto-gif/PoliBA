@@ -60,10 +60,11 @@ public class AttendanceActivity extends AppCompatActivity {
     }
 
     private void selectDate() {
-        DatePickerDialog dialog = new DatePickerDialog(this, (picker, year, month, day) -> {
+        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, (picker, year, month, day) -> {
             selectedDate = LocalDate.of(year, month + 1, day);
             updateDateLabel(); loadStudents();
         }, selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
+        dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         dialog.show();
     }
 

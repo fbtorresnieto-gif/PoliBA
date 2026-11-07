@@ -77,6 +77,7 @@ public class AvailabilityActivity extends AppCompatActivity {
     private void openDatePicker() {
         DatePickerDialog dialog = new DatePickerDialog(
                 this,
+                R.style.MultiProDatePickerDialog,
                 (picker, year, month, day) -> {
                     selectedDate = LocalDate.of(year, month + 1, day);
                     updateDateLabel();

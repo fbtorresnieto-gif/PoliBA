@@ -20,7 +20,7 @@ if ($modulo_id > 0) {
             SELECT c.*, e.nombre as entidad_nombre
             FROM modulos c
             JOIN entidades e ON c.fk_entidad = e.id
-            WHERE c.id = ? AND c.fk_usuario_profesor = ? AND c.estado = TRUE
+            WHERE c.id = ? AND c.fk_usuario_profesor = ? AND multipro_modulo_disponible(c.id)
         ");
         $stmt->execute([$modulo_id, $user['id']]);
         $modulo = $stmt->fetch();
@@ -33,15 +33,33 @@ if ($modulo_id > 0) {
 }
 
 // Fecha para tomar asistencia (default: hoy)
-$selected_date = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
+$hoy_asistencia = (new DateTimeImmutable('today', new DateTimeZone('America/Argentina/Buenos_Aires')))->format('Y-m-d');
+$selected_date = isset($_GET['fecha']) && is_string($_GET['fecha']) ? $_GET['fecha'] : $hoy_asistencia;
+$selected_date_object = DateTimeImmutable::createFromFormat('!Y-m-d', $selected_date);
+$selected_date_errors = DateTimeImmutable::getLastErrors();
+if ($selected_date_object === false
+    || ($selected_date_errors !== false && ($selected_date_errors['warning_count'] > 0 || $selected_date_errors['error_count'] > 0))
+    || $selected_date_object->format('Y-m-d') !== $selected_date
+    || $selected_date > $hoy_asistencia) {
+    $selected_date = $hoy_asistencia;
+    $error_msg = 'No se puede consultar ni registrar asistencia en una fecha futura.';
+}
 
 // Procesar carga de asistencia individual
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'cargar_asistencia') {
     $inscripcion_id = intval($_POST['inscripcion_id']);
     $estado_asistencia = $_POST['estado_asistencia']; // 'presente', 'ausente', 'lluvia'
-    $fecha = $_POST['fecha'];
+    $fecha = isset($_POST['fecha']) && is_string($_POST['fecha']) ? $_POST['fecha'] : '';
+    $fecha_object = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha);
+    $fecha_errors = DateTimeImmutable::getLastErrors();
+    $fecha_valida = $fecha_object !== false
+        && ($fecha_errors === false || ($fecha_errors['warning_count'] === 0 && $fecha_errors['error_count'] === 0))
+        && $fecha_object->format('Y-m-d') === $fecha
+        && $fecha <= $hoy_asistencia;
     
-    if (in_array($estado_asistencia, ['presente', 'ausente', 'lluvia'])) {
+    if (!$fecha_valida) {
+        $error_msg = 'No se puede registrar asistencia en una fecha futura.';
+    } elseif (in_array($estado_asistencia, ['presente', 'ausente', 'lluvia'], true)) {
         try {
             // Verificar si ya existe asistencia para esa fecha
             $stmt = $pdo->prepare("SELECT id FROM asistencia WHERE fk_inscripcion = ? AND fecha = ?");
@@ -50,12 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             
             if ($exist) {
                 // Actualizar
-                $stmt = $pdo->prepare("UPDATE asistencia SET asistencia = ? WHERE id = ?");
-                $stmt->execute([$estado_asistencia, $exist['id']]);
+                $stmt = $pdo->prepare("UPDATE asistencia SET asistencia = ?, registrado_por = ?, actualizado_en = clock_timestamp() WHERE id = ?");
+                $stmt->execute([$estado_asistencia, $user['id'], $exist['id']]);
             } else {
                 // Insertar
-                $stmt = $pdo->prepare("INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$inscripcion_id, $modulo_id, $estado_asistencia, $fecha]);
+                $stmt = $pdo->prepare("INSERT INTO asistencia (fk_inscripcion, fk_modulo, asistencia, fecha, registrado_por) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$inscripcion_id, $modulo_id, $estado_asistencia, $fecha, $user['id']]);
             }
             $success_msg = 'Asistencia cargada con éxito.';
         } catch (PDOException $e) {
@@ -100,7 +118,7 @@ if ($modulo_id == 0) {
             FROM modulos c
             JOIN actividades d ON c.fk_actividad = d.id
             JOIN entidades e ON c.fk_entidad = e.id
-            WHERE c.fk_usuario_profesor = ? AND c.estado = TRUE
+            WHERE c.fk_usuario_profesor = ? AND multipro_modulo_disponible(c.id)
             ORDER BY c.nombre ASC
         ");
         $stmt->execute([$user['id']]);
@@ -164,6 +182,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <label class="form-label fw-bold text-dark">Fecha de Asistencia</label>
                     <input type="date" name="fecha" class="form-control rounded-pill px-4" 
                            value="<?= htmlspecialchars($selected_date); ?>" 
+                           max="<?= htmlspecialchars($hoy_asistencia); ?>"
                            onchange="this.form.submit()">
                 </div>
                 <div class="col-md-3">

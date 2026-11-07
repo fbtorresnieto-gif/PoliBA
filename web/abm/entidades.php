@@ -2,15 +2,30 @@
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/UbicacionEntidades.php';
 
 // Validar que sea Gestor
 redirect_if_not_logged_in(['Gestor']);
 
 $error_msg = '';
 $success_msg = '';
+$_SESSION['csrf_entidades'] ??= bin2hex(random_bytes(32));
+if ($_SERVER['REQUEST_METHOD']==='POST' && (!is_string($_POST['csrf_entidades']??null) || !hash_equals($_SESSION['csrf_entidades'],$_POST['csrf_entidades']))) { http_response_code(403); exit('La sesión del formulario venció. Recargá la página.'); }
 
 // Procesar Alta / Modificación
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
+    try {
+        $ubicacionModo=$_POST['ubicacion_modo']??'manual';
+        if(!in_array($ubicacionModo,['catalogo','manual'],true))throw new InvalidArgumentException('Modo de ubicación no válido.');
+        if($ubicacionModo==='catalogo') {
+            $localidadElegida=UbicacionEntidades::seleccionar($pdo,$_POST['provincia_id']??null,$_POST['localidad_id']??null);
+            $provincia='';$localidad='';
+        } else {
+        $provincia=UbicacionEntidades::normalizar($_POST['provincia']??'');
+        $localidad=UbicacionEntidades::normalizar($_POST['localidad']??'');
+        if (($provincia==='')!==($localidad==='')) throw new InvalidArgumentException('Completá provincia y localidad juntas.');
+        }
+    } catch (InvalidArgumentException $e) { $error_msg=$e->getMessage(); }
     $nombre = trim($_POST['nombre']);
     $direccion = trim($_POST['direccion']);
     $horario_apertura = $_POST['horario_apertura'];
@@ -22,7 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fk_dia_cierre = !empty($_POST['fk_dia_cierre']) ? intval($_POST['fk_dia_cierre']) : null;
     $cuit = trim($_POST['cuit'] ?? '');
     
-    if (empty($nombre) || empty($direccion) || empty($horario_apertura) || empty($horario_cierre)) {
+    if ($error_msg!=='') {
+        // Conservar el error de ubicación sin escribir cambios parciales.
+    } elseif (empty($nombre) || empty($direccion) || empty($horario_apertura) || empty($horario_cierre)) {
         $error_msg = 'Por favor, completa los campos obligatorios (*).';
     } elseif (mb_strlen($nombre) < 3) {
         $error_msg = 'El nombre de la entidad debe tener al menos 3 caracteres.';
@@ -66,25 +83,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                 } elseif ($stmt_chk->fetchColumn() > 0) {
                     $error_msg = "Ya existe una entidad registrada con el nombre \"$nombre\".";
                 } else {
+                    $pdo->beginTransaction();
+                    $fk_localidad=$ubicacionModo==='catalogo'?UbicacionEntidades::seleccionar($pdo,$_POST['provincia_id']??null,$_POST['localidad_id']??null):UbicacionEntidades::guardar($pdo,$provincia,$localidad);
                     if ($_POST['action'] == 'crear') {
                         $stmt = $pdo->prepare("
-                            INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, estado)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                            INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, fk_localidad, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad]);
                         $success_msg = 'Entidad creada con éxito.';
                     } elseif ($_POST['action'] == 'editar') {
                         $id = intval($_POST['id']);
                         $stmt = $pdo->prepare("
                             UPDATE entidades
-                            SET cuit = ?, nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?
+                            SET cuit = ?, nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?, fk_localidad = ?
                             WHERE id = ?
                         ");
-                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $id]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad, $id]);
                         $success_msg = 'Entidad modificada con éxito.';
                     }
+                    $pdo->commit();
                 }
-            } catch (PDOException $e) {
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
                 $error_msg = 'Error al procesar la entidad en la base de datos: ' . $e->getMessage();
             }
         }
@@ -92,52 +113,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 }
 
 // Procesar Baja Lógica con Desactivación en Cascada
-if (isset($_GET['toggle_estado'])) {
-    $id = intval($_GET['toggle_estado']);
-    $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
-    try {
-        if ($nuevo_estado == 'FALSE') {
-            // Desactivación en cascada: entidad, actividades, espacios, modulos y subcategorías
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare("UPDATE entidades SET estado = FALSE WHERE id = ?");
-            $stmt->execute([$id]);
-
-            $stmt = $pdo->prepare("UPDATE actividades SET estado = FALSE WHERE fk_entidad = ?");
-            $stmt->execute([$id]);
-
-            $stmt = $pdo->prepare("UPDATE espacios SET estado = FALSE WHERE fk_entidad = ?");
-            $stmt->execute([$id]);
-
-            $stmt = $pdo->prepare("UPDATE modulos SET estado = FALSE WHERE fk_entidad = ?");
-            $stmt->execute([$id]);
-
-            $stmt = $pdo->prepare("UPDATE subcategorias SET estado = FALSE WHERE fk_entidad = ?");
-            $stmt->execute([$id]);
-
-            $pdo->commit();
-            $success_msg = 'Entidad desactivada. Sus actividades, espacios y módulos asociados fueron desactivados automáticamente en cascada.';
-        } else {
-            // Activación de la entidad
-            $stmt = $pdo->prepare("UPDATE entidades SET estado = TRUE WHERE id = ?");
-            $stmt->execute([$id]);
-            $success_msg = 'Entidad activada con éxito. Ya puedes gestionar sus actividades y espacios.';
-        }
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        $error_msg = 'Error al cambiar el estado de la entidad.';
-    }
-}
+$estadoTipo='entidad';
+require __DIR__.'/../includes/estado_accion.php';
 
 // Cargar Entidades
 $entidades = [];
 try {
     $stmt = $pdo->query("
-        SELECT e.*, d1.nombre as dia_apertura_nombre, d2.nombre as dia_cierre_nombre
+        SELECT e.*, d1.nombre as dia_apertura_nombre, d2.nombre as dia_cierre_nombre, l.nombre localidad, p.nombre provincia, p.id provincia_id, to_jsonb(l)->>'departamento' localidad_departamento, to_jsonb(l)->>'categoria' localidad_categoria
         FROM entidades e
         LEFT JOIN dias d1 ON e.fk_dia_apertura = d1.id
         LEFT JOIN dias d2 ON e.fk_dia_cierre = d2.id
+        LEFT JOIN localidades l ON l.id=e.fk_localidad
+        LEFT JOIN provincias p ON p.id=l.fk_provincia
         ORDER BY e.id ASC
     ");
     $entidades = $stmt->fetchAll();
@@ -150,7 +138,9 @@ try {
     $dias = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
+$provinciasCatalogo=$pdo->query('SELECT id,nombre FROM provincias ORDER BY nombre,id')->fetchAll();
 require_once __DIR__ . '/../includes/header.php';
+require __DIR__.'/../includes/estado_vista_previa.php';
 ?>
 
 <div class="container my-4">
@@ -194,11 +184,7 @@ require_once __DIR__ . '/../includes/header.php';
                         </td>
                         <td>
                             <button class="btn btn-sm btn-dark rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editEntidadModal<?= $entidad['id']; ?>">Editar</button>
-                            <a href="entidades.php?toggle_estado=<?= $entidad['id']; ?>&estado=<?= $entidad['estado'] ? '1' : '0'; ?>"
-                               class="btn btn-sm <?= $entidad['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                               onclick="return confirm('¿Seguro deseas cambiar el estado de esta entidad? Si la desactivas, todas sus actividades, espacios y módulos se desactivarán automáticamente.');">
-                                <?= $entidad['estado'] ? 'Desactivar' : 'Activar'; ?>
-                            </a>
+                            <?php $estadoRegistro=$entidad; require __DIR__.'/../includes/estado_formulario.php'; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -212,6 +198,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="modal fade" id="editEntidadModal<?= $entidad['id']; ?>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form action="entidades.php" method="POST" class="modal-content border-0 shadow">
+                <input type="hidden" name="csrf_entidades" value="<?= htmlspecialchars($_SESSION['csrf_entidades']); ?>">
                 <input type="hidden" name="action" value="editar">
                 <input type="hidden" name="id" value="<?= $entidad['id']; ?>">
                 <div class="modal-header bg-light">
@@ -231,6 +218,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <label class="form-label fw-bold">Dirección *</label>
                         <input type="text" name="direccion" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($entidad['direccion']); ?>">
                     </div>
+                    <?php $ubicacionActual=$entidad; require __DIR__.'/../includes/ubicacion_entidad_formulario.php'; ?>
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-bold">Hora Apertura *</label>
@@ -285,7 +273,8 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="modal fade" id="crearEntidadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <form action="entidades.php" method="POST" class="modal-content border-0 shadow">
-            <input type="hidden" name="action" value="crear">
+            <input type="hidden" name="csrf_entidades" value="<?= htmlspecialchars($_SESSION['csrf_entidades']); ?>">
+                <input type="hidden" name="action" value="crear">
             <div class="modal-header bg-light">
                 <h5 class="modal-title fw-bold">Agregar Entidad</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -303,6 +292,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <label class="form-label fw-bold">Dirección *</label>
                     <input type="text" name="direccion" class="form-control rounded-pill px-3" required placeholder="Av. Alvarez Thomas 123">
                 </div>
+                <?php $ubicacionActual=[]; require __DIR__.'/../includes/ubicacion_entidad_formulario.php'; ?>
                 <div class="row">
                     <div class="col-6 mb-3">
                         <label class="form-label fw-bold">Hora Apertura *</label>
@@ -352,4 +342,5 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<script src="../js/ubicaciones.js" defer></script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -67,7 +67,7 @@ rechaza(fn()=>q($admin,'UPDATE reservas SET importe_total_ars=1 WHERE id=?',[$pr
 $rTit=$local->crear($configId,$alumnoFixture,'2099-04-05','02:00:00','2700.99','presencial');$tid=(int)$rTit['id'];$local->registrarCobro($tid,$adminFixture);
 $web('perfil.php#mis-reservas',['action'=>'cancelar_reserva','reserva_id'=>(string)$tid,'csrf_reservas'=>$csrfAlumno],$cookieAlumno);
 igual(q($admin,'SELECT estado FROM reservas WHERE id=?',[$tid])->fetchColumn(),'cancelado','TITULAR_CANCELA_WEB');
-igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$tid])->fetchColumn(),1,'TITULAR_24H_DEVOLUCION');
+igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$tid])->fetchColumn(),1,'TITULAR_5H_DEVOLUCION');
 igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion'",[$tid])->fetchColumn(),0,'NO_DEVOLUCION_AUTOMATICA');
 // Turno cercano: cancelar usuario no genera solicitud; administrador si genera total.
 $cerca=q($admin,"SELECT (clock_timestamp() AT TIME ZONE 'America/Argentina/Buenos_Aires'+interval '2 hours')::date AS fecha,
@@ -78,9 +78,9 @@ $nuevoCerca=function(string $hora)use($admin,$configId,$alumnoFixture,$cerca):in
         VALUES(?,?,?,?,'pendiente_presencial','presencial',2700.99) RETURNING id",[$configId,$alumnoFixture,$cerca['fecha'],$hora])->fetchColumn();
 };
 $cid=$nuevoCerca($cerca['hora']);$local->registrarCobro($cid,$adminFixture);$local->cancelarTitular($cid,$alumnoFixture);
-igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$cid])->fetchColumn(),0,'MENOS_24H_PRESENCIAL');
+igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$cid])->fetchColumn(),0,'MENOS_5H_PRESENCIAL');
 $cid2=$nuevoCerca($cerca['hora']);$local->registrarCobro($cid2,$adminFixture);$local->cancelarAdministrador($cid2,$adminFixture,'Cancelacion excepcional cercana');
-igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$cid2])->fetchColumn(),1,'ADMIN_MENOS_24H_TOTAL');
+igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$cid2])->fetchColumn(),1,'ADMIN_MENOS_5H_TOTAL');
 $sinCobro=$local->crear($configId,$alumnoFixture,'2099-04-06','02:00:00','2700.99','presencial');$sid=(int)$sinCobro['id'];$local->cancelarTitular($sid,$alumnoFixture);
 igual((int)q($admin,'SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=?',[$sid])->fetchColumn(),0,'SIN_COBRO_NO_DEVOLUCION');
 rechaza(fn()=>$local->registrarCobro($sid,$adminFixture),'NO_COBRAR_CANCELADA');

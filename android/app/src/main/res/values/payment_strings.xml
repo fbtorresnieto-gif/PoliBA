@@ -19,5 +19,5 @@
     <string name="mp_unpaid_cancelled">Sin cobro presencial registrado</string>
     <string name="mp_refund_pending">Devolución total pendiente de realizar por la entidad.</string>
     <string name="mp_refund_done">Devolución total registrada por la entidad.</string>
-    <string name="mp_refund_policy">Si cancelás con 24 horas o más, corresponde devolución total. Con menos de 24 horas no se genera devolución.</string>
+    <string name="mp_refund_policy">Si cancelás con 5 horas o más, corresponde devolución total. Con menos de 5 horas no se genera devolución.</string>
 </resources>

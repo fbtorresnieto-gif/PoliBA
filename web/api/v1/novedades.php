@@ -12,6 +12,7 @@ try {
         FROM novedades n
         LEFT JOIN entidades e ON n.fk_entidad = e.id
         WHERE n.estado = TRUE AND n.fecha_fin >= ?
+          AND (n.fk_entidad IS NULL OR e.estado = TRUE)
         ORDER BY n.fecha_inicio DESC
     ");
     $stmt->execute([hoy_ar()]);

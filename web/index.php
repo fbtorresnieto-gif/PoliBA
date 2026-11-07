@@ -3,22 +3,29 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
 require_once __DIR__ . '/includes/novedades.php';
+require_once __DIR__ . '/includes/FiltroEntidades.php';
+$filtroEntidades = new FiltroEntidades([], $_GET);
+$errorListado = false;
 
 // Obtener las novedades activas desde la base de datos
 $novedades = [];
 try {
+    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET);
+    [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('n.fk_entidad');
     expirar_novedades($pdo);
     $stmt = $pdo->prepare("
         SELECT n.*, e.nombre as entidad_nombre
         FROM novedades n 
         LEFT JOIN entidades e ON n.fk_entidad = e.id
         WHERE n.estado = TRUE AND n.fecha_fin >= ?
+          AND (n.fk_entidad IS NULL OR e.estado = TRUE)
+          $filtroSql
         ORDER BY n.fecha_inicio DESC
     ");
-    $stmt->execute([hoy_ar()]);
+    $stmt->execute(array_merge([hoy_ar()], $filtroParametros));
     $novedades = $stmt->fetchAll();
 } catch (PDOException $e) {
-    // Si no conecta o hay error, la grilla se mostrará vacía o con datos mock
+    $errorListado = true;
 }
 
 require_once __DIR__ . '/includes/header.php';
@@ -41,7 +48,7 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="text-center px-4">
                     <h1 class="display-4 fw-bold">Reservas de Espacios</h1>
                     <p class="lead">Reservá tu espacio de fútbol, tenis, básquet o vóley de manera rápida desde tu perfil.</p>
-                    <a href="espacios.php" class="poliba-btn mt-2">Reservar Ahora</a>
+                    <a href="<?= htmlspecialchars($filtroEntidades->url('espacios.php')); ?>" class="poliba-btn mt-2">Reservar Ahora</a>
                 </div>
             </div>
         </div>
@@ -57,11 +64,14 @@ require_once __DIR__ . '/includes/header.php';
 <!-- 2. Novedades Section (Basado en Prototipo Home.png) -->
 <div class="container my-5">
     <h2 class="section-title">Novedades</h2>
+    <?php $filtroCantidad = count($novedades); require __DIR__.'/includes/filtro_entidades_formulario.php'; ?>
+    <?php if ($errorListado): ?><div class="alert alert-danger" role="alert">No pudimos cargar las novedades. Intentá nuevamente en unos minutos.</div><?php endif; ?>
     
-    <?php if (empty($novedades)): ?>
+    <?php if ($errorListado): ?>
+    <?php elseif (empty($novedades)): ?>
         <div class="text-center py-5">
             <i class="bi bi-info-circle text-muted fs-1 mb-3 d-block"></i>
-            <p class="text-muted">No hay novedades publicadas en este momento.</p>
+            <p class="text-muted"><?= $filtroEntidades->todas ? 'No hay novedades publicadas en este momento.' : 'No hay novedades para las entidades seleccionadas.'; ?></p>
         </div>
     <?php else: ?>
         <div class="row g-4 justify-content-center">

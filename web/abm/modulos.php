@@ -257,6 +257,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         if ($sub_valida) {
         $pdo->beginTransaction();
         try {
+            $pdo->exec('SELECT pg_advisory_xact_lock(76730009)');
             if ($_POST['action'] == 'crear') {
                 if ($db_driver_used === 'postgresql') {
                     $stmt = $pdo->prepare("
@@ -315,17 +316,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
 }
 
 // Procesar Alta/Baja Lógica
-if (isset($_GET['toggle_estado'])) {
-    $id = intval($_GET['toggle_estado']);
-    $nuevo_estado = $_GET['estado'] == '1' ? 'FALSE' : 'TRUE';
-    try {
-        $stmt = $pdo->prepare("UPDATE modulos SET estado = $nuevo_estado WHERE id = ? AND fk_entidad = ?");
-        $stmt->execute([$id, $entidad_id]);
-        $success_msg = 'Estado del módulo actualizado.';
-    } catch (PDOException $e) {
-        $error_msg = 'Error al actualizar el estado.';
-    }
-}
+$estadoTipo='modulo';
+require __DIR__.'/../includes/estado_accion.php';
 
 // Cargar Modulos de la sede
 $modulos = [];
@@ -387,6 +379,7 @@ try {
 } catch (PDOException $e) {}
 
 require_once __DIR__ . '/../includes/header.php';
+require __DIR__.'/../includes/estado_vista_previa.php';
 ?>
 
 <div class="container my-4">
@@ -455,11 +448,7 @@ require_once __DIR__ . '/../includes/header.php';
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-dark rounded-pill px-3 mb-1" data-bs-toggle="modal" data-bs-target="#editModuloModal<?= $modulo['id']; ?>">Editar</button>
-                                <a href="modulos.php?toggle_estado=<?= $modulo['id']; ?>&estado=<?= $modulo['estado'] ? '1' : '0'; ?>"
-                                   class="btn btn-sm <?= $modulo['estado'] ? 'btn-danger' : 'btn-success'; ?> rounded-pill px-3"
-                                   onclick="return confirm('¿Seguro deseas cambiar el estado de este módulo?');">
-                                    <?= $modulo['estado'] ? 'Desactivar' : 'Activar'; ?>
-                                </a>
+                                <?php $estadoRegistro=$modulo; require __DIR__.'/../includes/estado_formulario.php'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

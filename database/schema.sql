@@ -157,6 +157,9 @@ CREATE TABLE asistencia (
     fk_modulo INT NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
     asistencia VARCHAR(20) NOT NULL, -- 'presente', 'ausente', 'lluvia'
     fecha DATE NOT NULL,
+    registrado_por INT REFERENCES usuarios(id) ON DELETE SET NULL,
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    actualizado_en TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     CONSTRAINT uq_asistencia_inscripcion_fecha UNIQUE (fk_inscripcion, fecha)
 );
 

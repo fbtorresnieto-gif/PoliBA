@@ -94,6 +94,19 @@ function redirect_if_not_logged_in($allowed_roles = []) {
         // Si falla la consulta, no bloquear la navegación.
     }
     
+    $usuario_operacion=get_logged_user();
+    if (strtolower($usuario_operacion['rol_nombre']??'')==='administrador' && !empty($usuario_operacion['fk_entidad'])) {
+        $estado_entidad=$pdo->prepare('SELECT estado,cierre_administrativo_en FROM entidades WHERE id=?');
+        $estado_entidad->execute([$usuario_operacion['fk_entidad']]);$e_operacion=$estado_entidad->fetch();
+        $GLOBALS['admin_entidad_estado']=$e_operacion;
+        $ruta_operacion=basename($_SERVER['SCRIPT_NAME']);
+        if (!$e_operacion || !$e_operacion['estado']) {
+            $es_mutacion=$_SERVER['REQUEST_METHOD']!=='GET' || isset($_GET['toggle_estado']) || isset($_GET['cambiar_estado_profesor']);
+            $es_resolucion=$ruta_operacion==='reservas.php' && empty($e_operacion['cierre_administrativo_en']) && in_array($_POST['action']??'', ['registrar_cobro','registrar_devolucion'],true);
+            if ($es_mutacion && !$es_resolucion) {http_response_code(403);exit('La entidad está inactiva. Podés consultar el historial y resolver cobros o devoluciones pendientes desde Reservas.');}
+        }
+    }
+
     if (!empty($allowed_roles)) {
         $user = get_logged_user();
         $has_access = false;
