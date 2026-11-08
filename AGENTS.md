@@ -45,6 +45,17 @@ Al alcanzar o superar el presupuesto, antes de una ampliación sustancial:
 
 No pedir autorización por cada archivo o comando ni detener validaciones imprescindibles para seguridad o integridad. Tras dos intentos fallidos de la misma estrategia, detenerla, distinguir el fallo de una búsqueda normal y replantear la hipótesis antes de continuar.
 
+## Complejidad técnica y riesgo operativo
+
+Evaluar y comunicar por separado:
+
+- **Complejidad técnica:** baja, media o alta según alcance, dependencias y exploración necesaria.
+- **Riesgo operativo:** bajo, medio, alto o crítico según ambiente, reversibilidad, integridad de datos, indisponibilidad y alcance sobre usuarios reales.
+
+Una tarea técnicamente pequeña puede tener riesgo operativo alto. Toda migración en Producción es de riesgo **alto** como mínimo, o **crítico** si puede perder datos, exige indisponibilidad, combina cambios incompatibles o no tiene recuperación validada. El número de archivos no reduce esa clasificación.
+
+Para cualquier despliegue o migración usar [`docs/DEPLOYMENT_RUNBOOK.md`](docs/DEPLOYMENT_RUNBOOK.md) como lista de control. Una autorización para desplegar no reemplaza las autorizaciones productivas, destructivas o de restauración que correspondan.
+
 ## Límites de cambio
 
 - Hacer cambios mínimos; no refactorizar módulos ajenos ni cambiar dependencias sin autorización.
@@ -78,13 +89,15 @@ Cerrar cada tarea con este bloque, usando sólo métricas observables:
 ```text
 DEH — Eficiencia
 - Complejidad:
+- Riesgo operativo:
 - Archivos de código inspeccionados:
 - Archivos modificados:
 - Comandos ejecutados:
 - Reintentos por fallo:
+- Intentos fallidos de herramientas o interfaces:
 - Pruebas y resultados:
 - Ampliaciones de alcance:
 - Estado: completado/parcial/bloqueado.
 ```
 
-No inventar métricas. Informar `N/D` cuando un dato no pueda obtenerse de forma confiable y no contar búsquedas normales como reintentos fallidos. El harness no mide por sí mismo tokens, créditos ni cuota Plus; sólo registrar esos valores cuando exista una fuente real y explícita.
+No inventar métricas. Informar `N/D` cuando un dato no pueda obtenerse de forma confiable y no contar búsquedas normales como reintentos fallidos. Contabilizar también fallos de selectores de archivos, consolas, automatizaciones y otras interfaces cuando obliguen a reintentar o cambiar de estrategia. El harness no mide por sí mismo tokens, créditos ni cuota Plus; sólo registrar esos valores cuando exista una fuente real y explícita.
