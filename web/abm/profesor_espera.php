@@ -47,7 +47,7 @@ if (isset($_GET['activar_inscripcion'])) {
 $lista_espera = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT i.id as inscripcion_id, i.fecha, i.fk_modulo,
+        SELECT i.id as inscripcion_id, COALESCE(i.fecha_le, i.fecha) AS fecha_lista_espera, i.fk_modulo,
                c.nombre as modulo_nombre, c.cupo_maximo,
                u.nombre as alu_nombre, u.apellido as alu_apellido, u.dni as alu_dni, u.telefono as alu_telefono, u.email as alu_email,
                m.nombre as men_nombre, m.apellido as men_apellido, m.dni as men_dni,
@@ -58,7 +58,7 @@ try {
         LEFT JOIN menores m ON i.fk_menor = m.id
         LEFT JOIN usuarios tutor ON m.fk_usuario = tutor.id
         WHERE c.fk_usuario_profesor = ? AND i.lista_espera = TRUE AND i.estado = 'activo' AND multipro_modulo_disponible(c.id)
-        ORDER BY i.fecha ASC
+        ORDER BY COALESCE(i.fecha_le, i.fecha) ASC, i.id ASC
     ");
     $stmt->execute([$user['id']]);
     $lista_espera = $stmt->fetchAll();
@@ -98,7 +98,7 @@ require_once __DIR__ . '/../includes/header.php';
         <table class="table table-poliba table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Fecha Registro</th>
+                    <th>Ingreso a lista de espera</th>
                     <th>Módulo</th>
                     <th>Alumno</th>
                     <th>DNI</th>
@@ -123,7 +123,7 @@ require_once __DIR__ . '/../includes/header.php';
                         $has_vacante = $item['vacantes_disponibles'] > 0;
                     ?>
                         <tr>
-                            <td><?= date('d/m/Y H:i', strtotime($item['fecha'])); ?> hs</td>
+                            <td><?= date('d/m/Y H:i', strtotime($item['fecha_lista_espera'])); ?> hs</td>
                             <td class="fw-bold"><?= htmlspecialchars($item['modulo_nombre']); ?></td>
                             <td>
                                 <div><?= htmlspecialchars($nombre . ' ' . $apellido); ?></div>

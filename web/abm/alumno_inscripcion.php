@@ -125,11 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                         
                         // Insertar inscripción
                         $stmt_ins = $pdo->prepare("
-                            INSERT INTO inscripcion (fk_modulo, fk_usuario, fk_menor, lista_espera, estado)
-                            VALUES (?, ?, ?, ?, 'activo')
+                            INSERT INTO inscripcion (fk_modulo, fk_usuario, fk_menor, lista_espera, fecha_le, estado)
+                            VALUES (?, ?, ?, ?, CASE WHEN ? = 1 THEN CURRENT_TIMESTAMP ELSE NULL END, 'activo')
                         ");
                         // SQLite no soporta boolean directamente, usamos 1 o 0
-                        $stmt_ins->execute([$modulo_id, $fk_usuario, $fk_menor, $lista_espera]);
+                        $stmt_ins->execute([$modulo_id, $fk_usuario, $fk_menor, $lista_espera, $lista_espera]);
                         
                         if ($lista_espera) {
                             $success_msg = "¡Inscripción registrada! Debido a que el cupo está completo, $persona_nombre ha sido ingresado a la <strong>LISTA DE ESPERA</strong> del módulo.";
