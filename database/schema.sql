@@ -143,12 +143,38 @@ CREATE TABLE inscripcion (
     fk_menor INT REFERENCES menores(id) ON DELETE CASCADE,     -- O Alumno Menor (uno de los dos debe ser no nulo)
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     lista_espera BOOLEAN DEFAULT FALSE, -- TRUE si no alcanzó cupo
+    fecha_le TIMESTAMP, -- Fecha del último ingreso a lista de espera
     estado VARCHAR(20) DEFAULT 'activo', -- 'activo', 'cancelado' (por el alumno)
     CONSTRAINT chk_inscrito CHECK (
         (fk_usuario IS NOT NULL AND fk_menor IS NULL) OR 
         (fk_usuario IS NULL AND fk_menor IS NOT NULL)
-    )
+    ),
+    CONSTRAINT chk_inscripcion_fecha_le CHECK (lista_espera IS NOT TRUE OR fecha_le IS NOT NULL)
 );
+
+CREATE OR REPLACE FUNCTION multipro_registrar_fecha_lista_espera()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    IF NEW.lista_espera IS TRUE
+       AND (TG_OP = 'INSERT' OR OLD.lista_espera IS DISTINCT FROM TRUE) THEN
+        NEW.fecha_le := clock_timestamp();
+    ELSIF NEW.lista_espera IS TRUE AND NEW.fecha_le IS NULL THEN
+        NEW.fecha_le := COALESCE(NEW.fecha, clock_timestamp());
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_inscripcion_fecha_lista_espera
+BEFORE INSERT OR UPDATE OF lista_espera, fecha_le ON inscripcion
+FOR EACH ROW
+EXECUTE FUNCTION multipro_registrar_fecha_lista_espera();
+
+CREATE INDEX idx_inscripcion_lista_espera_orden
+    ON inscripcion (fk_modulo, fecha_le, id)
+    WHERE lista_espera IS TRUE AND estado = 'activo';
 
 -- 14. Tabla de Asistencias (Toma de asistencia por modulo)
 CREATE TABLE asistencia (
