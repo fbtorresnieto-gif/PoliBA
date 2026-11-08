@@ -29,3 +29,6 @@ database/poliba.db
 
 # Documento reemplazado por la versión funcional vigente
 /documentacion/Notificaciones_y_Cron_MultiPro_v1.0.docx
+
+# Mediciones operativas locales del Development Efficiency Harness
+/.deh/tasks.csv
