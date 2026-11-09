@@ -11,6 +11,21 @@ $user = get_logged_user();
 $error_msg = '';
 $success_msg = '';
 $_SESSION['csrf_promocion'] ??= bin2hex(random_bytes(32));
+$modulos_profesor = [];
+$modulo_solicitado = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['modulo_id'] ?? null) : ($_GET['modulo_id'] ?? null);
+$modulo_seleccionado_id = filter_var($modulo_solicitado, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 0;
+
+try {
+    $stmt_modulos = $pdo->prepare("SELECT id, nombre FROM modulos WHERE fk_usuario_profesor = ? AND multipro_modulo_disponible(id) ORDER BY nombre, id");
+    $stmt_modulos->execute([$user['id']]);
+    $modulos_profesor = $stmt_modulos->fetchAll();
+    $ids_modulos = array_map('intval', array_column($modulos_profesor, 'id'));
+    if (!in_array($modulo_seleccionado_id, $ids_modulos, true)) {
+        $modulo_seleccionado_id = $ids_modulos[0] ?? 0;
+    }
+} catch (PDOException $e) {
+    $error_msg = 'No se pudieron cargar tus módulos.';
+}
 
 // Procesar promoción de modulo
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'promocionar') {
@@ -47,10 +62,10 @@ try {
         LEFT JOIN usuarios u ON i.fk_usuario = u.id
         LEFT JOIN menores m ON i.fk_menor = m.id
         LEFT JOIN usuarios tutor ON m.fk_usuario = tutor.id
-        WHERE c.fk_usuario_profesor = ? AND i.estado = 'activo'
+        WHERE c.fk_usuario_profesor = ? AND c.id = ? AND i.estado = 'activo'
         ORDER BY c.nombre, u.apellido, u.nombre, m.apellido, m.nombre ASC
     ");
-    $stmt->execute([$user['id']]);
+    $stmt->execute([$user['id'], $modulo_seleccionado_id]);
     $alumnos_inscritos = $stmt->fetchAll();
     
     // Para cada alumno, buscar modulos alternativas en la misma actividad y entidad
@@ -107,6 +122,19 @@ require_once __DIR__ . '/../includes/header.php';
         <div class="alert alert-success"><?= htmlspecialchars($success_msg); ?></div>
     <?php endif; ?>
 
+    <form method="GET" action="profesor_promocion.php" class="row g-2 align-items-end mb-4">
+        <div class="col-md-6 col-lg-4">
+            <label for="modulo-promocion" class="form-label fw-bold">Módulo actual</label>
+            <select id="modulo-promocion" name="modulo_id" class="form-select rounded-pill px-3" onchange="this.form.submit()" <?= empty($modulos_profesor) ? 'disabled' : ''; ?>>
+                <?php if (empty($modulos_profesor)): ?><option>No tenés módulos activos</option><?php endif; ?>
+                <?php foreach ($modulos_profesor as $modulo_opcion): ?>
+                    <option value="<?= (int)$modulo_opcion['id']; ?>" <?= (int)$modulo_opcion['id'] === $modulo_seleccionado_id ? 'selected' : ''; ?>><?= htmlspecialchars($modulo_opcion['nombre']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-auto"><noscript><button type="submit" class="btn btn-dark rounded-pill px-4">Ver módulo</button></noscript></div>
+    </form>
+
     <div class="table-responsive">
         <table class="table table-poliba table-striped align-middle">
             <thead>
@@ -121,7 +149,7 @@ require_once __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php if (empty($alumnos_inscritos)): ?>
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No tienes alumnos inscriptos en tus módulos actualmente.</td>
+                        <td colspan="5" class="text-center text-muted py-4">No hay alumnos inscriptos en el módulo seleccionado.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($alumnos_inscritos as $al): ?>
@@ -143,6 +171,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         <input type="hidden" name="action" value="promocionar">
                                         <input type="hidden" name="csrf_promocion" value="<?= htmlspecialchars($_SESSION['csrf_promocion']); ?>">
                                         <input type="hidden" name="inscripcion_id" value="<?= $al['inscripcion_id']; ?>">
+                                        <input type="hidden" name="modulo_id" value="<?= $modulo_seleccionado_id; ?>">
                                         
                                         <select name="nueva_modulo_id" class="form-select form-select-sm rounded-pill px-3" required style="max-width:250px;">
                                             <option value="">-- Seleccionar Módulo --</option>
