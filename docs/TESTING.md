@@ -39,6 +39,30 @@ php -d extension=pdo_sqlite tests/filtros/validar.php
 
 Sirve para lógica focalizada; SQLite no valida compatibilidad PostgreSQL.
 
+### Visibilidad de entidades
+
+```powershell
+php tests/visibilidad_entidades/validar.php
+```
+
+Comprueba invitado, usuario vinculado, Gestor y persistencia del alcance en los filtros sin requerir base de datos. No reemplaza la prueba de la migración PostgreSQL ni la validación Web/API.
+
+Para validar únicamente el panel privado mediante HTTP y una base PostgreSQL temporal:
+
+```powershell
+& .\tests\pagos\validar_local.ps1 -SoloVisibilidadPrivada
+```
+
+Comprueba autenticación, menú, estadísticas de reservas, accesos directos prohibidos y visibilidad API. La base temporal se elimina al finalizar.
+
+### Codificación PHP
+
+```powershell
+& .\tests\php\validar_bom.ps1
+```
+
+Rechaza archivos PHP con BOM UTF-8, revisando primero autenticación, encabezados y login. No modifica archivos ni agrega dependencias.
+
 ### Suites PostgreSQL temporales
 
 ```powershell

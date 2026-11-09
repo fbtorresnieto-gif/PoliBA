@@ -64,7 +64,7 @@ try {
     [$codigo]=$http('abm/ubicaciones.php?provincia_id=0');ga($codigo===422,'provincia inválida rechazada');
     [$codigo,$html]=$http('abm/entidades.php');ga($codigo===200 && str_contains($html,'name="provincia_id"') && str_contains($html,'name="localidad_id"') && str_contains($html,'ubicaciones.js'),'formulario de selección dependiente');
     preg_match('/name="csrf_entidades" value="([a-f0-9]+)"/',$html,$m);$csrf=$m[1]??'';ga($csrf!=='','formulario protegido');
-    $form=['action'=>'crear','csrf_entidades'=>$csrf,'nombre'=>'Fixture catálogo '.$tag,'cuit'=>'30'.random_int(10000000,99999999).'1','direccion'=>'Dirección ficticia de QA','horario_apertura'=>'08:00','horario_cierre'=>'22:00','coordenadas'=>'','informacion'=>'QA','imagenURL'=>'','ubicacion_modo'=>'catalogo','provincia_id'=>$provincia,'localidad_id'=>$localidad];
+    $form=['action'=>'crear','csrf_entidades'=>$csrf,'nombre'=>'Fixture catálogo '.$tag,'cuit'=>'30'.random_int(10000000,99999999).'1','tipo_entidad'=>'publica','direccion'=>'Dirección ficticia de QA','horario_apertura'=>'08:00','horario_cierre'=>'22:00','coordenadas'=>'','informacion'=>'QA','imagenURL'=>'','ubicacion_modo'=>'catalogo','provincia_id'=>$provincia,'localidad_id'=>$localidad];
     [$codigo,$html]=$http('abm/entidades.php',$form);ga($codigo===200 && str_contains($html,'Entidad creada con éxito'),'alta de entidad con localidad oficial');
     ga((int)gq($db,'SELECT fk_localidad FROM entidades WHERE nombre=?',[$form['nombre']])->fetchColumn()===$localidad,'vincula por ID sin generar ubicación nueva');
     $form['nombre'].=' inválida';$form['localidad_id']=$otra;
