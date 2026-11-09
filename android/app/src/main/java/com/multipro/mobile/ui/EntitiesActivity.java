@@ -74,6 +74,8 @@ public class EntitiesActivity extends AppCompatActivity {
             ItemEntityBinding item = ItemEntityBinding.inflate(
                     getLayoutInflater(), binding.listContainer, false);
             item.nameText.setText(value(entity.getNombre()));
+            item.typeText.setText("privada".equals(entity.getTipoEntidad())
+                    ? R.string.entity_type_private : R.string.entity_type_public);
             ImageLoader.load(item.imageView, entity.getImageUrl());
             item.addressText.setText(value(entity.getDireccion()));
             item.infoText.setText(value(entity.getInformacion()));

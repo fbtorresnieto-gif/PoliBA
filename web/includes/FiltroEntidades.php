@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-/** Filtro del catálogo público. No modifica permisos ni afiliación del usuario. */
+require_once __DIR__ . '/VisibilidadEntidades.php';
+
+/** Filtro del catálogo respetando la visibilidad pública o vinculada. */
 final class FiltroEntidades
 {
     public array $opciones;
@@ -61,25 +63,30 @@ final class FiltroEntidades
         return $ids;
     }
 
-    public static function cargar(PDO $pdo, array $consulta): self
+    public static function cargar(PDO $pdo, array $consulta, ?array $usuario = null, bool $incluirPrivadas = false): self
     {
         $metadatos='';
         if($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='pgsql')$metadatos=",to_jsonb(l)->>'departamento' departamento,to_jsonb(l)->>'categoria' categoria";
-        $opciones = $pdo->query('SELECT e.id,e.nombre,l.id localidad_id,l.nombre localidad,p.id provincia_id,p.nombre provincia'.$metadatos.'
+        [$visibilidadSql, $visibilidadParametros] = $incluirPrivadas
+            ? ['TRUE', []]
+            : VisibilidadEntidades::condicion($usuario, 'e');
+        $stmt = $pdo->prepare('SELECT e.id,e.nombre,l.id localidad_id,l.nombre localidad,p.id provincia_id,p.nombre provincia'.$metadatos.'
             FROM entidades e LEFT JOIN localidades l ON l.id=e.fk_localidad
-            LEFT JOIN provincias p ON p.id=l.fk_provincia WHERE e.estado=TRUE ORDER BY e.nombre,e.id')->fetchAll(PDO::FETCH_ASSOC);
+            LEFT JOIN provincias p ON p.id=l.fk_provincia WHERE e.estado=TRUE AND '.$visibilidadSql.' ORDER BY e.nombre,e.id');
+        $stmt->execute($visibilidadParametros);
+        $opciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return new self($opciones, $consulta);
     }
 
     /** @return array{string,array} */
-    public function condicion(string $columna): array
+    public function condicion(string $columna, bool $permitirSinEntidad = false): array
     {
         if (!preg_match('/^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$/D', $columna)) {
             throw new InvalidArgumentException('Columna de filtro no permitida.');
         }
-        if ($this->todas) return ['', []];
         if (!$this->coincidentes) return [' AND 1=0', []];
-        return [' AND '.$columna.' IN ('.implode(',', array_fill(0, count($this->coincidentes), '?')).')', $this->coincidentes];
+        $in = $columna.' IN ('.implode(',', array_fill(0, count($this->coincidentes), '?')).')';
+        return [' AND '.($permitirSinEntidad ? '('.$columna.' IS NULL OR '.$in.')' : $in), $this->coincidentes];
     }
 
     public function url(string $ruta): string

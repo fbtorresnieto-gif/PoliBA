@@ -38,6 +38,8 @@
     <string name="explore_spaces">Explorar entidades y espacios</string>
     <string name="entities_title">Entidades</string>
     <string name="entities_subtitle">Elegí una entidad para conocer sus espacios disponibles.</string>
+    <string name="entity_type_public">Entidad pública</string>
+    <string name="entity_type_private">Entidad privada</string>
     <string name="spaces_title">Espacios</string>
     <string name="spaces_subtitle">Espacios disponibles en %1$s</string>
     <string name="space_detail_title">Detalle del espacio</string>

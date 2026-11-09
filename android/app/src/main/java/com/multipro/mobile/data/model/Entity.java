@@ -8,6 +8,9 @@ public final class Entity {
     private String direccion;
     private String informacion;
 
+    @SerializedName("tipo_entidad")
+    private String tipoEntidad;
+
     @SerializedName("dia_apertura")
     private String diaApertura;
 
@@ -27,6 +30,7 @@ public final class Entity {
     public String getNombre() { return nombre; }
     public String getDireccion() { return direccion; }
     public String getInformacion() { return informacion; }
+    public String getTipoEntidad() { return tipoEntidad; }
     public String getDiaApertura() { return diaApertura; }
     public String getDiaCierre() { return diaCierre; }
     public String getHorarioApertura() { return horarioApertura; }

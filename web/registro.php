@@ -14,7 +14,7 @@ $success_msg = '';
 // Obtener las entidades para el selector
 $entidades = [];
 try {
-    $stmt = $pdo->query("SELECT id, nombre FROM entidades WHERE estado = TRUE");
+    $stmt = $pdo->query("SELECT id, nombre FROM entidades WHERE estado = TRUE AND tipo_entidad = 'publica'");
     $entidades = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Si falla, el selector estará vacío

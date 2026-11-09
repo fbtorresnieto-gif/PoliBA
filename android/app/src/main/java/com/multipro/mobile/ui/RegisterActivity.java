@@ -84,7 +84,10 @@ public class RegisterActivity extends AppCompatActivity {
                     @NonNull Response<EntityListResponse> response) {
                 if (binding == null) return;
                 if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
-                    entities = response.body().getData();
+                    entities = new ArrayList<>();
+                    for (Entity entity : response.body().getData()) {
+                        if (!"privada".equals(entity.getTipoEntidad())) entities.add(entity);
+                    }
                     configureEntitySelector(entities);
                 } else showEntityWarning();
             }

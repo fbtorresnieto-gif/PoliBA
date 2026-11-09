@@ -77,6 +77,10 @@ final class ServicioReservas
                 LEFT JOIN dias da ON da.id=en.fk_dia_apertura LEFT JOIN dias dc ON dc.id=en.fk_dia_cierre
                 WHERE en.id=? AND en.estado FOR SHARE OF en',[$e['fk_entidad']])->fetch(PDO::FETCH_ASSOC);
             if(!$entidad)throw new RuntimeException('La entidad no está disponible.');
+            if($entidad['tipo_entidad']==='privada'){
+                $vinculada=$this->q('SELECT 1 FROM usuarios WHERE id=? AND estado AND fk_entidad=? FOR SHARE',[$usuario,$entidad['id']])->fetchColumn();
+                if(!$vinculada)throw new RuntimeException('El espacio no está disponible para tu cuenta.');
+            }
             if($precioVisto!==$e['precio_hora_ars'])throw new RuntimeException('El precio cambió. Recargá la página y confirmá el nuevo importe.');
             $gratis=$e['precio_hora_ars']==='0.00';
             if(($gratis && $modalidad!=='gratuito') || (!$gratis && ($modalidad!=='presencial' || !$e['pago_presencial_habilitado'])))

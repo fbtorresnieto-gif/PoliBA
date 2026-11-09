@@ -14,6 +14,9 @@
             <TextView android:id="@+id/nameText" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:ellipsize="end" android:maxLines="2" android:textColor="@color/multipro_dark"
                 android:textSize="22sp" android:textStyle="bold" />
+            <TextView android:id="@+id/typeText" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:textColor="@color/multipro_primary_dark"
+                android:textSize="13sp" android:textStyle="bold" />
             <TextView android:id="@+id/addressText" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="10dp" android:textColor="@color/multipro_text_muted" android:textSize="14sp" />
             <TextView android:id="@+id/scheduleText" android:layout_width="match_parent" android:layout_height="wrap_content"
