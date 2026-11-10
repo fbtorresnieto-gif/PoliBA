@@ -3,11 +3,12 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/FiltroEntidades.php';
 $filtroEntidades = new FiltroEntidades([], $_GET);
+$usuarioCatalogo = get_logged_user();
 $errorListado = false;
 
 $actividades = [];
 try {
-    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET);
+    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET, $usuarioCatalogo);
     [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('d.fk_entidad');
     $stmt = $pdo->prepare("
         SELECT d.*, e.nombre as entidad_nombre

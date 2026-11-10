@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     $fk_dia_apertura = !empty($_POST['fk_dia_apertura']) ? intval($_POST['fk_dia_apertura']) : null;
     $fk_dia_cierre = !empty($_POST['fk_dia_cierre']) ? intval($_POST['fk_dia_cierre']) : null;
     $cuit = trim($_POST['cuit'] ?? '');
+    $tipo_entidad = $_POST['tipo_entidad'] ?? '';
     
     if ($error_msg!=='') {
         // Conservar el error de ubicación sin escribir cambios parciales.
@@ -47,6 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         $error_msg = 'La dirección debe tener al menos 5 caracteres.';
     } elseif (!preg_match('/^\d{11}$/', $cuit)) {
         $error_msg = 'El CUIT debe contener exactamente 11 números (sin guiones ni espacios).';
+    } elseif (!in_array($tipo_entidad, ['publica', 'privada'], true)) {
+        $error_msg = 'Seleccioná si la entidad es pública o privada.';
     } elseif ($horario_apertura >= $horario_cierre) {
         $error_msg = "El horario de apertura ($horario_apertura hs) debe ser anterior al horario de cierre ($horario_cierre hs).";
     } else {
@@ -87,19 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
                     $fk_localidad=$ubicacionModo==='catalogo'?UbicacionEntidades::seleccionar($pdo,$_POST['provincia_id']??null,$_POST['localidad_id']??null):UbicacionEntidades::guardar($pdo,$provincia,$localidad);
                     if ($_POST['action'] == 'crear') {
                         $stmt = $pdo->prepare("
-                            INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, fk_localidad, estado)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+                            INSERT INTO entidades (cuit, nombre, direccion, horario_apertura, horario_cierre, coordenadas, informacion, imagenURL, fk_dia_apertura, fk_dia_cierre, fk_localidad, tipo_entidad, estado)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
                         ");
-                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad, $tipo_entidad]);
                         $success_msg = 'Entidad creada con éxito.';
                     } elseif ($_POST['action'] == 'editar') {
                         $id = intval($_POST['id']);
                         $stmt = $pdo->prepare("
                             UPDATE entidades
-                            SET cuit = ?, nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?, fk_localidad = ?
+                            SET cuit = ?, nombre = ?, direccion = ?, horario_apertura = ?, horario_cierre = ?, coordenadas = ?, informacion = ?, imagenURL = ?, fk_dia_apertura = ?, fk_dia_cierre = ?, fk_localidad = ?, tipo_entidad = ?
                             WHERE id = ?
                         ");
-                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad, $id]);
+                        $stmt->execute([$cuit, $nombre, $direccion, $horario_apertura, $horario_cierre, $coordenadas, $informacion, $imagenURL, $fk_dia_apertura, $fk_dia_cierre, $fk_localidad, $tipo_entidad, $id]);
                         $success_msg = 'Entidad modificada con éxito.';
                     }
                     $pdo->commit();
@@ -165,6 +168,7 @@ require __DIR__.'/../includes/estado_vista_previa.php';
                     <th>Dirección</th>
                     <th>Horario</th>
                     <th>Días</th>
+                    <th>Tipo</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -177,6 +181,7 @@ require __DIR__.'/../includes/estado_vista_previa.php';
                         <td><?= htmlspecialchars($entidad['direccion']); ?></td>
                         <td><?= date('H:i', strtotime($entidad['horario_apertura'])); ?> - <?= date('H:i', strtotime($entidad['horario_cierre'])); ?></td>
                         <td><?= htmlspecialchars($entidad['dia_apertura_nombre'] ?? 'Lunes'); ?> a <?= htmlspecialchars($entidad['dia_cierre_nombre'] ?? 'Sábado'); ?></td>
+                        <td><span class="badge rounded-pill <?= $entidad['tipo_entidad'] === 'privada' ? 'bg-dark' : 'bg-info text-dark'; ?>"><?= $entidad['tipo_entidad'] === 'privada' ? 'Privada' : 'Pública'; ?></span></td>
                         <td>
                             <span class="badge rounded-pill <?= $entidad['estado'] ? 'bg-success' : 'bg-danger'; ?>">
                                 <?= $entidad['estado'] ? 'Activo' : 'Inactivo'; ?>
@@ -217,6 +222,14 @@ require __DIR__.'/../includes/estado_vista_previa.php';
                     <div class="mb-3">
                         <label class="form-label fw-bold">Dirección *</label>
                         <input type="text" name="direccion" class="form-control rounded-pill px-3" required value="<?= htmlspecialchars($entidad['direccion']); ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de entidad *</label>
+                        <select name="tipo_entidad" class="form-select rounded-pill px-3" required>
+                            <option value="publica" <?= $entidad['tipo_entidad'] === 'publica' ? 'selected' : ''; ?>>Pública</option>
+                            <option value="privada" <?= $entidad['tipo_entidad'] === 'privada' ? 'selected' : ''; ?>>Privada</option>
+                        </select>
+                        <small class="text-muted">Las entidades privadas sólo son visibles para sus usuarios vinculados y el Gestor.</small>
                     </div>
                     <?php $ubicacionActual=$entidad; require __DIR__.'/../includes/ubicacion_entidad_formulario.php'; ?>
                     <div class="row">
@@ -291,6 +304,14 @@ require __DIR__.'/../includes/estado_vista_previa.php';
                 <div class="mb-3">
                     <label class="form-label fw-bold">Dirección *</label>
                     <input type="text" name="direccion" class="form-control rounded-pill px-3" required placeholder="Av. Alvarez Thomas 123">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tipo de entidad *</label>
+                    <select name="tipo_entidad" class="form-select rounded-pill px-3" required>
+                        <option value="publica" selected>Pública</option>
+                        <option value="privada">Privada</option>
+                    </select>
+                    <small class="text-muted">Las entidades privadas sólo son visibles para sus usuarios vinculados y el Gestor.</small>
                 </div>
                 <?php $ubicacionActual=[]; require __DIR__.'/../includes/ubicacion_entidad_formulario.php'; ?>
                 <div class="row">

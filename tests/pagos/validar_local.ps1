@@ -1,3 +1,4 @@
+param([switch]$SoloVisibilidadPrivada)
 $ErrorActionPreference='Stop'
 $repo=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $temporal='multipro_test_pagos_'+(Get-Date -Format 'yyyyMMddHHmmss')
@@ -13,6 +14,7 @@ function ArchivoRol([string]$ruta){
 }
 $creada=$false
 try{
+    & (Join-Path $repo 'tests/php/validar_bom.ps1')
     Sql postgres "CREATE DATABASE $temporal TEMPLATE multipro_base_20261026;"
     $creada=$true
     Archivo 'database/deployment/20261027_preflight_production.sql'
@@ -42,6 +44,10 @@ try{
     Archivo 'database/migrations/20261105_011_auditoria_asistencia.sql'
     Archivo 'database/migrations/rollback/20261105_011_auditoria_asistencia.rollback.sql'
     Archivo 'database/migrations/20261105_011_auditoria_asistencia.sql'
+    Archivo 'database/migrations/20261108_012_fecha_lista_espera.sql'
+    Archivo 'database/migrations/rollback/20261108_012_fecha_lista_espera.rollback.sql'
+    Archivo 'database/migrations/20261108_012_fecha_lista_espera.sql'
+    Archivo 'database/migrations/20261109_013_tipo_visibilidad_entidades.sql'
     Archivo 'database/deployment/20261027_postflight_production.sql'
     $baseProtegida=$false
     try { Archivo 'database/migrations/rollback/20261026_001_reservas_pagos_base.rollback.sql' } catch { $baseProtegida=$true }
@@ -72,6 +78,9 @@ try{
     $env:PGUSER=$env:MULTIPRO_TEST_USER;$env:PGPASSWORD=$env:MULTIPRO_TEST_PASSWORD;$env:PGSSLMODE='disable'
     $env:MULTIPRO_GEOREF_TARGET='rehearsal';$env:MULTIPRO_EXPECTED_DATABASE=$temporal
     $env:MULTIPRO_GEOREF_CONFIRM='IMPORTAR_CATALOGO_GEOREF_MULTIPRO'
+    & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'tests/visibilidad_entidades/http_panel_privado.php')
+    if($LASTEXITCODE -ne 0){throw 'Fallo prueba HTTP focalizada del panel privado'}
+    if($SoloVisibilidadPrivada){'PRUEBA_FOCALIZADA_VISIBILIDAD_OK';return}
     & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'database/deployment/importar_georef_production.php')
     if($LASTEXITCODE -ne 0){throw 'Fallo ensayo del importador productivo Georef'}
     & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'database/deployment/importar_georef_production.php')

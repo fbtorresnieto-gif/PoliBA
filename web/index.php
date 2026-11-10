@@ -4,14 +4,15 @@ require_once __DIR__ . '/includes/db.php';
 
 require_once __DIR__ . '/includes/novedades.php';
 require_once __DIR__ . '/includes/FiltroEntidades.php';
+$usuarioCatalogo = get_logged_user();
 $filtroEntidades = new FiltroEntidades([], $_GET);
 $errorListado = false;
 
 // Obtener las novedades activas desde la base de datos
 $novedades = [];
 try {
-    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET);
-    [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('n.fk_entidad');
+    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET, $usuarioCatalogo, true);
+    [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('n.fk_entidad', true);
     expirar_novedades($pdo);
     $stmt = $pdo->prepare("
         SELECT n.*, e.nombre as entidad_nombre

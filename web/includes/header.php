@@ -129,15 +129,18 @@ if (!isset($base_path)) {
 
             <!-- Botones del ADMINISTRADOR -->
             <?php if (has_role('Administrador')): ?>
+                <?php $administradorEntidadPrivada = ($logged_user['fk_entidad_tipo'] ?? 'publica') === 'privada'; ?>
                 <a href="<?= $base_path; ?>abm/estadisticas.php" class="sidebar-btn"><i class="bi bi-graph-up-arrow me-2"></i>Estadísticas</a>
-                <a href="<?= $base_path; ?>abm/actividades.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Actividades</a>
                 <a href="<?= $base_path; ?>abm/espacios.php" class="sidebar-btn"><i class="bi bi-grid-3x3-gap me-2"></i>Espacios</a>
-                <a href="<?= $base_path; ?>abm/modulos.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Módulos</a>
                 <a href="<?= $base_path; ?>abm/novedades.php" class="sidebar-btn"><i class="bi bi-newspaper me-2"></i>Novedades</a>
-                <a href="<?= $base_path; ?>abm/profesores.php" class="sidebar-btn"><i class="bi bi-person-badge me-2"></i>Profesores</a>
-                <a href="<?= $base_path; ?>abm/subcategorias.php" class="sidebar-btn"><i class="bi bi-tags me-2"></i>Subcategorías</a>
-                <a href="<?= $base_path; ?>abm/alumnos.php" class="sidebar-btn"><i class="bi bi-people me-2"></i>Alumnos</a>
                 <a href="<?= $base_path; ?>abm/reservas.php" class="sidebar-btn"><i class="bi bi-card-checklist me-2"></i>Ver reservas</a>
+                <?php if (!$administradorEntidadPrivada): ?>
+                    <a href="<?= $base_path; ?>abm/actividades.php" class="sidebar-btn"><i class="bi bi-trophy me-2"></i>Actividades</a>
+                    <a href="<?= $base_path; ?>abm/modulos.php" class="sidebar-btn"><i class="bi bi-calendar3 me-2"></i>Módulos</a>
+                    <a href="<?= $base_path; ?>abm/profesores.php" class="sidebar-btn"><i class="bi bi-person-badge me-2"></i>Profesores</a>
+                    <a href="<?= $base_path; ?>abm/subcategorias.php" class="sidebar-btn"><i class="bi bi-tags me-2"></i>Subcategorías</a>
+                    <a href="<?= $base_path; ?>abm/alumnos.php" class="sidebar-btn"><i class="bi bi-people me-2"></i>Alumnos</a>
+                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Botones del PROFESOR -->

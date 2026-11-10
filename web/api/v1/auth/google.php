@@ -91,6 +91,13 @@ try {
     if ($entidadId !== null && $entidadId < 1) {
         apiResponder(['error' => 'entidad_id debe ser un entero positivo o null.'], 422);
     }
+    if ($entidadId !== null) {
+        $stmtEntidad = $pdo->prepare("SELECT 1 FROM entidades WHERE id = ? AND estado = TRUE AND tipo_entidad = 'publica'");
+        $stmtEntidad->execute([$entidadId]);
+        if (!$stmtEntidad->fetchColumn()) {
+            apiResponder(['error' => 'La entidad seleccionada no está disponible para el registro público.'], 422);
+        }
+    }
 
     $rolId = $pdo->query("SELECT id FROM roles WHERE nombre = 'Alumno' LIMIT 1")->fetchColumn();
     if (!$rolId) apiResponder(['error' => 'No fue posible registrar el usuario.'], 500);

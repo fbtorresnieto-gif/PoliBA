@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/_auth.php';
 apiAceptarMetodo('GET');
 
 try {
     $pdo = apiBaseDatos();
-    $stmt = $pdo->query("
-        SELECT e.id, e.nombre, e.direccion, e.informacion,
+    $stmt = $pdo->prepare("
+        SELECT e.id, e.nombre, e.direccion, e.informacion, e.tipo_entidad,
                d1.nombre AS dia_apertura, d2.nombre AS dia_cierre,
                e.horario_apertura, e.horario_cierre, e.coordenadas, e.imagenurl
         FROM entidades e
@@ -16,12 +16,14 @@ try {
         WHERE e.estado = TRUE
         ORDER BY e.nombre ASC
     ");
+    $stmt->execute();
     $data = array_map(static fn (array $fila): array => [
         'id' => (int) $fila['id'], 'nombre' => $fila['nombre'],
         'direccion' => $fila['direccion'], 'informacion' => $fila['informacion'],
         'dia_apertura' => $fila['dia_apertura'], 'dia_cierre' => $fila['dia_cierre'],
         'horario_apertura' => $fila['horario_apertura'], 'horario_cierre' => $fila['horario_cierre'],
         'coordenadas' => $fila['coordenadas'], 'imagen_url' => apiUrlImagen($fila['imagenurl']),
+        'tipo_entidad' => $fila['tipo_entidad'],
     ], $stmt->fetchAll());
     apiResponder(['data' => $data]);
 } catch (Throwable $error) {

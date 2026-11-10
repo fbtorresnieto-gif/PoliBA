@@ -22,9 +22,11 @@ if ($entidad_id > 0) {
         
         if ($entidad) {
             // Consultar actividades de esta entidad
-            $stmt = $pdo->prepare("SELECT * FROM actividades WHERE fk_entidad = ? AND estado = TRUE");
-            $stmt->execute([$entidad_id]);
-            $actividades = $stmt->fetchAll();
+            if (($entidad['tipo_entidad'] ?? 'publica') === 'publica') {
+                $stmt = $pdo->prepare("SELECT * FROM actividades WHERE fk_entidad = ? AND estado = TRUE");
+                $stmt->execute([$entidad_id]);
+                $actividades = $stmt->fetchAll();
+            }
             
             // Consultar espacios de esta entidad
             $stmt = $pdo->prepare("SELECT * FROM espacios WHERE fk_entidad = ? AND estado = TRUE");
@@ -71,6 +73,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="col-lg-7">
             <div class="poliba-container-card mt-0 h-100 p-4">
                 <h1 class="fw-bold mb-3" style="color: var(--poliba-dark-blue);"><?= htmlspecialchars($entidad['nombre']); ?></h1>
+                <span class="badge rounded-pill mb-3 <?= $entidad['tipo_entidad'] === 'privada' ? 'bg-dark' : 'bg-info text-dark'; ?>"><?= $entidad['tipo_entidad'] === 'privada' ? 'Entidad privada' : 'Entidad pública'; ?></span>
                 
                 <div class="mb-4">
                     <h5 class="fw-bold text-dark"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Dirección</h5>

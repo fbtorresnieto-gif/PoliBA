@@ -7,6 +7,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/VisibilidadEntidades.php';
 
 // Verificar si el usuario está logueado
 function is_logged_in() {
@@ -22,7 +23,7 @@ function get_logged_user() {
     
     // Si la sesión conserva el contrato anterior, recargar el usuario desde la DB.
     if (isset($_SESSION['user_data'])) {
-        if (!array_key_exists('fk_entidad', $_SESSION['user_data'])) {
+        if (!array_key_exists('fk_entidad', $_SESSION['user_data']) || !array_key_exists('fk_entidad_tipo', $_SESSION['user_data'])) {
             unset($_SESSION['user_data'], $_SESSION['user_polideportivo']);
         } else {
             return $_SESSION['user_data'];
@@ -32,7 +33,7 @@ function get_logged_user() {
     // Si no, buscarlo en la DB
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre
+            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre, e.tipo_entidad as fk_entidad_tipo
             FROM usuarios u
             JOIN roles r ON u.fk_rol = r.id
             LEFT JOIN entidades e ON u.fk_entidad = e.id
@@ -96,7 +97,7 @@ function redirect_if_not_logged_in($allowed_roles = []) {
     
     $usuario_operacion=get_logged_user();
     if (strtolower($usuario_operacion['rol_nombre']??'')==='administrador' && !empty($usuario_operacion['fk_entidad'])) {
-        $estado_entidad=$pdo->prepare('SELECT estado,cierre_administrativo_en FROM entidades WHERE id=?');
+        $estado_entidad=$pdo->prepare('SELECT estado,cierre_administrativo_en,tipo_entidad FROM entidades WHERE id=?');
         $estado_entidad->execute([$usuario_operacion['fk_entidad']]);$e_operacion=$estado_entidad->fetch();
         $GLOBALS['admin_entidad_estado']=$e_operacion;
         $ruta_operacion=basename($_SERVER['SCRIPT_NAME']);
@@ -104,6 +105,10 @@ function redirect_if_not_logged_in($allowed_roles = []) {
             $es_mutacion=$_SERVER['REQUEST_METHOD']!=='GET' || isset($_GET['toggle_estado']) || isset($_GET['cambiar_estado_profesor']);
             $es_resolucion=$ruta_operacion==='reservas.php' && empty($e_operacion['cierre_administrativo_en']) && in_array($_POST['action']??'', ['registrar_cobro','registrar_devolucion'],true);
             if ($es_mutacion && !$es_resolucion) {http_response_code(403);exit('La entidad está inactiva. Podés consultar el historial y resolver cobros o devoluciones pendientes desde Reservas.');}
+        }
+        if (!VisibilidadEntidades::administradorPuedeAcceder((string)($e_operacion['tipo_entidad']??'publica'), $ruta_operacion)) {
+            http_response_code(403);
+            exit('Esta función no está disponible para entidades privadas.');
         }
     }
 
@@ -128,7 +133,7 @@ function login($email, $password) {
     global $pdo;
     try {
         $stmt = $pdo->prepare("
-            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre
+            SELECT u.*, r.nombre as rol_nombre, e.nombre as fk_entidad_nombre, e.tipo_entidad as fk_entidad_tipo
             FROM usuarios u
             JOIN roles r ON u.fk_rol = r.id
             LEFT JOIN entidades e ON u.fk_entidad = e.id
@@ -166,6 +171,13 @@ function login($email, $password) {
 function register_alumno($nombre, $apellido, $dni, $direccion, $email, $password, $telefono, $fecha_nacimiento, $entidad_id = null) {
     global $pdo;
     try {
+        if ($entidad_id !== null) {
+            $stmt_entidad = $pdo->prepare("SELECT 1 FROM entidades WHERE id = ? AND estado = TRUE AND tipo_entidad = 'publica'");
+            $stmt_entidad->execute([$entidad_id]);
+            if (!$stmt_entidad->fetchColumn()) {
+                throw new InvalidArgumentException('La entidad seleccionada no está disponible para el registro público.');
+            }
+        }
         // Buscar el ID del rol 'Alumno'
         $stmt = $pdo->prepare("SELECT id FROM roles WHERE nombre = 'Alumno' LIMIT 1");
         $stmt->execute();

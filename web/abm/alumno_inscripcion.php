@@ -2,6 +2,7 @@
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/VisibilidadEntidades.php';
 
 // Validar que sea Alumno
 redirect_if_not_logged_in(['Alumno']);
@@ -17,7 +18,8 @@ $pre_modulo_id = isset($_GET['modulo_id']) ? intval($_GET['modulo_id']) : 0;
 // Cargar Modulos Activas para el selector
 $modulos = [];
 try {
-    $stmt = $pdo->query("
+    [$visibilidadSql, $visibilidadParametros] = VisibilidadEntidades::condicion($user, 'e');
+    $stmt = $pdo->prepare("
         SELECT c.*, d.nombre as actividad_nombre, e.nombre as entidad_nombre,
                COALESCE(sub.edad_minima, cat.edad_minima, 0) as edad_min,
                COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
@@ -26,9 +28,10 @@ try {
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
         LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
-        WHERE multipro_modulo_disponible(c.id) AND e.estado = TRUE
+        WHERE multipro_modulo_disponible(c.id) AND e.estado = TRUE AND $visibilidadSql
         ORDER BY e.nombre, d.nombre, c.nombre ASC
     ");
+    $stmt->execute($visibilidadParametros);
     $modulos = $stmt->fetchAll();
 } catch (PDOException $e) {}
 
@@ -97,8 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             } else {
                 try {
                     $pdo->beginTransaction();$pdo->exec('SELECT pg_advisory_xact_lock(76730009)');
-                    $vigente=$pdo->prepare('SELECT cupo_maximo FROM modulos WHERE id=? AND multipro_modulo_disponible(id) FOR SHARE');
-                    $vigente->execute([$modulo_id]);$cupo_vigente=$vigente->fetchColumn();
+                    $vigente=$pdo->prepare("SELECT c.cupo_maximo FROM modulos c JOIN entidades e ON e.id=c.fk_entidad
+                        WHERE c.id=? AND multipro_modulo_disponible(c.id) AND e.estado=TRUE
+                          AND (e.tipo_entidad='publica' OR e.id=?) FOR SHARE OF c,e");
+                    $vigente->execute([$modulo_id, (int)($user['fk_entidad'] ?? 0)]);$cupo_vigente=$vigente->fetchColumn();
                     if($cupo_vigente===false)throw new RuntimeException('El módulo ya no está disponible.');
                     // Verificar si ya está inscripto en esta modulo
                     $stmt_chk = $pdo->prepare("

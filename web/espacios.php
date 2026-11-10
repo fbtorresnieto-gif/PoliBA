@@ -4,11 +4,12 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
 require_once __DIR__ . '/includes/FiltroEntidades.php';
 $filtroEntidades = new FiltroEntidades([], $_GET);
+$usuarioCatalogo = get_logged_user();
 $errorListado = false;
 
 $espacios = [];
 try {
-    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET);
+    $filtroEntidades = FiltroEntidades::cargar($pdo, $_GET, $usuarioCatalogo, true);
     [$filtroSql, $filtroParametros] = $filtroEntidades->condicion('esp.fk_entidad');
     $stmt = $pdo->prepare("
         SELECT esp.*, e.nombre as entidad_nombre

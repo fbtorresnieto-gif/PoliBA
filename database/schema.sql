@@ -26,6 +26,8 @@ CREATE TABLE entidades (
     imagenURL VARCHAR(255),
     fk_dia_apertura INT REFERENCES dias(id),
     fk_dia_cierre INT REFERENCES dias(id),
+    tipo_entidad VARCHAR(7) NOT NULL DEFAULT 'publica'
+        CHECK (tipo_entidad IN ('publica', 'privada')),
     estado BOOLEAN DEFAULT TRUE
 );
 

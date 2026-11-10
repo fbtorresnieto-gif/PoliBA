@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $base_path = '../';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
@@ -20,6 +20,8 @@ try {
     $stmt->execute([$entidad_id]);
     $entidad = $stmt->fetch();
 } catch (PDOException $e) {}
+$tipo_entidad = $user['fk_entidad_tipo'] ?? $entidad['tipo_entidad'] ?? 'publica';
+$es_entidad_privada = $tipo_entidad === 'privada';
 
 // 2. KPIs Generales de la Entidad
 $total_alumnos = 0;
@@ -30,6 +32,9 @@ $total_modulos = 0;
 $total_reservas = 0;
 $total_inscriptos_activos = 0;
 $total_lista_espera = 0;
+$reservas_total = 0;
+$reservas_canceladas = 0;
+$reservas_pendientes = 0;
 
 try {
     // Alumnos de la entidad
@@ -80,6 +85,24 @@ try {
     $insc_res = $stmt->fetch();
     $total_inscriptos_activos = $insc_res['activos'] ?? 0;
     $total_lista_espera = $insc_res['espera'] ?? 0;
+} catch (PDOException $e) {}
+
+try {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS total,
+               COUNT(*) FILTER (WHERE r.estado = 'reservado') AS confirmadas,
+               COUNT(*) FILTER (WHERE r.estado = 'cancelado') AS canceladas,
+               COUNT(*) FILTER (WHERE r.estado IN ('pendiente_pago','pendiente_presencial')) AS pendientes
+        FROM reservas r
+        JOIN espacios e ON r.fk_espacio = e.id
+        WHERE e.fk_entidad = ?
+    ");
+    $stmt->execute([$entidad_id]);
+    $resumen_reservas = $stmt->fetch() ?: [];
+    $reservas_total = (int)($resumen_reservas['total'] ?? 0);
+    $total_reservas = (int)($resumen_reservas['confirmadas'] ?? 0);
+    $reservas_canceladas = (int)($resumen_reservas['canceladas'] ?? 0);
+    $reservas_pendientes = (int)($resumen_reservas['pendientes'] ?? 0);
 } catch (PDOException $e) {}
 
 // 3. Estadísticas detalladas por espacio
@@ -201,6 +224,69 @@ require_once __DIR__ . '/../includes/header.php';
             </span>
         </div>
     </div>
+
+    <?php if ($es_entidad_privada): ?>
+    <div class="alert alert-info">Las entidades privadas muestran únicamente estadísticas relacionadas con reservas.</div>
+    <div class="row g-3 mb-4">
+        <?php foreach ([
+            ['Total de reservas', $reservas_total, 'bi-ticket-perforated-fill'],
+            ['Confirmadas', $total_reservas, 'bi-check-circle-fill'],
+            ['Pendientes', $reservas_pendientes, 'bi-hourglass-split'],
+            ['Canceladas', $reservas_canceladas, 'bi-x-circle-fill'],
+        ] as [$etiquetaReserva, $cantidadReserva, $iconoReserva]): ?>
+            <div class="col-sm-6 col-lg-3">
+                <div class="poliba-card p-3 text-center h-100">
+                    <i class="bi <?= $iconoReserva; ?> fs-3" style="color: var(--poliba-dark-blue);"></i>
+                    <div class="text-muted small fw-bold text-uppercase mt-2"><?= htmlspecialchars($etiquetaReserva); ?></div>
+                    <h3 class="fw-bold text-dark m-0"><?= number_format($cantidadReserva); ?></h3>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="poliba-container-card mt-0 h-100 p-4">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-grid-3x3-gap me-2"></i>Reservas por espacio</h4>
+                <?php if (empty($stats_espacios)): ?>
+                    <div class="alert alert-info">No hay espacios registrados en esta entidad.</div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead><tr><th>Espacio</th><th class="text-center">Confirmadas</th><th class="text-center">Canceladas</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($stats_espacios as $esp): ?>
+                                <tr>
+                                    <td class="fw-bold"><?= htmlspecialchars($esp['nombre']); ?></td>
+                                    <td class="text-center"><?= (int)$esp['reservas_activas']; ?></td>
+                                    <td class="text-center"><?= (int)$esp['reservas_canceladas']; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="poliba-container-card mt-0 h-100 p-4">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-clock-fill me-2"></i>Horarios más reservados</h4>
+                <?php if (empty($horarios_populares)): ?>
+                    <p class="text-muted">Aún no se registran reservas confirmadas.</p>
+                <?php else: ?>
+                    <div class="list-group list-group-flush">
+                    <?php foreach ($horarios_populares as $hp): ?>
+                        <div class="list-group-item d-flex justify-content-between px-0">
+                            <strong><?= date('H:i', strtotime($hp['horario'])); ?> hs</strong>
+                            <span class="badge bg-success rounded-pill"><?= (int)$hp['cantidad']; ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php else: ?>
 
     <!-- 1. Tarjetas de KPIs Generales -->
     <div class="row g-3 mb-4">
@@ -432,6 +518,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/VisibilidadEntidades.php';
 
 $actividad_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $actividad = null;
@@ -8,14 +9,15 @@ $modulos = [];
 
 if ($actividad_id > 0) {
     try {
+        [$visibilidadSql, $visibilidadParametros] = VisibilidadEntidades::condicion(get_logged_user(), 'e');
         // Consultar detalle de la actividad
         $stmt = $pdo->prepare("
             SELECT d.*, e.nombre as entidad_nombre
             FROM actividades d
             JOIN entidades e ON d.fk_entidad = e.id
-            WHERE d.id = ? AND d.estado = TRUE AND e.estado = TRUE
+            WHERE d.id = ? AND d.estado = TRUE AND e.estado = TRUE AND $visibilidadSql
         ");
-        $stmt->execute([$actividad_id]);
+        $stmt->execute(array_merge([$actividad_id], $visibilidadParametros));
         $actividad = $stmt->fetch();
         
         if ($actividad) {

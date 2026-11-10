@@ -1,10 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
-
 $entidades = [];
 try {
-    $stmt = $pdo->query("
+    $stmt = $pdo->prepare("
         SELECT e.*, d1.nombre as dia_apertura, d2.nombre as dia_cierre
         FROM entidades e
         LEFT JOIN dias d1 ON e.fk_dia_apertura = d1.id
@@ -12,6 +11,7 @@ try {
         WHERE e.estado = TRUE
         ORDER BY e.nombre ASC
     ");
+    $stmt->execute();
     $entidades = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Si falla, el listado estará vacío
@@ -51,6 +51,7 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                         <div class="poliba-card-body">
                             <h4 class="poliba-card-title fw-bold text-dark"><?= htmlspecialchars($entidad['nombre']); ?></h4>
+                            <span class="badge rounded-pill mb-2 <?= $entidad['tipo_entidad'] === 'privada' ? 'bg-dark' : 'bg-info text-dark'; ?>"><?= $entidad['tipo_entidad'] === 'privada' ? 'Privada' : 'Pública'; ?></span>
                             <p class="poliba-card-meta mb-2">
                                 <i class="bi bi-geo-alt-fill text-danger me-1"></i> <?= htmlspecialchars($entidad['direccion']); ?>
                             </p>

@@ -43,7 +43,7 @@ try {
         ca(!str_contains($html,'No pudimos cargar'),'consulta PostgreSQL de catálogo '.$pagina);
     }
     [$codigo,$html]=$http('abm/entidades.php',null,$cg);ca($codigo===200,'ABM entidad y campos ubicación');$csrf=$campos($html);
-    $datos=['action'=>'editar','csrf_entidades'=>$csrf['csrf_entidades'],'id'=>$otra,'nombre'=>'Otra fixture','cuit'=>'23123459876','direccion'=>'Dirección ficticia','horario_apertura'=>'00:00','horario_cierre'=>'23:59','coordenadas'=>'','informacion'=>'','imagenURL'=>'','provincia'=>' Buenos   Aires ','localidad'=>'Otra localidad'];
+    $datos=['action'=>'editar','csrf_entidades'=>$csrf['csrf_entidades'],'id'=>$otra,'nombre'=>'Otra fixture','cuit'=>'23123459876','tipo_entidad'=>'publica','direccion'=>'Dirección ficticia','horario_apertura'=>'00:00','horario_cierre'=>'23:59','coordenadas'=>'','informacion'=>'','imagenURL'=>'','provincia'=>' Buenos   Aires ','localidad'=>'Otra localidad'];
     [$codigo,$html]=$http('abm/entidades.php',$datos,$cg);
     ca($codigo===200 && str_contains($html,'Entidad modificada con éxito'),'edición ubicación por Gestor');
     ca(cq($p,'SELECT p.nombre FROM entidades e JOIN localidades l ON l.id=e.fk_localidad JOIN provincias p ON p.id=l.fk_provincia WHERE e.id=?',[$otra])->fetchColumn()==='Buenos Aires','edición reutiliza provincia normalizada');
