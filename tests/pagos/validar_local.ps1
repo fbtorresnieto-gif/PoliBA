@@ -1,4 +1,4 @@
-param([switch]$SoloVisibilidadPrivada)
+param([switch]$SoloVisibilidadPrivada,[switch]$SoloProfesorAlumnos)
 $ErrorActionPreference='Stop'
 $repo=Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $temporal='multipro_test_pagos_'+(Get-Date -Format 'yyyyMMddHHmmss')
@@ -78,9 +78,14 @@ try{
     $env:PGUSER=$env:MULTIPRO_TEST_USER;$env:PGPASSWORD=$env:MULTIPRO_TEST_PASSWORD;$env:PGSSLMODE='disable'
     $env:MULTIPRO_GEOREF_TARGET='rehearsal';$env:MULTIPRO_EXPECTED_DATABASE=$temporal
     $env:MULTIPRO_GEOREF_CONFIRM='IMPORTAR_CATALOGO_GEOREF_MULTIPRO'
-    & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'tests/visibilidad_entidades/http_panel_privado.php')
-    if($LASTEXITCODE -ne 0){throw 'Fallo prueba HTTP focalizada del panel privado'}
+    if(-not $SoloProfesorAlumnos){
+        & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'tests/visibilidad_entidades/http_panel_privado.php')
+        if($LASTEXITCODE -ne 0){throw 'Fallo prueba HTTP focalizada del panel privado'}
+    }
     if($SoloVisibilidadPrivada){'PRUEBA_FOCALIZADA_VISIBILIDAD_OK';return}
+    & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'tests/profesor_alumnos/http_reporte.php')
+    if($LASTEXITCODE -ne 0){throw 'Fallo prueba HTTP focalizada del reporte de alumnos por módulo'}
+    if($SoloProfesorAlumnos){'PRUEBA_FOCALIZADA_PROFESOR_ALUMNOS_OK';return}
     & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'database/deployment/importar_georef_production.php')
     if($LASTEXITCODE -ne 0){throw 'Fallo ensayo del importador productivo Georef'}
     & php -c $env:MULTIPRO_TEST_PHP_INI (Join-Path $repo 'database/deployment/importar_georef_production.php')

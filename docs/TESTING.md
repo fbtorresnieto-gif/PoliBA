@@ -55,6 +55,14 @@ Para validar únicamente el panel privado mediante HTTP y una base PostgreSQL te
 
 Comprueba autenticación, menú, estadísticas de reservas, accesos directos prohibidos y visibilidad API. La base temporal se elimina al finalizar.
 
+Para validar únicamente el reporte de alumnos por módulo del Profesor:
+
+```powershell
+& .\tests\pagos\validar_local.ps1 -SoloProfesorAlumnos
+```
+
+Comprueba el botón en las tarjetas, datos de alumnos mayores y menores, datos del responsable y denegación a profesores ajenos y usuarios anónimos. Utiliza y elimina una base PostgreSQL temporal.
+
 ### Codificación PHP
 
 ```powershell

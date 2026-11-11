@@ -370,14 +370,14 @@ require_once __DIR__ . '/includes/header.php';
                 <?php if (has_role('Alumno')): ?>
                     <?php foreach ($modulos_inscriptas as $modulo):
                         $status_badge = $modulo['lista_espera'] ? 'badge-espera' : 'badge-activo';
-                        if ($modulo['inscripcion_estado'] == 'cancelado') $status_badge = 'badge-cancelado';
+                        if (in_array($modulo['inscripcion_estado'], ['cancelado', 'baja'], true)) $status_badge = 'badge-cancelado';
                     ?>
                         <div class="col-md-6 col-lg-3">
                             <div class="poliba-card border-top border-5 border-info">
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="badge rounded-pill <?= $status_badge; ?>">
-                                            <?= $modulo['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA')); ?>
+                                            <?= $modulo['inscripcion_estado'] == 'baja' ? 'Inactivo x Baja' : ($modulo['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($modulo['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($modulo['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'))); ?>
                                         </span>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($modulo['modulo_nombre']); ?></h5>
@@ -399,8 +399,9 @@ require_once __DIR__ . '/includes/header.php';
                                     <div class="text-dark small mb-1"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($modulo['horario_inicio'])); ?> - <?= date('H:i', strtotime($modulo['horario_cierre'])); ?></div>
                                     <div class="text-dark small mb-3"><i class="bi bi-building me-2"></i>Entidad: <?= htmlspecialchars($modulo['entidad_nombre']); ?></div>
                                     
-                                    <div class="d-grid gap-2 mt-auto">
-                                        <a href="abm/profesor_modulos.php?modulo_id=<?= $modulo['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia / Alumnos</a>
+                                    <div class="d-flex flex-wrap gap-2 mt-auto">
+                                        <a href="abm/profesor_modulos.php?modulo_id=<?= $modulo['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia</a>
+                                        <a href="abm/profesor_alumnos.php?modulo_id=<?= $modulo['id']; ?>" class="poliba-btn-dark text-center text-decoration-none">Ver Alumnos</a>
                                     </div>
                                 </div>
                             </div>
@@ -429,14 +430,14 @@ require_once __DIR__ . '/includes/header.php';
             <div class="row g-4 mb-4">
                 <?php foreach ($mods as $m):
                     $badge = $m['lista_espera'] ? 'badge-espera' : 'badge-activo';
-                    if ($m['inscripcion_estado'] == 'cancelado') $badge = 'badge-cancelado';
+                    if (in_array($m['inscripcion_estado'], ['cancelado', 'baja'], true)) $badge = 'badge-cancelado';
                 ?>
                     <div class="col-md-6 col-lg-3">
                         <div class="poliba-card border-top border-5 border-info">
                             <div class="poliba-card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="badge rounded-pill <?= $badge; ?>">
-                                        <?= $m['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($m['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($m['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA')); ?>
+                                        <?= $m['inscripcion_estado'] == 'baja' ? 'Inactivo x Baja' : ($m['inscripcion_estado'] == 'suspendido' ? 'SUSPENDIDA' : ($m['inscripcion_estado'] == 'cancelado' ? 'CANCELADA' : ($m['lista_espera'] ? 'LISTA DE ESPERA' : 'ACTIVA'))); ?>
                                     </span>
                                 </div>
                                 <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($m['modulo_nombre']); ?></h5>

@@ -147,8 +147,9 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div class="text-muted small mb-2"><i class="bi bi-trophy"></i> <?= htmlspecialchars($cl['actividad_nombre']); ?></div>
                                 <div class="text-muted small mb-3"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($cl['entidad_nombre']); ?></div>
                                 <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($cl['horario_inicio'])); ?> - <?= date('H:i', strtotime($cl['horario_cierre'])); ?> hs</div>
-                                <div class="d-grid mt-auto">
+                                <div class="d-flex flex-wrap gap-2 mt-auto">
                                     <a href="profesor_modulos.php?modulo_id=<?= $cl['id']; ?>" class="poliba-btn text-center text-decoration-none">Tomar Asistencia</a>
+                                    <a href="profesor_alumnos.php?modulo_id=<?= $cl['id']; ?>" class="poliba-btn-dark text-center text-decoration-none">Ver Alumnos</a>
                                 </div>
                             </div>
                         </div>
