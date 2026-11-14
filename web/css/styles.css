@@ -400,8 +400,14 @@ body {
 /* Custom Table design */
 .table-responsive {
     border-radius: 12px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     box-shadow: var(--poliba-shadow);
+}
+
+.table-responsive > .table {
+    min-width: 720px;
 }
 
 .table-poliba {

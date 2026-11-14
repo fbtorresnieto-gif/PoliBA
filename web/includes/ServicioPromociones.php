@@ -21,7 +21,7 @@ final class ServicioPromociones
             if(!$i || (int)$i['fk_usuario_profesor']!==$actorId)throw new RuntimeException('La inscripción no está disponible para este profesor.');
             $stmt=$this->pdo->prepare("SELECT m.id,m.nombre,COALESCE(s.edad_minima,c.edad_minima,0) edad_min,
                 COALESCE(s.edad_maxima,c.edad_maxima,99) edad_max FROM modulos m
-                LEFT JOIN categoria c ON c.id=m.fk_categoria LEFT JOIN subcategorias s ON s.id=m.fk_subcategoria
+                LEFT JOIN categoria c ON c.id=m.fk_categoria LEFT JOIN subcategorias s ON s.id=m.fk_subcategoria AND s.estado=TRUE
                 WHERE m.id=? AND multipro_modulo_disponible(m.id) AND m.fk_actividad=? AND m.fk_entidad=? FOR SHARE OF m");
             $stmt->execute([$nuevoModuloId,$i['fk_actividad'],$i['fk_entidad']]);$nuevo=$stmt->fetch(PDO::FETCH_ASSOC);
             if(!$nuevo || $nuevoModuloId===(int)$i['fk_modulo'])throw new RuntimeException('El módulo de destino no está disponible.');

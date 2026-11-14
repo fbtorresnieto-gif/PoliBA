@@ -31,7 +31,7 @@ if ($actividad_id > 0) {
                 FROM modulos c
                 LEFT JOIN usuarios u ON c.fk_usuario_profesor = u.id
                 LEFT JOIN categoria cat ON c.fk_categoria = cat.id
-                LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
+                LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id AND sub.estado = TRUE
                 LEFT JOIN espacios esp ON c.fk_espacio = esp.id
                 WHERE c.fk_actividad = ? AND multipro_modulo_disponible(c.id)
                 ORDER BY c.nombre ASC

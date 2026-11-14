@@ -43,11 +43,13 @@ q($admin,'UPDATE espacios SET precio_hora_ars=2900 WHERE id=?',[$configId]);
 igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$apiIdPres])->fetchColumn(),1,'API_DEVOLUCION_UNICA');
 $local->registrarDevolucion($apiIdPres,$adminFixture);
 [$st,$detalle]=$api('GET','reservas/detalle.php?id='.$apiIdPres);igual($detalle['data']['devolucion_presencial'],'realizada','API_DEVOLUCION_REALIZADA');
-// Vencidas excluidas de lista y detalle; canceladas conservadas.
+// Vencidas visibles como historia, sin posibilidad de cancelación; canceladas conservadas.
 $vencida=(int)q($admin,"INSERT INTO reservas(fk_espacio,fk_usuario,fecha_de_asistencia,horario,estado,modalidad_pago,importe_total_ars)
-    VALUES(?,?,'2099-05-02','03:00','vencido','online',100) RETURNING id",[$configId,$alumnoFixture])->fetchColumn();
-[$st,$hist]=$api('GET','reservas/listar.php');igual($st,200,'API_HISTORIAL');$ids=array_column($hist['data'],'id');igual(in_array($vencida,$ids,true),false,'API_NO_VENCIDAS');igual(in_array($apiIdPres,$ids,true),true,'API_SI_CANCELADAS');
-[$st]=$api('GET','reservas/detalle.php?id='.$vencida);igual($st,404,'API_DETALLE_VENCIDA');
+    VALUES(?,?,'2020-05-02','03:00','reservado','gratuito',0) RETURNING id",[$configId,$alumnoFixture])->fetchColumn();
+[$st,$hist]=$api('GET','reservas/listar.php');igual($st,200,'API_HISTORIAL');$porId=array_column($hist['data'],null,'id');igual($porId[$vencida]['estado']??null,'vencido','API_LISTA_VENCIDA');igual(in_array($apiIdPres,array_keys($porId),true),true,'API_SI_CANCELADAS');
+[$st,$detalleVencida]=$api('GET','reservas/detalle.php?id='.$vencida);igual($st,200,'API_DETALLE_VENCIDA');igual($detalleVencida['data']['estado'],'vencido','API_ESTADO_EFECTIVO_VENCIDO');
+[$st]=$api('POST','reservas/cancelar.php',['reserva_id'=>$vencida]);igual($st,409,'API_NO_CANCELA_VENCIDA');
+igual(q($admin,'SELECT estado FROM reservas WHERE id=?',[$vencida])->fetchColumn(),'reservado','API_VENCIDA_CONSERVA_HISTORIA');
 foreach(['token_compartir','referencia_credencial','cuenta_proveedor','fk_actor'] as $privado)igual(array_key_exists($privado,$detalle['data']),false,'API_SIN_DATOS_INTERNOS');
 // Compatibilidad con cliente anterior: solo espacio/fecha/horario en gratuita.
 [$st,$gratisApi]=$api('POST','reservas/crear.php',['espacio_id'=>$espacioApi,'fecha'=>'2099-05-03','horario'=>'03:00']);igual($st,201,'API_CLIENTE_ANTERIOR');igual($gratisApi['data']['importe_total_ars'],'0.00','API_GRATUITA_CERO');

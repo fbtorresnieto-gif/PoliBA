@@ -115,7 +115,8 @@ require_once __DIR__ . '/../includes/header.php';
                     </tr>
                 <?php else: ?>
                     <?php foreach ($reservas as $res): 
-                        $is_active = strtolower($res['estado']) == 'reservado';
+                        $estado_vista = \MultiPro\Pagos\ConfiguracionEspacio::estadoEfectivo($res);
+                        $is_active = $estado_vista === 'reservado';
                     ?>
                         <tr>
                             <td class="fw-bold fs-5 text-dark"><?= date('H:i', strtotime($res['horario'])); ?> hs</td>
@@ -124,8 +125,8 @@ require_once __DIR__ . '/../includes/header.php';
                             <td><?= htmlspecialchars($res['alu_dni']); ?></td>
                             <td><?= htmlspecialchars($res['alu_telefono'] ?? '-'); ?></td>
                             <td>
-                                <span class="badge rounded-pill <?= $is_active ? 'bg-success' : (str_starts_with($res['estado'],'pendiente') ? 'bg-warning text-dark' : 'bg-danger'); ?>">
-                                    <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::estadoReserva($res['estado'])); ?>
+                                <span class="badge rounded-pill <?= $is_active ? 'bg-success' : (str_starts_with($estado_vista,'pendiente') ? 'bg-warning text-dark' : ($estado_vista==='vencido' ? 'bg-secondary' : 'bg-danger')); ?>">
+                                    <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::estadoReserva($estado_vista)); ?>
                                 </span>
                                 <?php if ($res['estado']==='cancelado' && !empty($res['motivo_cancelacion'])): ?>
                                     <small class="d-block mt-1">Motivo: <?= htmlspecialchars($res['motivo_cancelacion']); ?></small>
@@ -154,7 +155,7 @@ require_once __DIR__ . '/../includes/header.php';
                                         <button type="submit" class="btn btn-success btn-sm">Registrar devolución realizada</button>
                                     </form>
                                 <?php endif; ?>
-                                <?php if (in_array($res['estado'],['reservado','pendiente_presencial'],true) && $res['modalidad_pago']!=='online'): ?>
+                                <?php if (in_array($estado_vista,['reservado','pendiente_presencial'],true) && $res['modalidad_pago']!=='online'): ?>
                                     <details><summary class="text-danger">Cancelar reserva</summary>
                                         <form method="POST" class="mt-2">
                                             <input type="hidden" name="csrf_reservas" value="<?= htmlspecialchars($_SESSION['csrf_reservas']); ?>">

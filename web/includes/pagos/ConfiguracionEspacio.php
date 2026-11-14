@@ -42,4 +42,22 @@ final class ConfiguracionEspacio
             'reservado'=>'Reservado', 'cancelado'=>'Cancelado', 'vencido'=>'Vencido', default=>'Estado no disponible',
         };
     }
+
+    /** Estado funcional calculado sin alterar la historia almacenada de la reserva. */
+    public static function estadoEfectivo(array $reserva, ?\DateTimeImmutable $ahora = null): string
+    {
+        $estado = (string) ($reserva['estado'] ?? '');
+        if (!in_array($estado, ['reservado', 'pendiente_pago', 'pendiente_presencial'], true)) return $estado;
+        $fecha = $reserva['fecha_de_asistencia'] ?? $reserva['fecha'] ?? null;
+        $horario = $reserva['horario'] ?? null;
+        if (!is_string($fecha) || !is_string($horario) || $fecha === '' || $horario === '') return $estado;
+        try {
+            $zona = new \DateTimeZone('America/Argentina/Buenos_Aires');
+            $inicio = new \DateTimeImmutable($fecha.' '.$horario, $zona);
+            $ahora ??= new \DateTimeImmutable('now', $zona);
+            return $inicio <= $ahora ? 'vencido' : $estado;
+        } catch (\Throwable) {
+            return $estado;
+        }
+    }
 }

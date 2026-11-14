@@ -84,6 +84,18 @@ igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE
 $sinCobro=$local->crear($configId,$alumnoFixture,'2099-04-06','02:00:00','2700.99','presencial');$sid=(int)$sinCobro['id'];$local->cancelarTitular($sid,$alumnoFixture);
 igual((int)q($admin,'SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=?',[$sid])->fetchColumn(),0,'SIN_COBRO_NO_DEVOLUCION');
 rechaza(fn()=>$local->registrarCobro($sid,$adminFixture),'NO_COBRAR_CANCELADA');
+$pasada=(int)q($admin,"INSERT INTO reservas(fk_espacio,fk_usuario,fecha_de_asistencia,horario,estado,modalidad_pago,importe_total_ars)
+    VALUES(?,?,'2020-04-06','02:00:00','pendiente_presencial','presencial',2700.99) RETURNING id",[$configId,$alumnoFixture])->fetchColumn();
+rechaza(fn()=>$local->cancelarTitular($pasada,$alumnoFixture),'NO_CANCELAR_VENCIDA');
+[$status,$perfilVencido]=$web('perfil.php',null,$cookieAlumno);
+igual(str_contains($perfilVencido,'Vencido'),true,'PERFIL_MUESTRA_VENCIDA');
+$tokenPasado=(string)q($admin,'SELECT token_compartir FROM reservas WHERE id=?',[$pasada])->fetchColumn();
+igual(str_contains($perfilVencido,'ver_reserva.php?t='.urlencode($tokenPasado)),false,'PERFIL_NO_COMPARTE_VENCIDA');
+igual(str_contains($perfilVencido,'name="reserva_id" value="'.$pasada.'"'),false,'PERFIL_NO_CANCELA_VENCIDA');
+[$status,$adminVencido]=$web('abm/reservas.php?fecha=2020-04-06',null,$cookieAdmin);
+igual(str_contains($adminVencido,'Vencido'),true,'ADMIN_MUESTRA_VENCIDA');
+igual(str_contains($adminVencido,'Registrar cobro presencial'),true,'ADMIN_RESUELVE_COBRO_PENDIENTE_VENCIDO');
+igual(str_contains($adminVencido,'id="motivo'.$pasada.'"'),false,'ADMIN_NO_CANCELA_VENCIDA');
 // La fecha POST se valida independientemente de la fecha visible de calendario.
 rechaza(fn()=>$local->crear($configId,$alumnoFixture,'2099-02-30','02:00:00','2700.99','presencial'),'FECHA_INVALIDA');
 rechaza(fn()=>$local->crear($configId,$alumnoFixture,'2099-04-07','02:30:00','2700.99','presencial'),'TURNO_INVALIDO');

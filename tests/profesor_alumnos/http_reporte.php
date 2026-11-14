@@ -41,6 +41,7 @@ $crearUsuario = static function (string $rol, string $nombre, string $apellido, 
 
 $profesor = $crearUsuario('Profesor', 'Paula', 'Docente', '99000101', 'profesor-reporte@example.invalid', '11110001');
 $profesorAjeno = $crearUsuario('Profesor', 'Omar', 'Ajeno', '99000102', 'profesor-ajeno@example.invalid', '11110002');
+$administrador = $crearUsuario('Administrador', 'Ada', 'Administradora', '99000106', 'administradora-reporte@example.invalid', '11110006');
 $alumno = $crearUsuario('Alumno', 'Ana', 'Adulta', '99000103', 'alumna-adulta@example.invalid', '11110003');
 $responsable = $crearUsuario('Alumno', 'Rita', 'Responsable', '99000104', 'responsable@example.invalid', '11110004');
 $menor = (int) ejecutarReporte($root, "INSERT INTO menores(nombre,apellido,dni,direccion,fecha_nacimiento,relacion,fk_usuario) VALUES('Milo','Menor','99000105','Dirección menor','2015-04-05','Hijo/a',?) RETURNING id", [$responsable])->fetchColumn();
@@ -122,6 +123,17 @@ try {
     [$codigo, $excelSoloAdultos] = $http('abm/profesor_alumnos_excel.php?modulo_id='.$moduloSoloAdultos, null, $cookie);
     verificaReporte($codigo === 200 && str_contains($excelSoloAdultos, 'Ana'), 'Excel de adultos autorizado');
     verificaReporte(!str_contains($excelSoloAdultos, 'Apellido del mayor') && !str_contains($excelSoloAdultos, 'Relación'), 'Excel sin menores omite columnas del responsable');
+
+    $cookieAdministrador = '';
+    [$codigo] = $http('login.php', ['action' => 'login', 'email' => 'administradora-reporte@example.invalid', 'contrasena' => $clave], $cookieAdministrador);
+    verificaReporte($codigo === 302 && $cookieAdministrador !== '', 'autenticación del administrador');
+    [$codigo, $alumnosAdministrador] = $http('abm/alumnos.php', null, $cookieAdministrador);
+    verificaReporte($codigo === 200, 'Ver alumnos del administrador responde HTTP 200');
+    foreach (['Rita', 'Responsable', 'Ningún módulo', 'Milo', 'Menor', '99000105', 'Módulo reporte profesor'] as $datoAdministrador) {
+        verificaReporte(str_contains($alumnosAdministrador, $datoAdministrador), 'Ver alumnos contiene '.$datoAdministrador);
+    }
+    [$codigo, $busquedaMenor] = $http('abm/alumnos.php?search=99000105', null, $cookieAdministrador);
+    verificaReporte($codigo === 200 && str_contains($busquedaMenor, 'Rita') && str_contains($busquedaMenor, 'Milo'), 'la búsqueda por DNI del menor devuelve su responsable');
 
     verificaReporte((bool) preg_match('/name="csrf_profesor_alumnos" value="([^"]+)"/', $reporte, $csrfBaja), 'reporte incluye protección CSRF');
     [$codigo] = $http('abm/profesor_alumnos.php', [

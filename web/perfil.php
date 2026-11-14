@@ -166,7 +166,7 @@ if (has_role('Alumno')) {
             FROM reservas r
             JOIN espacios esp ON r.fk_espacio = esp.id
             JOIN entidades e ON esp.fk_entidad = e.id
-            WHERE r.fk_usuario = ? AND r.estado <> 'vencido'
+            WHERE r.fk_usuario = ?
             ORDER BY r.fecha_de_asistencia DESC, r.horario DESC
         ");
         $stmt->execute([$user['id']]);
@@ -307,15 +307,18 @@ require_once __DIR__ . '/includes/header.php';
             <?php else: ?>
                 <div class="row g-4">
                     <?php foreach ($reservas as $res): 
+                        $estado_vista = \MultiPro\Pagos\ConfiguracionEspacio::estadoEfectivo($res);
                         $status_badge = 'bg-success';
-                        if (strtolower($res['estado']) == 'cancelado') $status_badge = 'bg-danger';
-                        if (str_starts_with($res['estado'], 'pendiente')) $status_badge = 'bg-warning text-dark';
+                        $borde_estado = 'border-success';
+                        if ($estado_vista === 'cancelado') { $status_badge = 'bg-danger'; $borde_estado = 'border-danger'; }
+                        if (str_starts_with($estado_vista, 'pendiente')) { $status_badge = 'bg-warning text-dark'; $borde_estado = 'border-warning'; }
+                        if ($estado_vista === 'vencido') { $status_badge = 'bg-secondary'; $borde_estado = 'border-secondary'; }
                     ?>
                         <div class="col-md-6 col-lg-3">
-                            <div class="poliba-card border-top border-5 border-success">
+                            <div class="poliba-card border-top border-5 <?= $borde_estado; ?>">
                                 <div class="poliba-card-body p-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge <?= $status_badge; ?>"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::estadoReserva($res['estado'])); ?></span>
+                                        <span class="badge <?= $status_badge; ?>"><?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::estadoReserva($estado_vista)); ?></span>
                                     </div>
                                     <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($res['espacio_nombre']); ?></h5>
                                     <div class="text-muted small mb-2"><i class="bi bi-building"></i> Entidad: <?= htmlspecialchars($res['entidad_nombre']); ?></div>
@@ -323,8 +326,8 @@ require_once __DIR__ . '/includes/header.php';
                                     <div class="text-dark small mb-3"><i class="bi bi-clock me-2"></i><?= date('H:i', strtotime($res['horario'])); ?> hs</div>
                                     <p class="small fw-bold">Importe final por 1 hora: <?= htmlspecialchars(\MultiPro\Pagos\ConfiguracionEspacio::etiqueta($res['importe_total_ars'])); ?></p>
                                     <?php if ($res['modalidad_pago']==='presencial'): ?>
-                                        <p class="small"><?= $res['presencial_cobrado'] ? 'Cobro presencial registrado' : ($res['estado']==='cancelado' ? 'Sin cobro registrado' : 'Pago presencial pendiente'); ?></p>
-                                        <?php if ($res['estado']==='reservado' && $res['presencial_cobrado']): ?>
+                                        <p class="small"><?= $res['presencial_cobrado'] ? 'Cobro presencial registrado' : ($estado_vista==='cancelado' ? 'Sin cobro registrado' : ($estado_vista==='vencido' ? 'Reserva vencida sin cobro registrado' : 'Pago presencial pendiente')); ?></p>
+                                        <?php if ($estado_vista==='reservado' && $res['presencial_cobrado']): ?>
                                             <p class="small text-muted">Si cancelás con 5 horas o más, corresponde devolución total. Con menos de 5 horas no se genera devolución.</p>
                                         <?php endif; ?>
                                         <?php if ($res['devolucion_realizada']): ?><p class="small">Devolución total registrada por la entidad.</p>
@@ -332,12 +335,12 @@ require_once __DIR__ . '/includes/header.php';
                                     <?php endif; ?>
                                     
                                     <div class="d-flex justify-content-between gap-1 mt-auto">
-                                        <?php if (strtolower($res['estado']) == 'reservado'): ?>
+                                        <?php if ($estado_vista === 'reservado'): ?>
                                             <button type="button" class="btn btn-outline-dark btn-sm flex-grow-1"
                                                     data-share-url="ver_reserva.php?t=<?= urlencode($res['token_compartir']); ?>"
                                                     onclick="compartirReserva(this)">Compartir</button>
                                         <?php endif; ?>
-                                        <?php if (in_array($res['estado'],['reservado','pendiente_presencial'],true) && $res['modalidad_pago']!=='online'): ?>
+                                        <?php if (in_array($estado_vista,['reservado','pendiente_presencial'],true) && $res['modalidad_pago']!=='online'): ?>
                                             <form action="perfil.php#mis-reservas" method="POST" onsubmit="return confirm('¿Querés cancelar esta reserva?');">
                                                 <input type="hidden" name="action" value="cancelar_reserva">
                                                 <input type="hidden" name="reserva_id" value="<?= $res['id']; ?>">

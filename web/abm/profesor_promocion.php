@@ -58,7 +58,7 @@ try {
         FROM inscripcion i
         JOIN modulos c ON i.fk_modulo = c.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
-        LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
+        LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id AND sub.estado = TRUE
         LEFT JOIN usuarios u ON i.fk_usuario = u.id
         LEFT JOIN menores m ON i.fk_menor = m.id
         LEFT JOIN usuarios tutor ON m.fk_usuario = tutor.id
@@ -89,7 +89,7 @@ try {
                    COALESCE(sub.edad_maxima, cat.edad_maxima, 99) as edad_max
             FROM modulos c
             LEFT JOIN categoria cat ON c.fk_categoria = cat.id
-            LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
+            LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id AND sub.estado = TRUE
             WHERE c.fk_actividad = ? AND c.fk_entidad = ? AND c.id != ? AND multipro_modulo_disponible(c.id)
         ");
         $stmt_cls->execute([$al['fk_actividad'], $al['fk_entidad'], $al['fk_modulo']]);

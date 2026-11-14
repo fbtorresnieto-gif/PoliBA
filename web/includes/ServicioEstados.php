@@ -138,7 +138,7 @@ final class ServicioEstados
             if(!$this->q('SELECT multipro_modulo_disponible(?)',[$modulo])->fetchColumn())throw new RuntimeException('Reactivá primero la entidad, actividad, espacio y módulo.');
             $filas=$this->q("SELECT * FROM inscripcion WHERE fk_modulo=? AND estado IN ('activo','suspendido') ORDER BY id FOR UPDATE",[$modulo])->fetchAll(PDO::FETCH_ASSOC);
             $cupos=0;$personas=[];$total=0;
-            $rango=$this->q('SELECT COALESCE(s.edad_minima,c.edad_minima,0) minima,COALESCE(s.edad_maxima,c.edad_maxima,99) maxima FROM modulos m LEFT JOIN categoria c ON c.id=m.fk_categoria LEFT JOIN subcategorias s ON s.id=m.fk_subcategoria WHERE m.id=?',[$modulo])->fetch(PDO::FETCH_ASSOC);
+            $rango=$this->q('SELECT COALESCE(s.edad_minima,c.edad_minima,0) minima,COALESCE(s.edad_maxima,c.edad_maxima,99) maxima FROM modulos m LEFT JOIN categoria c ON c.id=m.fk_categoria LEFT JOIN subcategorias s ON s.id=m.fk_subcategoria AND s.estado=TRUE WHERE m.id=?',[$modulo])->fetch(PDO::FETCH_ASSOC);
             foreach($filas as $i) {
                 $clave=$i['fk_usuario']?'u'.$i['fk_usuario']:'m'.$i['fk_menor'];
                 if(isset($personas[$clave]))throw new RuntimeException('Hay inscripciones duplicadas. Revisalas antes de reactivar el conjunto.');

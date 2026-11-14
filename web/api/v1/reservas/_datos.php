@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/../_auth.php';
 require_once __DIR__.'/../../../includes/pagos/ServicioReservas.php';
+require_once __DIR__.'/../../../includes/pagos/ConfiguracionEspacio.php';
 
 function reservaApiEntero(array $datos,string $campo): int {
     $v=$datos[$campo]??null;
@@ -20,16 +21,17 @@ function reservaApiSeleccion(): string {
 }
 
 function reservaApiDatos(array $r): array {
+    $estado=\MultiPro\Pagos\ConfiguracionEspacio::estadoEfectivo($r);
     return ['id'=>(int)$r['id'],'espacio_id'=>(int)$r['fk_espacio'],'espacio_nombre'=>$r['espacio_nombre'],
         'entidad_id'=>(int)$r['entidad_id'],'entidad_nombre'=>$r['entidad_nombre'],'entidad_direccion'=>$r['entidad_direccion'],
-        'fecha'=>$r['fecha_de_asistencia'],'horario'=>$r['horario'],'estado'=>$r['estado'],
+        'fecha'=>$r['fecha_de_asistencia'],'horario'=>$r['horario'],'estado'=>$estado,
         'modalidad_pago'=>$r['modalidad_pago'],'importe_total_ars'=>$r['importe_total_ars'],'moneda'=>$r['moneda'],
         'presencial_cobrado'=>(bool)$r['presencial_cobrado'],
         'devolucion_presencial'=>$r['devolucion_realizada']?'realizada':($r['devolucion_solicitada']?'pendiente':'no_solicitada')];
 }
 
 function reservaApiPropia(PDO $pdo,int $id,int $usuario): array {
-    $s=$pdo->prepare(reservaApiSeleccion()." WHERE r.id=? AND r.fk_usuario=? AND r.estado<>'vencido'");
+    $s=$pdo->prepare(reservaApiSeleccion()." WHERE r.id=? AND r.fk_usuario=?");
     $s->execute([$id,$usuario]);$r=$s->fetch(PDO::FETCH_ASSOC);
     if(!$r)apiResponder(['error'=>'Reserva no encontrada.'],404);
     return reservaApiDatos($r);

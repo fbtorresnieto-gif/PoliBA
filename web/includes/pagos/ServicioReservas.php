@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace MultiPro\Pagos;
 
 require_once dirname(__DIR__).'/NotificacionesEmail.php';
+require_once __DIR__.'/ConfiguracionEspacio.php';
 
 use PDO;
 use Throwable;
@@ -145,8 +146,9 @@ final class ServicioReservas
                 if((int)$r['fk_usuario']!==$actor)throw new RuntimeException('Reserva no disponible.');
                 $entidad=(int)$this->q('SELECT fk_entidad FROM espacios WHERE id=? FOR SHARE',[$r['fk_espacio']])->fetchColumn();
             }
-            if($r['modalidad_pago']==='online')throw new RuntimeException('La cancelación online todavía no está habilitada en esta pantalla.');
             if($r['estado']==='cancelado')return;
+            if(ConfiguracionEspacio::estadoEfectivo($r)==='vencido')throw new RuntimeException('La reserva está vencida y ya no se puede cancelar.');
+            if($r['modalidad_pago']==='online')throw new RuntimeException('La cancelación online todavía no está habilitada en esta pantalla.');
             if(!in_array($r['estado'],['reservado','pendiente_presencial'],true))throw new RuntimeException('La reserva no se puede cancelar.');
             $this->q("UPDATE reservas SET estado='cancelado',cancelado_en=clock_timestamp(),cancelacion_origen=?,
                 cancelado_por_usuario=?,motivo_cancelacion=?,actualizado_en=clock_timestamp() WHERE id=?",[$admin?'administrador':'usuario',$actor,$motivo,$reserva]);

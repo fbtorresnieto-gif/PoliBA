@@ -27,7 +27,7 @@ try {
         JOIN actividades d ON c.fk_actividad = d.id
         JOIN entidades e ON c.fk_entidad = e.id
         LEFT JOIN categoria cat ON c.fk_categoria = cat.id
-        LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id
+        LEFT JOIN subcategorias sub ON c.fk_subcategoria = sub.id AND sub.estado = TRUE
         WHERE multipro_modulo_disponible(c.id) AND e.estado = TRUE AND $visibilidadSql
         ORDER BY e.nombre, d.nombre, c.nombre ASC
     ");

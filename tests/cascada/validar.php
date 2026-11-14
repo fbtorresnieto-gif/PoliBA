@@ -141,12 +141,13 @@ cq($p,'INSERT INTO dias_modulos(fk_modulo,fk_dia) VALUES(?,?)',[$conflicto,$diaM
 cr(fn()=>$s->cambiar('modulo',$conflicto,true,$admin2,'Horario ocupado'),'reactivación valida agenda');
 ca(!cq($p,'SELECT estado FROM modulos WHERE id=?',[$conflicto])->fetchColumn(),'conflicto no deja módulo activo');
 $s->cambiar('modulo',$m,false,$admin2,'Revisión de condiciones');
-$categoria=$id("INSERT INTO categoria(nombre,edad_minima,edad_maxima) VALUES('Fixture fuera de edad',70,99)");
-cq($p,'UPDATE modulos SET fk_categoria=? WHERE id=?',[$categoria,$m]);
+$categoria=$id("INSERT INTO categoria(nombre,edad_minima,edad_maxima) VALUES('Fixture categoría amplia',0,99)");
+$subcategoria=$id("INSERT INTO subcategorias(nombre,edad_minima,edad_maxima,fk_actividad,fk_categoria,fk_entidad) VALUES('Fixture fuera de edad',70,99,?,?,?)",[$a,$categoria,$e]);
+cq($p,'UPDATE modulos SET fk_categoria=?,fk_subcategoria=? WHERE id=?',[$categoria,$subcategoria,$m]);
 $s->cambiar('modulo',$m,true,$admin2,'Reabrir con condiciones cambiadas');
 cr(fn()=>$s->reactivarInscripciones($m,$admin2,'Fuera de edad'),'condiciones de edad no se ignoran');
-cq($p,'UPDATE modulos SET fk_categoria=NULL WHERE id=?',[$m]);
-ca($s->reactivarInscripciones($m,$admin2,'Condiciones corregidas')===3,'recupera conjunto tras corregir condiciones');
+cq($p,'UPDATE subcategorias SET estado=FALSE WHERE id=?',[$subcategoria]);
+ca($s->reactivarInscripciones($m,$admin2,'Subcategoría inactiva')===3,'subcategoría inactiva usa el rango de la categoría');
 
 // Procesos independientes: una baja concurrente no deja reservas activas ni pierde obligaciones.
 function concurrentes(array $operaciones): array {

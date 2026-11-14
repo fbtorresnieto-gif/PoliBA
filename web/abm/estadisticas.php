@@ -68,6 +68,7 @@ try {
         FROM reservas r
         JOIN espacios e ON r.fk_espacio = e.id
         WHERE e.fk_entidad = ? AND r.estado = 'reservado'
+          AND ((r.fecha_de_asistencia+r.horario) AT TIME ZONE 'America/Argentina/Buenos_Aires') > clock_timestamp()
     ");
     $stmt->execute([$entidad_id]);
     $total_reservas = $stmt->fetchColumn() ?: 0;
@@ -90,9 +91,9 @@ try {
 try {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) AS total,
-               COUNT(*) FILTER (WHERE r.estado = 'reservado') AS confirmadas,
+               COUNT(*) FILTER (WHERE r.estado = 'reservado' AND ((r.fecha_de_asistencia+r.horario) AT TIME ZONE 'America/Argentina/Buenos_Aires') > clock_timestamp()) AS confirmadas,
                COUNT(*) FILTER (WHERE r.estado = 'cancelado') AS canceladas,
-               COUNT(*) FILTER (WHERE r.estado IN ('pendiente_pago','pendiente_presencial')) AS pendientes
+               COUNT(*) FILTER (WHERE r.estado IN ('pendiente_pago','pendiente_presencial') AND ((r.fecha_de_asistencia+r.horario) AT TIME ZONE 'America/Argentina/Buenos_Aires') > clock_timestamp()) AS pendientes
         FROM reservas r
         JOIN espacios e ON r.fk_espacio = e.id
         WHERE e.fk_entidad = ?
@@ -111,7 +112,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             e.id, e.nombre, e.techado, e.estado,
-            (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'reservado') as reservas_activas,
+            (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'reservado' AND ((r.fecha_de_asistencia+r.horario) AT TIME ZONE 'America/Argentina/Buenos_Aires') > clock_timestamp()) as reservas_activas,
             (SELECT COUNT(*) FROM reservas r WHERE r.fk_espacio = e.id AND r.estado = 'cancelado') as reservas_canceladas,
             (SELECT COUNT(*) FROM modulos cl WHERE cl.fk_espacio = e.id AND cl.estado = TRUE) as modulos_asignados
         FROM espacios e
@@ -230,7 +231,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="row g-3 mb-4">
         <?php foreach ([
             ['Total de reservas', $reservas_total, 'bi-ticket-perforated-fill'],
-            ['Confirmadas', $total_reservas, 'bi-check-circle-fill'],
+            ['Activas', $total_reservas, 'bi-check-circle-fill'],
             ['Pendientes', $reservas_pendientes, 'bi-hourglass-split'],
             ['Canceladas', $reservas_canceladas, 'bi-x-circle-fill'],
         ] as [$etiquetaReserva, $cantidadReserva, $iconoReserva]): ?>

@@ -19,23 +19,35 @@ $alumnos = [];
 
 try {
     $sql = "
-        SELECT DISTINCT u.* 
+        SELECT u.*
         FROM usuarios u
         JOIN roles r ON u.fk_rol = r.id
-        JOIN inscripcion i ON u.id = i.fk_usuario
-        JOIN modulos c ON i.fk_modulo = c.id
         WHERE r.nombre = 'Alumno'
-          AND c.fk_entidad = ?
-          AND i.estado = 'activo'
-          AND (i.lista_espera IS NULL OR i.lista_espera = FALSE)
-          AND c.estado = TRUE
+          AND EXISTS (
+              SELECT 1
+              FROM inscripcion i
+              JOIN modulos c ON i.fk_modulo = c.id
+              LEFT JOIN menores menor_inscripto ON menor_inscripto.id = i.fk_menor
+              WHERE c.fk_entidad = ?
+                AND i.estado = 'activo'
+                AND (i.lista_espera IS NULL OR i.lista_espera = FALSE)
+                AND multipro_modulo_disponible(c.id)
+                AND (i.fk_usuario = u.id OR menor_inscripto.fk_usuario = u.id)
+          )
     ";
     
     $params = [$entidad_id];
     
     if (!empty($search_query)) {
         // SQLite soporta || para concatenar, Postgres también.
-        $sql .= " AND (u.nombre ILIKE ? OR u.apellido ILIKE ? OR u.dni LIKE ?)";
+        $sql .= " AND (
+            u.nombre ILIKE ? OR u.apellido ILIKE ? OR u.dni LIKE ?
+            OR EXISTS (
+                SELECT 1 FROM menores menor_busqueda
+                WHERE menor_busqueda.fk_usuario = u.id
+                  AND (menor_busqueda.nombre ILIKE ? OR menor_busqueda.apellido ILIKE ? OR menor_busqueda.dni LIKE ?)
+            )
+        )";
         // Para SQLite que es case-sensitive o usa LIKE normal, usaremos LIKE y concatenamos %
         // Adaptemos la consulta para que funcione en ambos drivers (PostgreSQL y SQLite fallback)
         global $db_driver_used;
@@ -43,6 +55,9 @@ try {
             $sql = str_replace('ILIKE', 'LIKE', $sql);
         }
         $search_param = "%$search_query%";
+        $params[] = $search_param;
+        $params[] = $search_param;
+        $params[] = "%$search_query%";
         $params[] = $search_param;
         $params[] = $search_param;
         $params[] = "%$search_query%";
