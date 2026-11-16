@@ -96,6 +96,15 @@ igual(str_contains($perfilVencido,'name="reserva_id" value="'.$pasada.'"'),false
 igual(str_contains($adminVencido,'Vencido'),true,'ADMIN_MUESTRA_VENCIDA');
 igual(str_contains($adminVencido,'Registrar cobro presencial'),true,'ADMIN_RESUELVE_COBRO_PENDIENTE_VENCIDO');
 igual(str_contains($adminVencido,'id="motivo'.$pasada.'"'),false,'ADMIN_NO_CANCELA_VENCIDA');
+// El enlace público debe interpretar fecha y horario como Buenos Aires aunque PHP se ejecute en UTC.
+$instanteCompartible=q($admin,"SELECT (clock_timestamp() AT TIME ZONE 'America/Argentina/Buenos_Aires'+interval '2 hours 17 minutes')::date AS fecha,
+    to_char(clock_timestamp() AT TIME ZONE 'America/Argentina/Buenos_Aires'+interval '2 hours 17 minutes','HH24:MI:SS') AS hora")->fetch();
+$compartible=(int)q($admin,"INSERT INTO reservas(fk_espacio,fk_usuario,fecha_de_asistencia,horario,estado,modalidad_pago,importe_total_ars)
+    VALUES(?,?,?,?,'reservado','gratuito',0) RETURNING id",[$configId,$alumnoFixture,$instanteCompartible['fecha'],$instanteCompartible['hora']])->fetchColumn();
+$tokenCompartible=(string)q($admin,'SELECT token_compartir FROM reservas WHERE id=?',[$compartible])->fetchColumn();
+[$status,$reservaCompartida]=$web('ver_reserva.php?t='.urlencode($tokenCompartible),null,$cookieAlumno);
+igual($status,200,'LINK_COMPARTIR_HTTP');
+igual(str_contains($reservaCompartida,'Detalle de Reserva'),true,'LINK_COMPARTIR_ZONA_BUENOS_AIRES');
 // La fecha POST se valida independientemente de la fecha visible de calendario.
 rechaza(fn()=>$local->crear($configId,$alumnoFixture,'2099-02-30','02:00:00','2700.99','presencial'),'FECHA_INVALIDA');
 rechaza(fn()=>$local->crear($configId,$alumnoFixture,'2099-04-07','02:30:00','2700.99','presencial'),'TURNO_INVALIDO');

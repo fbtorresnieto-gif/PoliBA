@@ -42,6 +42,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
     private ActivityReservationDetailBinding binding;
     private SessionManager sessionManager;
     private Call<ReservationResponse> detailRequest;
+    private Call<ReservationResponse> shareValidationRequest;
     private Call<ReservationCancelResponse> cancellationRequest;
     private int reservationId;
     private boolean cancelling;
@@ -129,7 +130,56 @@ public class ReservationDetailActivity extends AppCompatActivity {
 
     private void shareReservation() {
         if (displayedReservation == null || !displayedReservation.canShare()) return;
-        String text = getString(R.string.share_reservation_text, displayedReservation.getShareUrl());
+        String authorization = sessionManager.authorizationHeader();
+        if (authorization == null) {
+            openLogin();
+            return;
+        }
+        if (shareValidationRequest != null) shareValidationRequest.cancel();
+        binding.shareButton.setEnabled(false);
+        shareValidationRequest = ApiClient.getService().consultarReserva(authorization, reservationId);
+        shareValidationRequest.enqueue(new Callback<>() {
+            @Override
+            public void onResponse(@NonNull Call<ReservationResponse> call,
+                                   @NonNull Response<ReservationResponse> response) {
+                if (binding == null) return;
+                binding.shareButton.setEnabled(true);
+                if (response.code() == 401) {
+                    sessionManager.clear();
+                    openLogin();
+                    return;
+                }
+                Reservation reservation = response.body() == null
+                        ? null : response.body().getData();
+                if (response.isSuccessful() && reservation != null && reservation.canShare()) {
+                    displayedReservation = reservation;
+                    performShare(reservation);
+                    return;
+                }
+                if (reservation != null) renderReservation(reservation);
+                android.widget.Toast.makeText(
+                        ReservationDetailActivity.this,
+                        R.string.reservation_share_unavailable,
+                        android.widget.Toast.LENGTH_LONG
+                ).show();
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ReservationResponse> call,
+                                  @NonNull Throwable error) {
+                if (binding == null || call.isCanceled()) return;
+                binding.shareButton.setEnabled(true);
+                android.widget.Toast.makeText(
+                        ReservationDetailActivity.this,
+                        R.string.connection_error,
+                        android.widget.Toast.LENGTH_LONG
+                ).show();
+            }
+        });
+    }
+
+    private void performShare(Reservation reservation) {
+        String text = getString(R.string.share_reservation_text, reservation.getShareUrl());
         Intent send = new Intent(Intent.ACTION_SEND)
                 .setType("text/plain")
                 .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_reservation_title))
@@ -139,9 +189,15 @@ public class ReservationDetailActivity extends AppCompatActivity {
         } catch (ActivityNotFoundException error) {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             clipboard.setPrimaryClip(ClipData.newPlainText(
-                    getString(R.string.share_reservation_title), displayedReservation.getShareUrl()));
+                    getString(R.string.share_reservation_title), reservation.getShareUrl()));
             android.widget.Toast.makeText(this, R.string.share_link_copied, android.widget.Toast.LENGTH_LONG).show();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (binding != null && displayedReservation != null && !cancelling) loadReservation();
     }
 
     private void confirmCancellation() {
@@ -270,6 +326,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (detailRequest != null) detailRequest.cancel();
+        if (shareValidationRequest != null) shareValidationRequest.cancel();
         if (cancellationRequest != null) cancellationRequest.cancel();
         binding = null;
         super.onDestroy();

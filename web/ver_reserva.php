@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/pagos/ConfiguracionEspacio.php';
 
 $token = isset($_GET['t']) ? trim($_GET['t']) : '';
 $reserva = null;
@@ -24,12 +25,9 @@ if (preg_match('/^[a-f0-9]{32}$/', $token)) {
     }
 }
 
-// Si no existe, está cancelada o ya pasó el horario de inicio, no se muestra ningún dato
-$disponible = false;
-if ($reserva && strtolower($reserva['estado']) === 'reservado') {
-    $inicio = strtotime($reserva['fecha_de_asistencia'] . ' ' . $reserva['horario']);
-    $disponible = $inicio !== false && $inicio > time();
-}
+// La página pública usa la misma zona horaria y regla funcional que Web/API.
+$disponible = $reserva
+    && \MultiPro\Pagos\ConfiguracionEspacio::estadoEfectivo($reserva) === 'reservado';
 
 if (!$disponible) {
     require_once __DIR__ . '/includes/header.php';

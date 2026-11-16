@@ -102,6 +102,7 @@
     <string name="share_reservation_title">Reserva MultiPro</string>
     <string name="share_reservation_text">Te comparto mi reserva de MultiPro: %1$s</string>
     <string name="share_link_copied">El enlace de la reserva se copió al portapapeles.</string>
+    <string name="reservation_share_unavailable">La reserva ya no está disponible para compartir.</string>
     <string name="confirm_cancellation_title">Cancelar reserva</string>
     <string name="confirm_cancellation_message">¿Confirmás la cancelación de la reserva #%1$d? El horario volverá a quedar disponible.</string>
     <string name="cancelling_reservation">Cancelando reserva…</string>
