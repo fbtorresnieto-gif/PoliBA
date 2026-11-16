@@ -117,15 +117,32 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void openDatePicker() {
         LocalDate initial = selectedBirthDate == null ? LocalDate.now().minusYears(18) : selectedBirthDate;
-        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, (picker, year, month, day) -> {
-            selectedBirthDate = LocalDate.of(year, month + 1, day);
-            binding.birthDateInput.setText(selectedBirthDate.format(DISPLAY_DATE));
-            binding.birthDateLayout.setError(null);
-        }, initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth());
+        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, null,
+                initial.getYear(), initial.getMonthValue() - 1, initial.getDayOfMonth());
         long maximumBirthDate = LocalDate.now().minusYears(18)
                 .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
         dialog.getDatePicker().setMaxDate(maximumBirthDate);
         dialog.show();
+        dialog.getDatePicker().init(
+                initial.getYear(),
+                initial.getMonthValue() - 1,
+                initial.getDayOfMonth(),
+                (picker, year, month, day) -> applyBirthDate(dialog, year, month, day)
+        );
+        dialog.getButton(DatePickerDialog.BUTTON_POSITIVE).setOnClickListener(view ->
+                applyBirthDate(
+                        dialog,
+                        dialog.getDatePicker().getYear(),
+                        dialog.getDatePicker().getMonth(),
+                        dialog.getDatePicker().getDayOfMonth()
+                ));
+    }
+
+    private void applyBirthDate(DatePickerDialog dialog, int year, int month, int day) {
+        selectedBirthDate = LocalDate.of(year, month + 1, day);
+        dialog.dismiss();
+        binding.birthDateInput.setText(selectedBirthDate.format(DISPLAY_DATE));
+        binding.birthDateLayout.setError(null);
     }
 
     private void submit() {

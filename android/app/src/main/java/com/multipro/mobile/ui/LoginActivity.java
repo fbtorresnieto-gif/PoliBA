@@ -7,6 +7,7 @@ import android.util.Patterns;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.credentials.Credential;
@@ -20,6 +21,7 @@ import androidx.credentials.exceptions.GetCredentialException;
 
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.multipro.mobile.BuildConfig;
@@ -31,6 +33,7 @@ import com.multipro.mobile.data.model.LoginResponse;
 import com.multipro.mobile.data.remote.ApiClient;
 import com.multipro.mobile.data.remote.ApiErrorParser;
 import com.multipro.mobile.databinding.ActivityLoginBinding;
+import com.multipro.mobile.databinding.DialogPasswordRecoveryBinding;
 
 import java.util.Locale;
 
@@ -42,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
     private Call<LoginResponse> loginCall;
     private Call<LoginResponse> googleLoginCall;
+    private Call<JsonObject> recoveryCall;
     private CancellationSignal googleCancellationSignal;
     private CredentialManager credentialManager;
 
@@ -53,6 +57,7 @@ public class LoginActivity extends AppCompatActivity {
 
         binding.backButton.setOnClickListener(view -> finish());
         binding.loginButton.setOnClickListener(view -> submitLogin());
+        binding.forgotPasswordButton.setOnClickListener(view -> showPasswordRecovery());
         credentialManager = CredentialManager.create(this);
         binding.googleLoginButton.setOnClickListener(view -> startGoogleSignIn());
         binding.googleLoginButton.setEnabled(!BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank());
@@ -217,6 +222,65 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private void showPasswordRecovery() {
+        DialogPasswordRecoveryBinding fields =
+                DialogPasswordRecoveryBinding.inflate(getLayoutInflater());
+        fields.emailInput.setText(binding.emailInput.getText());
+
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.forgot_password)
+                .setMessage(R.string.forgot_password_instructions)
+                .setView(fields.getRoot())
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.send_recovery_link, null)
+                .create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(view -> submitRecovery(dialog, fields)));
+        dialog.show();
+    }
+
+    private void submitRecovery(AlertDialog dialog, DialogPasswordRecoveryBinding fields) {
+        String email = fields.emailInput.getText() == null
+                ? "" : fields.emailInput.getText().toString().trim();
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            fields.emailLayout.setError(getString(
+                    email.isEmpty() ? R.string.required_email : R.string.invalid_email));
+            return;
+        }
+        fields.emailLayout.setError(null);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(false);
+        JsonObject data = new JsonObject();
+        data.addProperty("email", email.toLowerCase(Locale.ROOT));
+        recoveryCall = ApiClient.getService().solicitarRecuperacion(data);
+        recoveryCall.enqueue(new Callback<>() {
+            @Override public void onResponse(@NonNull Call<JsonObject> call,
+                    @NonNull Response<JsonObject> response) {
+                if (binding == null || call != recoveryCall) return;
+                if (!response.isSuccessful()) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(true);
+                    fields.emailLayout.setError(ApiErrorParser.message(
+                            response, getString(R.string.unexpected_error)));
+                    return;
+                }
+                dialog.dismiss();
+                new MaterialAlertDialogBuilder(LoginActivity.this)
+                        .setTitle(R.string.recovery_requested_title)
+                        .setMessage(R.string.recovery_requested_message)
+                        .setPositiveButton(R.string.accept, null)
+                        .show();
+            }
+
+            @Override public void onFailure(@NonNull Call<JsonObject> call, @NonNull Throwable error) {
+                if (binding == null || call.isCanceled() || call != recoveryCall) return;
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(true);
+                fields.emailLayout.setError(getString(R.string.connection_error));
+            }
+        });
+    }
+
     private boolean saveSessionAndOpenHome(LoginData data) {
         if (data == null || data.getUsuario() == null || data.getToken() == null
                 || data.getToken().isBlank()) return false;
@@ -258,6 +322,7 @@ public class LoginActivity extends AppCompatActivity {
         binding.loginButton.setEnabled(!loading);
         binding.googleLoginButton.setEnabled(!loading && !BuildConfig.GOOGLE_WEB_CLIENT_ID.isBlank());
         binding.registerButton.setEnabled(!loading);
+        binding.forgotPasswordButton.setEnabled(!loading);
         binding.emailInput.setEnabled(!loading);
         binding.passwordInput.setEnabled(!loading);
         binding.loginButton.setText(loading && !google ? R.string.logging_in : R.string.login);
@@ -269,6 +334,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onDestroy() {
         if (loginCall != null) loginCall.cancel();
         if (googleLoginCall != null) googleLoginCall.cancel();
+        if (recoveryCall != null) recoveryCall.cancel();
         if (googleCancellationSignal != null) googleCancellationSignal.cancel();
         binding = null;
         super.onDestroy();

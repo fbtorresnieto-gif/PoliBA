@@ -64,6 +64,15 @@ public interface ApiService {
     @GET("perfil/consultar.php")
     Call<UserResponse> consultarPerfil(@Header("Authorization") String authorization);
 
+    @POST("perfil/actualizar.php")
+    Call<UserResponse> actualizarPerfil(
+            @Header("Authorization") String authorization,
+            @Body JsonObject datos
+    );
+
+    @POST("auth/recuperar.php")
+    Call<JsonObject> solicitarRecuperacion(@Body JsonObject datos);
+
     @GET("reservas/listar.php")
     Call<ReservationListResponse> listarReservas(@Header("Authorization") String authorization);
 

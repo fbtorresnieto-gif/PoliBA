@@ -5,7 +5,7 @@ apiAceptarMetodo('GET');
 $id=apiParametroEntero('id');
 try {
     [$pdo,$usuario]=apiContextoAutenticado('Alumno');
-    apiResponder(['data'=>reservaApiPropia($pdo,$id,(int)$usuario['id'])]);
+    apiResponder(['data'=>reservaApiPropia($pdo,$id,(int)$usuario['id'],true)]);
 } catch(Throwable $e) {
     error_log('MultiPro API detalle reserva: fallo interno');apiResponder(['error'=>'No se pudo consultar la reserva.'],500);
 }

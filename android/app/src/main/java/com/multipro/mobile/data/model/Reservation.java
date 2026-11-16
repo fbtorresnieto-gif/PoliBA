@@ -27,11 +27,16 @@ public final class Reservation {
     @SerializedName("modalidad_pago") private String paymentMode;
     @SerializedName("presencial_cobrado") private boolean presentialPaid;
     @SerializedName("devolucion_presencial") private String presentialRefund;
+    @SerializedName("compartir_url") private String shareUrl;
 
     public String getTotalArs() { return totalArs; }
     public String getPaymentMode() { return paymentMode; }
     public boolean isPresentialPaid() { return presentialPaid; }
     public String getPresentialRefund() { return presentialRefund; }
+    public String getShareUrl() { return shareUrl; }
+    public boolean canShare() {
+        return isActive() && shareUrl != null && !shareUrl.isBlank();
+    }
     public boolean canCancel() {
         return ("reservado".equals(estado) || "pendiente_presencial".equals(estado)) && !"online".equals(paymentMode);
     }

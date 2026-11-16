@@ -16,6 +16,20 @@ $registro=['nombre'=>'Prueba','apellido'=>'Clave','dni'=>$sufijo,'email'=>'clave
 [$st]=$api('POST','auth/registro.php',$registro,'');igual($st,422,'API_RECHAZA_CLAVE_7');
 $registro['contrasena']=$registro['confirmar_contrasena']='12345678';
 [$st]=$api('POST','auth/registro.php',$registro,'');igual($st,201,'API_ACEPTA_CLAVE_8');
+[$st,$perfil]=$api('GET','perfil/consultar.php');igual($st,200,'API_PERFIL_CONSULTA');
+igual((int)$perfil['data']['id'],$alumnoFixture,'API_PERFIL_TITULAR');
+[$st]=$api('POST','perfil/actualizar.php',['nombre'=>'Sin','apellido'=>'Sesion'],'');igual($st,401,'API_PERFIL_REQUIERE_SESION');
+[$st]=$api('POST','perfil/actualizar.php',['nombre'=>'','apellido'=>'Valido','direccion'=>'','telefono'=>'']);igual($st,422,'API_PERFIL_REQUIERE_NOMBRE');
+$perfilNuevo=['nombre'=>'Alumno actualizado','apellido'=>'Mobile','direccion'=>'Direccion de prueba','telefono'=>'1144445555'];
+[$st,$perfil]=$api('POST','perfil/actualizar.php',$perfilNuevo);igual($st,200,'API_PERFIL_ACTUALIZA');
+igual($perfil['data']['nombre'],$perfilNuevo['nombre'],'API_PERFIL_RESPUESTA');
+igual(q($admin,'SELECT nombre FROM usuarios WHERE id=?',[$alumnoFixture])->fetchColumn(),$perfilNuevo['nombre'],'API_PERFIL_PERSISTE');
+[$st]=$api('POST','auth/recuperar.php',['email'=>'correo-invalido'],'');igual($st,422,'API_RECUPERACION_VALIDA_EMAIL');
+$emailRecuperacion=(string)q($admin,'SELECT email FROM usuarios WHERE id=?',[$alumnoFixture])->fetchColumn();
+[$st,$recuperacion]=$api('POST','auth/recuperar.php',['email'=>$emailRecuperacion],'');igual($st,202,'API_RECUPERACION_REGISTRA');
+igual(isset($recuperacion['data']['mensaje']),true,'API_RECUPERACION_RESPUESTA_NEUTRA');
+igual((int)q($admin,'SELECT count(*) FROM password_reset_solicitudes WHERE email_hash=?',[hash('sha256',strtolower($emailRecuperacion))])->fetchColumn(),1,'API_RECUPERACION_COLA');
+[$st]=$api('POST','auth/recuperar.php',['email'=>'no-existe@multipro.invalid'],'');igual($st,202,'API_RECUPERACION_NO_ENUMERA');
 [$st,$datosEsp]=$api('GET','espacio.php?id='.$configId);igual($st,200,'API_PRECIO_ESPACIO');
 igual($datosEsp['data']['precio_hora_ars'],'2700.99','API_PRECIO_TEXTO');igual($datosEsp['data']['modalidades_disponibles'],['presencial'],'API_MODALIDADES');
 igual($datosEsp['data']['cobro_online_habilitado'],false,'API_ONLINE_DESACTIVADO');
@@ -36,9 +50,11 @@ igual((int)q($admin,'SELECT fk_usuario FROM reservas WHERE id=?',[$apiIdPres])->
 igual(q($admin,'SELECT estado FROM reservas WHERE id=?',[$apiIdPres])->fetchColumn(),'pendiente_presencial','API_AJENO_NO_MODIFICA');
 $local->registrarCobro($apiIdPres,$adminFixture);
 [$st,$detalle]=$api('GET','reservas/detalle.php?id='.$apiIdPres);igual($detalle['data']['presencial_cobrado'],true,'API_COBRO_VISIBLE');igual($detalle['data']['estado'],'reservado','API_ESTADO_COBRADO');
+    igual(str_starts_with($detalle['data']['compartir_url']??'','http://127.0.0.1:8082/ver_reserva.php?t='),true,'API_COMPARTE_RESERVADA');
 q($admin,'UPDATE espacios SET precio_hora_ars=2900 WHERE id=?',[$configId]);
 [$st,$detalle]=$api('GET','reservas/detalle.php?id='.$apiIdPres);igual($detalle['data']['importe_total_ars'],'2700.99','API_PRECIO_CONGELADO');
 [$st,$cancelada]=$api('POST','reservas/cancelar.php',['reserva_id'=>$apiIdPres]);igual($st,200,'API_CANCELAR_PRESENCIAL');igual($cancelada['data']['devolucion_presencial'],'pendiente','API_DEVOLUCION_PENDIENTE');
+    [$st,$detalleCancelada]=$api('GET','reservas/detalle.php?id='.$apiIdPres);igual(array_key_exists('compartir_url',$detalleCancelada['data']),false,'API_NO_COMPARTE_CANCELADA');
 [$st]=$api('POST','reservas/cancelar.php',['reserva_id'=>$apiIdPres]);igual($st,200,'API_CANCELAR_IDEMPOTENTE');
 igual((int)q($admin,"SELECT count(*) FROM reserva_movimientos_presenciales WHERE fk_reserva=? AND tipo='devolucion_solicitada'",[$apiIdPres])->fetchColumn(),1,'API_DEVOLUCION_UNICA');
 $local->registrarDevolucion($apiIdPres,$adminFixture);
@@ -48,10 +64,11 @@ $vencida=(int)q($admin,"INSERT INTO reservas(fk_espacio,fk_usuario,fecha_de_asis
     VALUES(?,?,'2020-05-02','03:00','reservado','gratuito',0) RETURNING id",[$configId,$alumnoFixture])->fetchColumn();
 [$st,$hist]=$api('GET','reservas/listar.php');igual($st,200,'API_HISTORIAL');$porId=array_column($hist['data'],null,'id');igual($porId[$vencida]['estado']??null,'vencido','API_LISTA_VENCIDA');igual(in_array($apiIdPres,array_keys($porId),true),true,'API_SI_CANCELADAS');
 [$st,$detalleVencida]=$api('GET','reservas/detalle.php?id='.$vencida);igual($st,200,'API_DETALLE_VENCIDA');igual($detalleVencida['data']['estado'],'vencido','API_ESTADO_EFECTIVO_VENCIDO');
+    igual(array_key_exists('compartir_url',$detalleVencida['data']),false,'API_NO_COMPARTE_VENCIDA');
 [$st]=$api('POST','reservas/cancelar.php',['reserva_id'=>$vencida]);igual($st,409,'API_NO_CANCELA_VENCIDA');
 igual(q($admin,'SELECT estado FROM reservas WHERE id=?',[$vencida])->fetchColumn(),'reservado','API_VENCIDA_CONSERVA_HISTORIA');
 foreach(['token_compartir','referencia_credencial','cuenta_proveedor','fk_actor'] as $privado)igual(array_key_exists($privado,$detalle['data']),false,'API_SIN_DATOS_INTERNOS');
 // Compatibilidad con cliente anterior: solo espacio/fecha/horario en gratuita.
 [$st,$gratisApi]=$api('POST','reservas/crear.php',['espacio_id'=>$espacioApi,'fecha'=>'2099-05-03','horario'=>'03:00']);igual($st,201,'API_CLIENTE_ANTERIOR');igual($gratisApi['data']['importe_total_ars'],'0.00','API_GRATUITA_CERO');
 [$st]=$api('POST','reservas/cancelar.php',['reserva_id'=>$gratisApi['data']['id']]);igual($st,200,'API_GRATUITA_CANCELA');
-echo "OK: API presencial, compatibilidad gratuita, importe, titular, idempotencia, historial y devoluciones.\n";
+echo "OK: API perfil, recuperacion, presencial, compatibilidad gratuita, importe, titular, idempotencia, historial y devoluciones.\n";

@@ -1,5 +1,9 @@
 package com.multipro.mobile.ui;
 
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -60,6 +64,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         binding.backButton.setOnClickListener(view -> finish());
         binding.retryButton.setOnClickListener(view -> loadReservation());
+        binding.shareButton.setOnClickListener(view -> shareReservation());
         binding.cancelButton.setOnClickListener(view -> confirmCancellation());
         loadReservation();
     }
@@ -117,8 +122,26 @@ public class ReservationDetailActivity extends AppCompatActivity {
                 reservation.isActive() ? R.color.multipro_success : R.color.multipro_text_muted
         ));
         binding.cancelButton.setVisibility(reservation.canCancel() ? View.VISIBLE : View.GONE);
+        binding.shareButton.setVisibility(reservation.canShare() ? View.VISIBLE : View.GONE);
         binding.stateContainer.setVisibility(View.GONE);
         binding.contentScroll.setVisibility(View.VISIBLE);
+    }
+
+    private void shareReservation() {
+        if (displayedReservation == null || !displayedReservation.canShare()) return;
+        String text = getString(R.string.share_reservation_text, displayedReservation.getShareUrl());
+        Intent send = new Intent(Intent.ACTION_SEND)
+                .setType("text/plain")
+                .putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_reservation_title))
+                .putExtra(Intent.EXTRA_TEXT, text);
+        try {
+            startActivity(Intent.createChooser(send, getString(R.string.share_reservation)));
+        } catch (ActivityNotFoundException error) {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText(
+                    getString(R.string.share_reservation_title), displayedReservation.getShareUrl()));
+            android.widget.Toast.makeText(this, R.string.share_link_copied, android.widget.Toast.LENGTH_LONG).show();
+        }
     }
 
     private void confirmCancellation() {
@@ -200,6 +223,7 @@ public class ReservationDetailActivity extends AppCompatActivity {
         cancelling = value;
         binding.cancellingContainer.setVisibility(value ? View.VISIBLE : View.GONE);
         binding.cancelButton.setEnabled(!value);
+        binding.shareButton.setEnabled(!value);
         binding.backButton.setEnabled(!value);
     }
 

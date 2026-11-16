@@ -43,6 +43,17 @@
                     <TextView android:id="@+id/entityText" style="@style/ProfileValueLast" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/modifyProfileButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:minHeight="52dp"
+                android:text="@string/modify_profile"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                app:backgroundTint="@color/multipro_primary"
+                app:cornerRadius="26dp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
     <LinearLayout android:id="@+id/stateContainer" android:layout_width="match_parent"

@@ -20,6 +20,11 @@
     <string name="required_email">Ingresá tu correo electrónico.</string>
     <string name="invalid_email">Ingresá un correo electrónico válido.</string>
     <string name="required_password">Ingresá tu contraseña.</string>
+    <string name="forgot_password">Olvidé mi contraseña</string>
+    <string name="forgot_password_instructions">Ingresá tu correo y te enviaremos un enlace para restablecerla.</string>
+    <string name="send_recovery_link">Enviar enlace</string>
+    <string name="recovery_requested_title">Solicitud registrada</string>
+    <string name="recovery_requested_message">Si ese correo está registrado en MultiPro, vas a recibir un enlace para restablecer tu contraseña en los próximos minutos.</string>
     <string name="connection_error">No pudimos conectarnos con MultiPro. Revisá tu conexión e intentá nuevamente.</string>
     <string name="unexpected_error">Ocurrió un problema inesperado. Intentá nuevamente.</string>
     <string name="welcome_name">Hola, %1$s</string>
@@ -93,6 +98,10 @@
     <string name="time_label">Horario</string>
     <string name="status_label">Estado</string>
     <string name="cancel_reservation">Cancelar reserva</string>
+    <string name="share_reservation">Compartir reserva</string>
+    <string name="share_reservation_title">Reserva MultiPro</string>
+    <string name="share_reservation_text">Te comparto mi reserva de MultiPro: %1$s</string>
+    <string name="share_link_copied">El enlace de la reserva se copió al portapapeles.</string>
     <string name="confirm_cancellation_title">Cancelar reserva</string>
     <string name="confirm_cancellation_message">¿Confirmás la cancelación de la reserva #%1$d? El horario volverá a quedar disponible.</string>
     <string name="cancelling_reservation">Cancelando reserva…</string>
@@ -123,6 +132,9 @@
     <string name="my_profile">Mi perfil</string>
     <string name="profile_title">Mi perfil</string>
     <string name="profile_subtitle">Datos asociados a tu cuenta de MultiPro.</string>
+    <string name="modify_profile">Modificar datos</string>
+    <string name="save_changes">Guardar cambios</string>
+    <string name="profile_updated">Tus datos fueron actualizados.</string>
     <string name="full_name_label">Nombre y apellido</string>
     <string name="dni_label">DNI</string>
     <string name="email_label">Correo electrónico</string>

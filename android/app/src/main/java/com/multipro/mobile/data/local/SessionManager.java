@@ -59,6 +59,10 @@ public final class SessionManager {
     public String getRole() { return read(KEY_ROLE); }
     public String getExpiresAt() { return read(KEY_EXPIRES_AT); }
 
+    public void updateName(String name) {
+        preferences.edit().putString(KEY_NAME, encrypt(valueOrEmpty(name))).apply();
+    }
+
     public String authorizationHeader() {
         String token = getToken();
         return token == null ? null : "Bearer " + token;

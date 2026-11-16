@@ -25,6 +25,7 @@ import com.multipro.mobile.databinding.ActivityAvailabilityBinding;
 import com.multipro.mobile.databinding.ItemAvailabilitySlotBinding;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -78,17 +79,36 @@ public class AvailabilityActivity extends AppCompatActivity {
         DatePickerDialog dialog = new DatePickerDialog(
                 this,
                 R.style.MultiProDatePickerDialog,
-                (picker, year, month, day) -> {
-                    selectedDate = LocalDate.of(year, month + 1, day);
-                    updateDateLabel();
-                    loadAvailability();
-                },
+                null,
                 selectedDate.getYear(),
                 selectedDate.getMonthValue() - 1,
                 selectedDate.getDayOfMonth()
         );
-        dialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000L);
+        long startOfToday = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        dialog.getDatePicker().setMinDate(startOfToday);
         dialog.show();
+        dialog.getDatePicker().init(
+                selectedDate.getYear(),
+                selectedDate.getMonthValue() - 1,
+                selectedDate.getDayOfMonth(),
+                (picker, year, month, day) -> {
+                    applySelectedDate(dialog, year, month, day);
+                }
+        );
+        dialog.getButton(DatePickerDialog.BUTTON_POSITIVE).setOnClickListener(view ->
+                applySelectedDate(
+                        dialog,
+                        dialog.getDatePicker().getYear(),
+                        dialog.getDatePicker().getMonth(),
+                        dialog.getDatePicker().getDayOfMonth()
+                ));
+    }
+
+    private void applySelectedDate(DatePickerDialog dialog, int year, int month, int day) {
+        selectedDate = LocalDate.of(year, month + 1, day);
+        dialog.dismiss();
+        updateDateLabel();
+        loadAvailability();
     }
 
     private void updateDateLabel() {

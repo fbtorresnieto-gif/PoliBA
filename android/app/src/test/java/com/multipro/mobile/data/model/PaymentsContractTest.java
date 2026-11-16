@@ -56,6 +56,13 @@ public class PaymentsContractTest {
         assertFalse(gson.fromJson("{\"estado\":\"reservado\",\"modalidad_pago\":\"online\"}",Reservation.class).canCancel());
         assertTrue(gson.fromJson("{\"devolucion_presencial\":\"pendiente\"}",ReservationCancelData.class).isRefundPending());
     }
+    @Test public void onlyActiveReservationWithPublicUrlCanBeShared() {
+        Reservation active=gson.fromJson("{\"estado\":\"reservado\",\"compartir_url\":\"https://example.test/ver_reserva.php?t=abc\"}",Reservation.class);
+        assertTrue(active.canShare());
+        assertFalse(gson.fromJson("{\"estado\":\"reservado\"}",Reservation.class).canShare());
+        assertFalse(gson.fromJson("{\"estado\":\"vencido\",\"compartir_url\":\"https://example.test/reserva\"}",Reservation.class).canShare());
+        assertFalse(gson.fromJson("{\"estado\":\"cancelado\",\"compartir_url\":\"https://example.test/reserva\"}",Reservation.class).canShare());
+    }
     @Test public void localBuildCannotTargetProduction() {
         if("local".equals(BuildConfig.BUILD_TYPE)) {
             assertEquals("http://127.0.0.1:8080/api/v1/",BuildConfig.API_BASE_URL);

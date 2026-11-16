@@ -12,7 +12,7 @@ function reservaApiEntero(array $datos,string $campo): int {
 }
 
 function reservaApiSeleccion(): string {
-    return "SELECT r.id,r.fk_espacio,r.fecha_de_asistencia,r.horario,r.estado,r.modalidad_pago,r.importe_total_ars,r.moneda,
+    return "SELECT r.id,r.fk_espacio,r.fecha_de_asistencia,r.horario,r.estado,r.modalidad_pago,r.importe_total_ars,r.moneda,r.token_compartir,
         esp.nombre AS espacio_nombre,e.id AS entidad_id,e.nombre AS entidad_nombre,e.direccion AS entidad_direccion,
         EXISTS(SELECT 1 FROM reserva_movimientos_presenciales m WHERE m.fk_reserva=r.id AND m.tipo='cobro') AS presencial_cobrado,
         EXISTS(SELECT 1 FROM reserva_movimientos_presenciales m WHERE m.fk_reserva=r.id AND m.tipo='devolucion_solicitada') AS devolucion_solicitada,
@@ -30,11 +30,18 @@ function reservaApiDatos(array $r): array {
         'devolucion_presencial'=>$r['devolucion_realizada']?'realizada':($r['devolucion_solicitada']?'pendiente':'no_solicitada')];
 }
 
-function reservaApiPropia(PDO $pdo,int $id,int $usuario): array {
+function reservaApiPropia(PDO $pdo,int $id,int $usuario,bool $incluirCompartir=false): array {
     $s=$pdo->prepare(reservaApiSeleccion()." WHERE r.id=? AND r.fk_usuario=?");
     $s->execute([$id,$usuario]);$r=$s->fetch(PDO::FETCH_ASSOC);
     if(!$r)apiResponder(['error'=>'Reserva no encontrada.'],404);
-    return reservaApiDatos($r);
+    $datos=reservaApiDatos($r);
+    if($incluirCompartir && $datos['estado']==='reservado') {
+        $base=apiBasePublica();
+        $token=(string)($r['token_compartir']??'');
+        if($base!==null && preg_match('/^[a-f0-9]{32}$/',$token)===1)
+            $datos['compartir_url']=$base.'/ver_reserva.php?t='.rawurlencode($token);
+    }
+    return $datos;
 }
 
 if (realpath((string)($_SERVER['SCRIPT_FILENAME']??''))===__FILE__) apiResponder(['error'=>'Recurso no encontrado.'],404);

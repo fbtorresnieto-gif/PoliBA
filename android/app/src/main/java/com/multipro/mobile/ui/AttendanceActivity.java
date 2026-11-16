@@ -60,12 +60,30 @@ public class AttendanceActivity extends AppCompatActivity {
     }
 
     private void selectDate() {
-        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, (picker, year, month, day) -> {
-            selectedDate = LocalDate.of(year, month + 1, day);
-            updateDateLabel(); loadStudents();
-        }, selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
+        DatePickerDialog dialog = new DatePickerDialog(this, R.style.MultiProDatePickerDialog, null,
+                selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
         dialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         dialog.show();
+        dialog.getDatePicker().init(
+                selectedDate.getYear(),
+                selectedDate.getMonthValue() - 1,
+                selectedDate.getDayOfMonth(),
+                (picker, year, month, day) -> applySelectedDate(dialog, year, month, day)
+        );
+        dialog.getButton(DatePickerDialog.BUTTON_POSITIVE).setOnClickListener(view ->
+                applySelectedDate(
+                        dialog,
+                        dialog.getDatePicker().getYear(),
+                        dialog.getDatePicker().getMonth(),
+                        dialog.getDatePicker().getDayOfMonth()
+                ));
+    }
+
+    private void applySelectedDate(DatePickerDialog dialog, int year, int month, int day) {
+        selectedDate = LocalDate.of(year, month + 1, day);
+        dialog.dismiss();
+        updateDateLabel();
+        loadStudents();
     }
 
     private void updateDateLabel() {
